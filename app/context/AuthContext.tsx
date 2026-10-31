@@ -1,4 +1,5 @@
 import { isAxiosError } from "axios";
+import { getCalendars } from "expo-localization";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { identifyUser, resetUser } from "@/lib/analytics";
 import { setApiToken, setAuthHandlers } from "@/lib/api/client";
@@ -6,7 +7,9 @@ import { deleteMe, getMe, updateMe } from "@/lib/api/me";
 import { submitOnboarding } from "@/lib/api/onboarding";
 import type { LoginResponse, MeResponse, Premium, ProfilePatch, User } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
+import { cancelReminders } from "@/lib/notifications";
 import { clearPendingOnboarding, getPendingOnboarding } from "@/lib/onboarding";
+import { identifyPurchases, resetPurchases } from "@/lib/purchases";
 import { deleteSecure, getSecure, setSecure } from "@/lib/storage";
 
 // Adapted from PDR_pl context/AuthContext.tsx: the token and the last known account live in SecureStore,
@@ -65,6 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await saveAccount(null);
     await clearPendingOnboarding();
     resetUser();
+    resetPurchases().catch(reportError);
+    // The next person on this phone shouldn't get this person's reminders
+    cancelReminders().catch(reportError);
     setStatus("signedOut");
   }, [saveToken, saveAccount]);
 
@@ -119,6 +125,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await deleteMe();
     await signOut();
   }, [signOut]);
+
+  // Once per launch per account: tie purchases to the account and keep the server's timezone in step with the
+  // phone's, so the streak counts days at the person's own midnight
+  const userId = account?.user.id;
+  useEffect(() => {
+    if (!userId) return;
+    identifyPurchases(userId).catch(reportError);
+    const timezone = getCalendars()[0]?.timeZone;
+    if (timezone) updateMe({ timezone }).catch(() => {});
+  }, [userId]);
 
   // The API client reports refreshed and rejected tokens here
   useEffect(() => {
