@@ -63,6 +63,9 @@ export function publicUser(user: User) {
     translation: user.translation,
     aiEnabled: user.aiEnabled,
     weeklyGoal: user.weeklyGoal,
+    streakHidden: user.streakHidden,
+    reminderTime: user.reminderTime,
+    remindersEnabled: user.remindersEnabled,
   };
 }
 
