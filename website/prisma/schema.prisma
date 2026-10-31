@@ -82,6 +82,7 @@ model User {
 
   loginTokens        LoginToken[]
   entitlements       Entitlement[]
+  appErrors          AppError[]
 }
 
 enum LoginTokenPurpose {
@@ -223,4 +224,28 @@ model ContentVersion {
   id        Int      @id @default(1)
   version   Int      @default(0)
   updatedAt DateTime @updatedAt
+}
+
+// ───────── App diagnostics (SPEC §10, copied from PDR_pl) ─────────
+
+// Crash and error reports from the phone app. userId is null for signed-out installs.
+model AppError {
+  id          String   @id @default(uuid())
+  userId      String?
+  type        String   @default("error") // "crash" | "error"
+  message     String
+  stack       String?
+  isFatal     Boolean?
+  page        String? // screen path where it happened
+  platform    Platform
+  osVersion   String?
+  deviceModel String?
+  appVersion  String?
+  createdAt   DateTime @default(now())
+
+  // Reports outlive a deleted account (they hold no personal data besides the id)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
 }

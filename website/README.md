@@ -48,6 +48,7 @@ CORS rule allowing `PUT` from your site's origin (for browser uploads).
   without `RESEND_API_KEY`). Needs `JWT_SECRET`. Apple/Google routes are ready for the phone app
   (`APPLE_CLIENT_ID`, `GOOGLE_CLIENT_ID`).
 - **Web app:** `/app` (Today, Prayers, Companion placeholder, Settings, Upgrade), signed-in only.
-- **Stripe (test mode):** create two recurring prices, fill `STRIPE_*` in `.env`, then
+- **Stripe: won't work for us** (no legal entity, Stripe doesn't onboard Ukraine). The code stays as a reference until
+  a replacement is chosen (Paddle, WayForPay, monobank). For the record, Stripe test setup was: create two recurring prices, fill `STRIPE_*` in `.env`, then
   `stripe listen --forward-to localhost:3000/api/webhooks/stripe` and copy the `whsec_` into `STRIPE_WEBHOOK_SECRET`.
   Without keys the paywall says "Payments aren't set up yet" and "continue free" still works.
