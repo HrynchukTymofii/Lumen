@@ -7,8 +7,8 @@ import { sceneSvg, type SceneOptions } from "@website/lib/kit/art";
 // Names: dawn, golden, lake, meadow, dusk, evening, night, sky. Fills its parent, cropping like CSS `cover`.
 export function Scene({ name, options, style }: { name: string; options?: SceneOptions; style?: StyleProp<ViewStyle> }) {
   const key = JSON.stringify(options ?? {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   // The web markup's class and aria-hidden attributes mean nothing to react-native-svg
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const xml = useMemo(() => sceneSvg(name, options).replace(/ (class|aria-hidden)="[^"]*"/g, ""), [name, key]);
   return <SvgXml xml={xml} width="100%" height="100%" style={style} />;
 }
