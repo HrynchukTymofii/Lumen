@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+
+# env files (contain secrets)
+.env
+.env*.local
+
+# Browser automation logs (Playwright MCP)
+.playwright-mcp/
