@@ -1,0 +1,126 @@
+/* Lumen design kit: tokens, the Light, buttons, tags, cards.
+   Mirrors what goes into website/app/globals.css (@theme) and app/tailwind.config.js. */
+
+:root{
+  color-scheme:light;
+  --page:#F7E8D8;--bg:#FFF9F2;--card:#FFFFFF;--ink:#2B211C;--muted:#8A7B70;--dim:#B9AA9C;
+  --line:#F1E4D6;--line2:#E5D3C0;
+  --peach:#F2B29A;--peach-2:#E98E6F;--orange:#F29A4A;
+  --butter:#FDE3A2;--sage:#D6E8CC;--sky:#D4E7F0;--lav:#E7DBF6;--rose:#F9D6D2;
+  --on-pastel:#2B211C;
+  --shadow:0 22px 44px -26px rgba(120,70,30,.45);--shadow-sm:0 10px 24px -16px rgba(120,70,30,.4);
+  --danger:#D9534F;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --page:#110E0C;--bg:#1A1513;--card:#251E1B;--ink:#F7EEE5;--muted:#A99A8E;--dim:#6E6058;
+  --line:#2F2622;--line2:#3F332D;
+  --peach:#F2B29A;--peach-2:#F4A585;
+  --butter:#F3D894;--sage:#C8DDBE;--sky:#C6DCE6;--lav:#D9CBEE;--rose:#F1C9C5;
+  --shadow:0 22px 44px -24px rgba(0,0,0,.7);--shadow-sm:0 10px 24px -14px rgba(0,0,0,.6);
+  --danger:#F07C72;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --page:#110E0C;--bg:#1A1513;--card:#251E1B;--ink:#F7EEE5;--muted:#A99A8E;--dim:#6E6058;
+  --line:#2F2622;--line2:#3F332D;--peach:#F2B29A;--peach-2:#F4A585;
+  --butter:#F3D894;--sage:#C8DDBE;--sky:#C6DCE6;--lav:#D9CBEE;--rose:#F1C9C5;
+  --shadow:0 22px 44px -24px rgba(0,0,0,.7);--shadow-sm:0 10px 24px -14px rgba(0,0,0,.6);--danger:#F07C72;
+}}
+
+/* ───────── palettes (compare in the prototypes) ─────────
+   dawn   = current peach (default, no overrides)
+   easter = cream + deep navy + gold: heaven, glory, Easter morning
+   olive  = cream + deep olive + gold: Ordinary Time, growth, peace */
+:root[data-palette="easter"][data-theme="light"]{
+  --page:#EEEAE0;--bg:#FBF8F2;--card:#FFFFFF;--ink:#1C2541;--muted:#6B7088;--dim:#A8ABBA;
+  --line:#ECE6DA;--line2:#DCD4C4;
+  --peach:#E9C46A;--peach-2:#A9771C;--dot:#E9C46A;--orbit:#E0B04C;--rays:#C98F1E;
+  --butter:#F6E4B2;--sage:#DCE5D3;--sky:#D6E1F1;--lav:#E0DDF0;--rose:#F2DDD6;--on-pastel:#1C2541;
+  --shadow:0 22px 44px -26px rgba(28,37,65,.4);--shadow-sm:0 10px 24px -16px rgba(28,37,65,.35);
+}
+:root[data-palette="easter"][data-theme="dark"]{
+  --page:#090D1A;--bg:#0F1530;--card:#18203F;--ink:#F4EFE4;--muted:#9AA1BD;--dim:#5E6688;
+  --line:#222B4D;--line2:#2F3960;
+  --peach:#E9C46A;--peach-2:#F0CB72;--dot:#E9C46A;--orbit:#E0B04C;--rays:#F0C35A;
+  --butter:#EBD9A6;--sage:#D1DCC6;--sky:#CCD8EC;--lav:#D6D1EA;--rose:#E8D1C9;--on-pastel:#1C2541;
+  --shadow:0 22px 44px -24px rgba(0,0,0,.75);--shadow-sm:0 10px 24px -14px rgba(0,0,0,.65);
+}
+:root[data-palette="olive"][data-theme="light"]{
+  --page:#ECEADF;--bg:#FAF8F1;--card:#FFFFFF;--ink:#26301F;--muted:#717866;--dim:#AAAE9E;
+  --line:#E9E6D9;--line2:#D8D4C2;
+  --peach:#C5D19E;--peach-2:#5F7334;--dot:#E3C771;--orbit:#A9B98A;--rays:#C9A33A;
+  --butter:#F2E4B4;--sage:#D8E3C4;--sky:#D6E3E0;--lav:#E3E0EA;--rose:#EFDACF;--on-pastel:#26301F;
+  --shadow:0 22px 44px -26px rgba(50,60,30,.42);--shadow-sm:0 10px 24px -16px rgba(50,60,30,.36);
+}
+:root[data-palette="olive"][data-theme="dark"]{
+  --page:#0C0F09;--bg:#141A10;--card:#1D2518;--ink:#EEF0E4;--muted:#9CA38E;--dim:#5F6852;
+  --line:#262F1F;--line2:#35412C;
+  --peach:#C5D19E;--peach-2:#C3D38D;--dot:#E3C771;--orbit:#A9B98A;--rays:#E3C771;
+  --butter:#E8DBAC;--sage:#CFDBBB;--sky:#CEDCD9;--lav:#DAD7E2;--rose:#E5D1C6;--on-pastel:#26301F;
+  --shadow:0 22px 44px -24px rgba(0,0,0,.75);--shadow-sm:0 10px 24px -14px rgba(0,0,0,.65);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink)}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:transparent}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--peach-2);outline-offset:3px}
+.display{font-family:'Outfit',system-ui,sans-serif;letter-spacing:-.01em}
+.read{font-family:'Literata',Georgia,serif}
+
+/* pastel surfaces keep dark ink in both themes (same rule as the SAT site) */
+.bg-butter,.bg-sage,.bg-sky,.bg-lav,.bg-rose,.bg-peach{color:var(--on-pastel);--muted:#6E5F55;--line:rgba(43,33,28,.12);--line2:rgba(43,33,28,.2);--ink:#2B211C}
+.bg-butter{background:var(--butter)}.bg-sage{background:var(--sage)}.bg-sky{background:var(--sky)}.bg-lav{background:var(--lav)}.bg-rose{background:var(--rose)}.bg-peach{background:var(--peach)}
+/* card motif: a soft sun + two hill lines, the same flat-landscape language as the scenes */
+.motif{background-image:radial-gradient(circle at calc(100% - 36px) 34px,rgba(255,255,255,.55) 0 20px,rgba(255,255,255,.22) 21px 34px,transparent 35px),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 120' preserveAspectRatio='none'%3E%3Cpath d='M0 64C70 34 150 40 220 58S340 30 400 46V120H0Z' fill='rgba(40,44,30,.055)'/%3E%3Cpath d='M0 92C90 68 180 74 260 90S360 78 400 84V120H0Z' fill='rgba(40,44,30,.075)'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:0 0,0 100%;background-size:100% 100%,100% 64px}
+
+/* buttons */
+.btn-ink{display:inline-flex;align-items:center;justify-content:space-between;gap:14px;height:56px;padding:0 6px 0 24px;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:800;font-size:16px;transition:transform .15s}
+.btn-ink .dot{width:44px;height:44px;border-radius:50%;background:var(--dot,var(--peach));color:var(--on-pastel);display:grid;place-items:center;flex:none;transition:transform .2s}
+.btn-ink:hover .dot{transform:translateX(2px)}
+.btn-ink:active{transform:scale(.98)}
+.btn-ink[disabled]{opacity:.3;pointer-events:none}
+.btn-ink.full{width:100%}
+.btn-peach{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 30px;border-radius:999px;background:var(--peach);color:var(--on-pastel);font-weight:800;font-size:16.5px;box-shadow:0 12px 22px -12px rgba(233,142,111,.9);transition:transform .15s}
+.btn-peach:active{transform:scale(.97)}
+.btn-line{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 24px;border-radius:999px;border:1.5px solid var(--line2);background:var(--card);font-weight:800;font-size:15.5px}
+.tag{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 13px;border-radius:9px;border:1.5px solid var(--ink);font-size:13px;font-weight:600;opacity:.85;white-space:nowrap}
+.tag.soft{border-color:var(--line2);opacity:1}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:800;letter-spacing:.02em}
+.vchip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:10px;border:1.5px solid var(--peach-2);color:var(--ink);font-size:13px;font-weight:800;background:color-mix(in srgb,var(--peach) 14%,transparent)}
+.vchip svg{color:var(--peach-2)}
+.ic-btn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.85);color:#2B211C;box-shadow:0 4px 14px -6px rgba(0,0,0,.25);flex:none}
+.eyebrow{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+
+/* illustration frames */
+.scene{display:block;width:100%;height:100%}
+.art{position:relative;overflow:hidden;border-radius:22px;background:var(--line)}
+.art svg{position:absolute;inset:0;width:100%;height:100%}
+
+/* the Light: a flat sun with a dashed orbit */
+.light{display:inline-block;flex:none;width:var(--s,96px);height:var(--s,96px)}
+.light svg{width:100%;height:100%;overflow:visible}
+.light .orbit,.light .core,.light .halo,.light .rays,.light .ripple{transform-box:view-box;transform-origin:50px 50px}
+.light .halo{animation:breathe 4.4s ease-in-out infinite}
+.light .core{animation:breathe 4.4s ease-in-out infinite}
+.light .orbit{animation:turn 40s linear infinite}
+.light .rays{opacity:0}
+.light .ripple{opacity:0}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+@keyframes turn{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.13)}}
+@keyframes ripple{0%{transform:scale(.7);opacity:.6}100%{transform:scale(1.35);opacity:0}}
+@keyframes rays{0%{transform:scale(.7) rotate(0);opacity:0}30%{opacity:1}100%{transform:scale(1.15) rotate(25deg);opacity:0}}
+.light[data-state="listening"] .core,.light[data-state="listening"] .halo{animation:pulse 1.3s ease-in-out infinite}
+.light[data-state="listening"] .orbit{animation-duration:6s}
+.light[data-state="speaking"] .ripple{animation:ripple 2.1s ease-out infinite}
+.light[data-state="speaking"] .ripple.r2{animation-delay:.7s}
+.light[data-state="speaking"] .ripple.r3{animation-delay:1.4s}
+.light[data-state="thinking"] .orbit{animation-duration:2.6s}
+.light[data-state="celebrating"] .rays{animation:rays 1.5s cubic-bezier(.2,.8,.2,1) infinite}
+.light[data-state="celebrating"] .core{animation:pulse .75s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.light *{animation:none!important}}
+
+.hidden{display:none!important}

@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumen Web Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kit/kit.css">
+<style>
+html,body{background:var(--bg)}
+body{min-height:100vh}
+h1,h2,h3{font-family:'Outfit',sans-serif;font-weight:600;letter-spacing:-.015em}
+
+/* prototype toolbar */
+.tb{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:9px 16px;background:color-mix(in srgb,var(--page) 90%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line2);font-size:13px}
+.tb b{font-weight:800;margin-right:4px}
+.tb .sp{flex:1}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line2);border-radius:999px;padding:3px}
+.seg button{padding:6px 12px;border-radius:999px;color:var(--muted);font-weight:700;font-size:12.5px}
+.seg button.on{background:var(--ink);color:var(--bg)}
+@media (max-width:680px){.tb .sp{display:none}.tb b{width:100%}}
+
+/* ───────── landing (SAT layout + illustrated cards) ───────── */
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+.brand{display:flex;align-items:center;gap:10px;font-family:'Outfit';font-weight:700;font-size:21px}
+.nav-links{display:flex;gap:28px;font-weight:700;font-size:15px;color:var(--muted)}
+.nav-links a{text-decoration:none}
+@media (max-width:820px){.nav-links{display:none}}
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding:44px 0 80px}
+@media (max-width:920px){.hero{grid-template-columns:1fr;padding-top:16px}}
+.kicker{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:var(--card);padding:6px 16px 6px 6px;font-size:14px;font-weight:700;box-shadow:var(--shadow-sm)}
+.kicker span{background:var(--butter);color:var(--on-pastel);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:800}
+.hero h1{font-size:clamp(42px,6.4vw,78px);line-height:1.02;margin:24px 0 20px}
+.hl{position:relative;white-space:nowrap;isolation:isolate}
+.hl::after{content:"";position:absolute;left:0;right:0;bottom:.04em;height:.16em;border-radius:99px;background:var(--peach);z-index:-1}
+.hero p.lead{color:var(--muted);font-size:19px;line-height:1.55;max-width:46ch;margin-bottom:30px}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px}
+.checks{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:26px;list-style:none;color:var(--muted);font-weight:700;font-size:14px}
+.checks li{display:flex;align-items:center;gap:7px}
+.checks svg{color:#4E9A5E}
+.collage{position:relative;height:580px;max-width:560px;width:100%;margin:0 auto}
+.c1,.c2,.c3{position:absolute;border-radius:30px;box-shadow:0 30px 50px -30px rgba(90,50,20,.55)}
+.c1{left:0;top:10px;width:68%;transform:rotate(-5deg);background:var(--card);overflow:hidden}
+.c1 .art{height:200px;border-radius:0}
+.c1 .b{padding:16px 20px 20px}
+.c1 h3{font-size:24px}
+.c1 p{color:var(--muted);font-size:14px;margin:4px 0 12px}
+.c2{right:0;top:300px;width:54%;transform:rotate(3deg);padding:20px 22px;z-index:2}
+.c2 q{display:block;font-family:'Literata',serif;font-size:19px;line-height:1.5;quotes:none;margin:8px 0 14px}
+.c3{left:0;bottom:0;width:46%;transform:rotate(-2deg);padding:20px 22px;z-index:3}
+.c3 .big{font-family:'Outfit';font-weight:600;font-size:52px;line-height:1}
+.wk{display:flex;gap:6px;margin-top:12px}
+.wk i{flex:1;height:34px;border-radius:10px;background:rgba(43,33,28,.12)}
+.wk i.on{background:#2B211C}
+.sticker{position:absolute;right:2%;bottom:6px;transform:rotate(-8deg);background:var(--ink);color:var(--bg);font-weight:800;font-size:14px;padding:10px 18px;border-radius:999px;z-index:4}
+.c-light{position:absolute;right:6%;top:-10px;z-index:4}
+@media (max-width:560px){.collage{height:540px}.c1{width:80%}.c1 .art{height:150px}.c2{top:260px;width:60%}.c3{width:50%}.sticker{display:none}}
+
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding-bottom:96px}
+@media (max-width:820px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{border-radius:26px;padding:22px 24px}
+.tile b{display:block;font-family:'Outfit';font-weight:600;font-size:44px;line-height:1;letter-spacing:-.02em}
+.tile span{display:block;margin-top:6px;font-weight:700;font-size:14px}
+.tile.dash{border:2px dashed var(--line2)}
+.tile.dash span{color:var(--muted)}
+
+.shead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:36px}
+.shead h2{font-size:clamp(34px,4.6vw,52px);line-height:1.04;max-width:15ch}
+.shead p{color:var(--muted);font-size:18px;line-height:1.5;max-width:42ch}
+section.blk{padding-bottom:100px}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:56px;list-style:none}
+@media (max-width:920px){.steps{grid-template-columns:1fr;gap:28px}}
+.step{position:relative;background:var(--card);border-radius:30px;padding:28px;box-shadow:var(--shadow-sm)}
+.step:nth-child(2){margin-top:44px}.step:nth-child(3){margin-top:88px}
+@media (max-width:920px){.step:nth-child(n){margin-top:0}}
+.step .n{position:absolute;top:-18px;right:22px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:'Outfit';font-weight:700;color:var(--on-pastel)}
+.step .art{height:130px;margin:-6px -6px 18px}
+.step h3{font-size:26px}
+.step p{color:var(--muted);line-height:1.5;margin:8px 0 14px}
+@media (min-width:921px){.step:not(:last-child)::after{content:"";position:absolute;right:-58px;top:70px;width:58px;height:46px;border-top:2px dashed var(--peach-2);border-right:2px dashed var(--peach-2);border-top-right-radius:18px}}
+
+.trust{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:920px){.trust{grid-template-columns:1fr}}
+.panel{position:relative;border-radius:36px;padding:34px;overflow:hidden;min-height:380px}
+.panel h3{font-size:clamp(28px,3vw,38px);line-height:1.1;max-width:14ch}
+.panel p{font-weight:600;max-width:34ch;margin-top:12px;line-height:1.5}
+.panel .doodle{position:absolute;right:16px;bottom:10px;width:190px}
+.chatcard{background:var(--card);border-radius:36px;padding:26px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:12px}
+.bub{max-width:88%;padding:13px 16px;border-radius:20px;line-height:1.5;font-size:15px}
+.bub.me{align-self:flex-end;background:var(--ink);color:var(--bg);border-bottom-right-radius:6px}
+.bub.ai{align-self:flex-start;background:var(--bg);border-bottom-left-radius:6px}
+.bub .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.who{display:flex;align-items:center;gap:10px;font-weight:800}
+.who small{display:block;color:var(--muted);font-weight:600;font-size:12.5px}
+
+.lib{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media (max-width:920px){.lib{grid-template-columns:1fr 1fr}}
+.lib a{display:block;background:var(--card);border-radius:22px;overflow:hidden;text-decoration:none;box-shadow:var(--shadow-sm);transition:transform .2s}
+.lib a:hover{transform:translateY(-3px)}
+.lib .art{height:150px;border-radius:0}
+.lib div.t{padding:12px 14px 14px;font-family:'Outfit';font-weight:600;font-size:16px}
+.lib small{display:block;font-family:'Manrope';color:var(--muted);font-weight:700;font-size:12.5px;margin-top:2px}
+
+.price{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:820px){.price{grid-template-columns:1fr}}
+.tier{border-radius:34px;padding:32px;position:relative;overflow:hidden}
+.tier.free{background:var(--card);box-shadow:var(--shadow-sm)}
+.tier h3{font-size:24px;display:flex;justify-content:space-between;align-items:center}
+.tier .amt{font-family:'Outfit';font-weight:600;font-size:54px;letter-spacing:-.02em;margin:14px 0 2px}
+.tier .amt small{font-family:'Manrope';font-size:16px;font-weight:700;color:var(--muted)}
+.tier .note{color:var(--muted);font-weight:600;font-size:14px;line-height:1.5;max-width:38ch}
+.tier ul{list-style:none;display:grid;gap:11px;margin:22px 0 26px;font-weight:700;font-size:15px}
+.tier li{display:flex;align-items:center;gap:10px}
+.tier li i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--sage);color:#2B211C;flex:none}
+
+.ways{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media (max-width:920px){.ways{grid-template-columns:1fr}}
+.way{display:block;text-align:left;background:var(--card);border-radius:30px;overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .2s}
+.way:hover{transform:translateY(-3px)}
+.way .art{height:180px;border-radius:0}
+.way .b{padding:20px 22px 22px}
+.way h3{font-size:23px;line-height:1.15}
+.way p{color:var(--muted);margin:8px 0 16px;line-height:1.5}
+.way .go{display:inline-flex;align-items:center;gap:8px;font-weight:800}
+.way .go span{width:34px;height:34px;border-radius:50%;background:var(--peach);display:grid;place-items:center;color:#2B211C}
+
+.faq{max-width:840px}
+details{background:var(--card);border-radius:22px;padding:20px 24px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+summary{cursor:pointer;font-weight:800;font-size:17px;list-style:none;display:flex;justify-content:space-between;gap:12px;align-items:center}
+summary::after{content:"+";width:30px;height:30px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:18px;flex:none}
+details[open] summary::after{content:"–";background:var(--peach)}
+details p{color:var(--muted);line-height:1.6;margin-top:10px}
+
+.foot-cta{position:relative;border-radius:40px;overflow:hidden;min-height:360px;display:flex;align-items:flex-end;margin-bottom:60px}
+.foot-cta .art{position:absolute;inset:0;border-radius:0}
+.foot-cta .in{position:relative;margin:24px;background:var(--card);border-radius:30px;padding:28px;max-width:520px;box-shadow:var(--shadow)}
+.foot-cta h2{font-size:clamp(28px,3.4vw,40px);line-height:1.08}
+.foot-cta p{color:var(--muted);margin:10px 0 20px;line-height:1.5}
+footer{border-top:1px solid var(--line2);padding:30px 0 50px;color:var(--muted);font-size:14px;font-weight:600;display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between}
+footer nav{display:flex;flex-wrap:wrap;gap:20px}
+footer a{text-decoration:none}
+
+/* ───────── funnel ───────── */
+#funnel{max-width:480px;margin:0 auto;min-height:calc(100vh - 52px);display:flex;flex-direction:column;position:relative;background:var(--bg)}
+.ftop{display:flex;align-items:center;gap:12px;padding:12px 18px 6px;min-height:60px}
+.ftop .ic-btn{background:var(--card);color:var(--ink)}
+.ftop .ic-btn.hide{opacity:0;pointer-events:none}
+.prog{flex:1;height:6px;border-radius:6px;background:var(--line2);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--peach-2);border-radius:6px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+#stage{flex:1;display:flex;flex-direction:column}
+.scr{flex:1;display:flex;flex-direction:column;padding:6px 20px 24px;animation:inF .42s cubic-bezier(.2,.8,.2,1) both}
+.scr.back{animation-name:inB}
+.scr.flush{padding:0 0 24px}
+@keyframes inF{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes inB{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.qt .hl{white-space:normal;background:linear-gradient(transparent 80%,var(--peach) 80%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.qt .hl::after{display:none}
+.qt{font-size:30px;line-height:1.12;margin:12px 0 8px;text-wrap:balance}
+.qs{color:var(--muted);font-size:16px;line-height:1.5;margin-bottom:20px;max-width:38ch;font-weight:500}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opts>*{animation:rise .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*40ms)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:9px 16px 9px 9px;border-radius:20px;background:var(--card);font-size:16px;font-weight:700;box-shadow:var(--shadow-sm);border:2px solid transparent;transition:transform .15s,border-color .2s}
+.opt:active{transform:scale(.98)}
+.opt.on{border-color:var(--peach-2)}
+.opt .th{width:46px;height:46px;border-radius:14px;flex:none}
+.opt .ot{flex:1;display:flex;flex-direction:column;gap:1px}
+.opt small{color:var(--muted);font-size:13px;font-weight:600}
+.box{width:24px;height:24px;flex:none;border-radius:8px;box-shadow:inset 0 0 0 2px var(--line2);display:grid;place-items:center;color:var(--bg);transition:.2s}
+.opt.on .box{background:var(--ink);box-shadow:none}
+.box svg{opacity:0}.opt.on .box svg{opacity:1}
+.foot{margin-top:auto;padding-top:18px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 30%);padding-bottom:4px}
+.link{display:block;margin:14px auto 0;color:var(--muted);font-size:14.5px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.fine{color:var(--dim);font-size:12.5px;line-height:1.5;text-align:center;margin-top:12px;font-weight:600}
+.scale{display:flex;justify-content:space-between;gap:8px}
+.scale button{flex:1;aspect-ratio:1;max-width:64px;border-radius:18px;background:var(--card);box-shadow:var(--shadow-sm);font-family:'Outfit';font-weight:600;font-size:20px;border:2px solid transparent;transition:.2s}
+.scale button.on{border-color:var(--peach-2);background:var(--peach)}
+.scale-l{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-top:10px;font-weight:700}
+.stmt{font-family:'Literata',serif;font-size:21px;line-height:1.45;padding:22px;border-radius:24px;margin-bottom:18px}
+.times{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.times button{padding:15px 0;border-radius:16px;background:var(--card);box-shadow:var(--shadow-sm);font-weight:800;border:2px solid transparent}
+.times button.on{border-color:var(--peach-2)}
+.field{width:100%;height:58px;border-radius:18px;border:2px solid var(--line2);background:var(--card);padding:0 18px;font-size:17px;font-weight:600}
+.field:focus{outline:none;border-color:var(--peach-2)}
+.top-art{position:relative;height:300px;flex:none}
+.top-art .art{position:absolute;inset:0;border-radius:0 0 34px 34px}
+.top-art .lt{position:absolute;left:50%;top:80px;transform:translateX(-50%)}
+.sheet-in{padding:22px 20px 0}
+.factc{border-radius:30px;padding:24px;position:relative;overflow:hidden;margin-top:6px}
+.factc .doodle{position:absolute;right:10px;bottom:6px;width:120px}
+.factc .stat{font-family:'Outfit';font-weight:600;font-size:60px;line-height:1}
+.factc p{font-weight:600;line-height:1.5;max-width:26ch;position:relative;z-index:1}
+.factc .src{font-size:12px;font-weight:700;opacity:.7;margin-top:14px;font-style:italic}
+.load{display:flex;flex-direction:column;align-items:center;text-align:center}
+.lprog{width:100%;height:10px;border-radius:10px;background:var(--line2);overflow:hidden;margin-top:22px}
+.lprog i{display:block;height:100%;width:0;background:var(--peach-2);border-radius:10px}
+.pct{font-family:'Outfit';font-weight:600;font-size:46px;margin-top:16px}
+.lsteps{list-style:none;display:grid;gap:12px;margin-top:22px;width:100%;text-align:left}
+.lsteps li{display:flex;align-items:center;gap:12px;color:var(--dim);font-weight:700;transition:color .3s;background:var(--card);padding:12px 14px;border-radius:16px}
+.lsteps li.act,.lsteps li.ok{color:var(--ink)}
+.lsteps .dot{width:24px;height:24px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--line2);display:grid;place-items:center;flex:none;transition:.3s;color:#fff}
+.lsteps li.ok .dot{background:#4E9A5E;box-shadow:none}
+.lsteps li.act .dot{box-shadow:inset 0 0 0 2px var(--peach-2);border-top-color:transparent;animation:turn 1s linear infinite}
+.path{display:grid;gap:10px;margin:4px 0 22px}
+.day{display:flex;align-items:center;gap:14px;padding:8px 14px 8px 8px;border-radius:18px;background:var(--card);box-shadow:var(--shadow-sm);animation:rise .4s both;animation-delay:calc(var(--i)*70ms)}
+.day .art{width:52px;height:52px;border-radius:13px;flex:none}
+.day b{display:block;font-size:15px}
+.day small{color:var(--muted);font-size:12.5px;font-weight:700}
+.day .when{margin-left:auto;font-size:11.5px;font-weight:800;border-radius:999px;padding:4px 10px;background:var(--bg);color:var(--muted)}
+.day.today .when{background:var(--peach);color:var(--on-pastel)}
+.prayer{border-radius:28px;background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+.prayer .art{height:120px;border-radius:0}
+.prayer .in{padding:18px 20px 20px}
+.prayer .ph{display:flex;align-items:center;gap:12px;margin:-46px 0 10px;position:relative}
+.prayer .ph small{color:var(--muted);font-size:12px;font-weight:800;display:block;margin-top:24px}
+.prayer .pt{font-family:'Literata',serif;font-size:18px;line-height:1.65;min-height:7em;white-space:pre-line}
+.caret{display:inline-block;width:2px;height:1.1em;background:var(--peach-2);vertical-align:-3px;margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.pw-head{position:relative;height:200px;flex:none}
+.pw-head .art{position:absolute;inset:0;border-radius:0 0 34px 34px}
+.pw-head .ic-btn{position:absolute;top:14px;right:16px}
+.pw-card{margin:-50px 14px 0;background:var(--card);border-radius:30px;padding:22px 18px;box-shadow:var(--shadow);position:relative}
+.cmp{display:grid;grid-template-columns:1fr 1fr;border-radius:20px;overflow:hidden;margin:14px 0 18px;box-shadow:inset 0 0 0 1.5px var(--line2)}
+.cmp>div{padding:14px 12px}
+.cmp .pm{background:var(--butter);color:var(--on-pastel)}
+.cmp h4{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px;font-weight:800}
+.cmp ul{list-style:none;display:grid;gap:8px;font-size:13.5px;line-height:1.3;font-weight:600}
+.cmp li{display:flex;gap:7px}.cmp li::before{content:"✓";font-weight:800;color:var(--peach-2)}
+.cmp .pm li::before{color:#2B211C}
+.plans{display:grid;gap:10px}
+.plan{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:16px;border-radius:20px;background:var(--bg);border:2px solid transparent;transition:.2s}
+.plan.on{border-color:var(--ink);background:var(--card)}
+.plan .rd{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--dim);display:grid;place-items:center;flex:none}
+.plan.on .rd{box-shadow:none;background:var(--ink)}
+.plan.on .rd::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--bg)}
+.plan .pn{font-weight:800;font-size:16.5px;display:block}
+.plan .pd{color:var(--muted);font-size:13px;font-weight:600}
+.plan .pp{margin-left:auto;text-align:right;font-family:'Outfit';font-weight:600;font-size:19px}
+.plan .pp small{display:block;font-family:'Manrope';color:var(--muted);font-weight:700;font-size:11.5px}
+.plan .tag2{position:absolute;top:-10px;left:16px;background:var(--peach);color:var(--on-pastel);font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px}
+.renew{color:var(--muted);font-size:13px;line-height:1.5;text-align:center;margin-top:12px;font-weight:600}
+.tl{list-style:none;position:relative;margin:6px 0 22px;padding-left:36px;display:grid;gap:18px}
+.tl::before{content:"";position:absolute;left:11px;top:8px;bottom:8px;border-left:2px dashed var(--peach-2)}
+.tl li{position:relative}
+.tl li::before{content:"";position:absolute;left:-33px;top:1px;width:20px;height:20px;border-radius:50%;background:var(--peach);box-shadow:0 0 0 4px var(--card)}
+.tl b{display:block;font-size:15.5px}
+.tl span{color:var(--muted);font-size:14px;line-height:1.45;font-weight:600}
+.secure{display:flex;gap:8px;justify-content:center;align-items:center;color:var(--muted);font-size:12.5px;margin-top:10px;font-weight:700}
+
+/* sheet */
+#bd{position:fixed;inset:0;background:rgba(20,12,8,.45);opacity:0;pointer-events:none;transition:opacity .3s;z-index:60}
+#bd.open{opacity:1;pointer-events:auto}
+#sheet{position:fixed;left:50%;bottom:0;width:100%;max-width:480px;transform:translate(-50%,105%);background:var(--card);border-radius:30px 30px 0 0;padding:10px 22px 28px;z-index:61;transition:transform .42s cubic-bezier(.2,.8,.2,1);box-shadow:var(--shadow);max-height:88vh;overflow:auto}
+#sheet.open{transform:translate(-50%,0)}
+#sheet:not(.open){visibility:hidden;transition:transform .42s cubic-bezier(.2,.8,.2,1),visibility 0s .42s}
+.grab{width:42px;height:5px;border-radius:5px;background:var(--line2);margin:0 auto 16px}
+.vs-ref{font-weight:800;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--peach-2)}
+.vs-text{font-family:'Literata',serif;font-size:21px;line-height:1.55;margin:12px 0 16px}
+.vs-text sup{font-family:'Manrope';font-size:11px;color:var(--muted);margin-right:3px;font-weight:800}
+.paybtn{width:100%;height:54px;border-radius:999px;background:#000;color:#fff;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;gap:8px}
+.or{display:flex;align-items:center;gap:12px;color:var(--dim);font-size:12.5px;margin:16px 0;font-weight:700}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line2)}
+.order{border-radius:18px;background:var(--bg);padding:14px 16px;margin:4px 0 16px;display:grid;gap:8px;font-size:14.5px;font-weight:600}
+.order div{display:flex;justify-content:space-between}
+.order div:last-child{font-weight:800;border-top:1px solid var(--line2);padding-top:8px}
+.flabel{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px;font-weight:700}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.succ{display:flex;flex-direction:column;text-align:center}
+.store{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:54px;padding:0 20px;border-radius:999px;border:1.5px solid var(--line2);background:var(--card);font-weight:800;margin-top:10px;width:100%}
+.mailnote{margin-top:18px;padding:16px;border-radius:20px;color:var(--muted);font-size:14px;line-height:1.5;text-align:left;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="tb" role="toolbar" aria-label="Prototype controls">
+  <b>Prototype</b>
+  <div class="seg" id="viewSeg"><button data-v="landing" class="on">Landing</button><button data-v="struggle">Funnel: struggle</button><button data-v="habit">habit</button><button data-v="scripture">scripture</button></div>
+  <span class="sp"></span>
+  <div class="seg" id="pwSeg" title="Paywall variant"><button data-p="A" class="on">Paywall A</button><button data-p="B">B</button></div>
+  <div class="seg" id="palSeg" title="Colour palette"><button data-pal="dawn">Dawn</button><button data-pal="easter">Easter</button><button data-pal="olive">Olive</button></div>
+  <div class="seg" id="thSeg"><button data-t="light">Light</button><button data-t="dark">Dark</button></div>
+</div>
+
+<!-- ───────── LANDING ───────── -->
+<main id="landing">
+  <div class="wrap">
+    <nav class="nav"><span class="brand"><span data-light="36"></span>Lumen</span>
+      <span class="nav-links"><a href="#how">How it works</a><a href="#library">Prayers</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></span>
+      <button class="btn-ink" data-go="struggle" style="height:48px;padding-left:20px">Get started<span class="dot" style="width:38px;height:38px" data-ic="arrow"></span></button></nav>
+
+    <header class="hero">
+      <div>
+        <span class="kicker"><span>Free to start</span>Catholic &amp; Protestant · real Scripture</span>
+        <h1>A daily prayer, <span class="hl">made for you.</span></h1>
+        <p class="lead">Lumen writes a short prayer for what you're carrying, guides you through it, and talks with you about faith. Every verse it mentions opens the actual Bible text.</p>
+        <div class="cta-row"><button class="btn-ink" data-go="struggle">Get my prayer<span class="dot" data-ic="arrow"></span></button><a class="btn-line" href="#pricing" style="height:56px;text-decoration:none">See what's free</a></div>
+        <ul class="checks"><li data-ic="check"></li></ul>
+      </div>
+      <div class="collage" aria-hidden="true">
+        <div class="c1"><div data-art="dawn"></div><div class="b"><h3>Handing Over the Worry</h3><p>Written for you this morning</p><span class="tag">Peace</span> <span class="tag">2 min</span></div></div>
+        <div class="c2 bg-butter motif"><span class="eyebrow">Verse of the day</span><q>“Come to me, all you who labor and are heavily burdened, and I will give you rest.”</q><b style="font-size:13px">Matthew 11:28 · WEB</b></div>
+        <div class="c3 bg-lav motif"><span style="font-size:13px;font-weight:800">This week</span><div class="big">4 of 5</div><span style="font-size:13px;font-weight:700">days prayed · no streak lost</span><div class="wk"><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i></i></div></div>
+        <span class="c-light"><span data-light="96" data-state="idle"></span></span>
+        <span class="sticker">Free daily prayer, forever</span>
+      </div>
+    </header>
+
+    <section class="tiles">
+      <div class="tile bg-peach motif"><b>3</b><span>public-domain Bibles: WEB, KJV, Douay-Rheims</span></div>
+      <div class="tile bg-butter motif"><b>2 min</b><span>a personal prayer, every morning</span></div>
+      <div class="tile bg-sage motif"><b>0</b><span>invented verses: every one comes from the Bible text</span></div>
+      <div class="tile dash"><b>$0</b><span>for the Bible, daily verse and a daily prayer</span></div>
+    </section>
+
+    <section class="blk" id="how">
+      <div class="shead"><h2>Five quiet minutes, every day</h2><p>Each step leads to the next, so you always know what to pray today.</p></div>
+      <ol class="steps">
+        <li class="step"><span class="n bg-peach">1</span><div data-art="sky"></div><h3>Tell us what's on your heart</h3><p>A two-minute quiz: your tradition, what you're carrying, when you like to pray.</p><span class="pill bg-peach">2-minute quiz</span></li>
+        <li class="step"><span class="n bg-butter">2</span><div data-art="dawn"></div><h3>Pray with a guide</h3><p>A short prayer written for you, read aloud over a calm scene, one line at a time.</p><span class="pill bg-butter">Text + audio</span></li>
+        <li class="step"><span class="n bg-sage">3</span><div data-art="meadow"></div><h3>Talk it through</h3><p>Ask about a passage or ask Lumen to pray for you. Save any talk as a prayer.</p><span class="pill bg-sage">Verse-grounded</span></li>
+      </ol>
+    </section>
+
+    <section class="blk">
+      <div class="shead"><h2>The verses come from the Bible, not the AI</h2><p>Lumen can only cite verses we look up in our Bible database. Tap one and read the real text.</p></div>
+      <div class="trust">
+        <div class="chatcard">
+          <div class="who"><span data-light="42"></span><span>Lumen<small>AI companion · not a member of the clergy</small></span></div>
+          <div class="bub me">I can't stop worrying about my job interview tomorrow.</div>
+          <div class="bub ai">That's a lot to carry tonight. Scripture invites us to bring exactly this to God, not to hold it alone. Would you like to pray about it together?<div class="row" data-chips="phil4,1pet5"></div></div>
+          <p class="fine" style="text-align:left;margin:0">Tap a verse to see how references open the Bible text.</p>
+        </div>
+        <div class="panel bg-lav motif"><h3>Your tradition, your Bible, your choice</h3><p>Catholic, Protestant, Orthodox or still exploring. Choose WEB, KJV or Douay-Rheims. Prefer no AI? Turn it off and keep the Bible, prayers and journal.</p><div class="doodle" data-doodle="dove"></div></div>
+      </div>
+    </section>
+
+    <section class="blk" id="library">
+      <div class="shead"><h2>Prayers for every part of the day</h2><p>Guided prayers with calm scenes and a gentle voice. Morning, evening, worry, grief, family, sleep.</p></div>
+      <div class="lib" id="libGrid"></div>
+    </section>
+
+    <section class="blk" id="pricing">
+      <div class="shead"><h2>See what's free before you sign up</h2><p>No surprise paywall after the quiz. This is exactly what you get.</p></div>
+      <div class="price">
+        <div class="tier free"><h3>Free <span class="pill bg-sage">Forever</span></h3><div class="amt">$0</div><p class="note">No card needed.</p>
+          <ul><li><i data-ic="check"></i>Full Bible: WEB, KJV, Douay-Rheims</li><li><i data-ic="check"></i>Verse of the day</li><li><i data-ic="check"></i>One daily prayer</li><li><i data-ic="check"></i>Companion: 5 messages a day</li><li><i data-ic="check"></i>Weekly goal that forgives missed days</li></ul>
+          <button class="btn-line" data-go="habit" style="width:100%">Start free</button></div>
+        <div class="tier bg-butter motif"><h3>Premium <span class="pill" style="background:#2B211C;color:#FFF9F2">7 days free</span></h3><div class="amt">$59.99<small> / year</small></div><p class="note">That's $5 a month, or $9.99 monthly. Cancel in two taps; we email you 2 days before your trial ends.</p>
+          <ul><li><i data-ic="check" style="background:#fff"></i>Unlimited companion chat</li><li><i data-ic="check" style="background:#fff"></i>Personal daily prayer, text and audio</li><li><i data-ic="check" style="background:#fff"></i>Full guided prayer library</li><li><i data-ic="check" style="background:#fff"></i>Prayer journal and history</li><li><i data-ic="check" style="background:#fff"></i>7-day and 30-day prayer paths</li></ul>
+          <button class="btn-ink" data-go="struggle" style="width:100%">Try Premium free<span class="dot" data-ic="arrow"></span></button></div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <div class="shead"><h2>Start where you are</h2><p>Three short quizzes, three ways in.</p></div>
+      <div class="ways">
+        <button class="way" data-go="struggle"><div data-art="dusk"></div><div class="b"><h3>Carrying something heavy?</h3><p>Anxiety, grief, family, work. Get a prayer for exactly that.</p><span class="go"><span data-ic="arrow"></span>Start</span></div></button>
+        <button class="way" data-go="habit"><div data-art="dawn"></div><div class="b"><h3>Build a daily prayer habit</h3><p>Five minutes a day, with a weekly goal that forgives missed days.</p><span class="go"><span data-ic="arrow"></span>Start</span></div></button>
+        <button class="way" data-go="scripture"><div data-art="lake"></div><div class="b"><h3>Ask anything about the Bible</h3><p>Answers with real verses you can open and read in full.</p><span class="go"><span data-ic="arrow"></span>Start</span></div></button>
+      </div>
+    </section>
+
+    <section class="blk faq" id="faq">
+      <div class="shead"><h2>Questions</h2></div>
+      <details><summary>Is it really free?</summary><p>Yes. The Bible, verse of the day, one daily prayer, 5 companion messages a day and your weekly goal are free forever. Premium adds unlimited chat, personal prayers with audio, the full library, the journal and prayer paths.</p></details>
+      <details><summary>Is it Catholic or Protestant?</summary><p>Both. You choose your tradition and Lumen respects it. Catholic users can pick the Douay-Rheims Bible, which includes the deuterocanonical books.</p></details>
+      <details><summary>Can the AI make things up?</summary><p>It can make mistakes in its own words, which is why every verse you see is loaded from the Bible text in our database, and references that don't exist are removed before you see them.</p></details>
+      <details><summary>Is this a replacement for church?</summary><p>No. Lumen helps you pray day to day and encourages you to stay connected to your church, pastor or priest.</p></details>
+      <details><summary>What happens to my conversations?</summary><p>They're encrypted, never used for ads, and you can delete them, or your whole account, at any time.</p></details>
+    </section>
+
+    <section class="foot-cta"><div data-art="golden"></div><div class="in"><h2>Your first prayer is two minutes away</h2><p>Answer a few gentle questions and get a prayer written for you.</p><button class="btn-ink" data-go="struggle">Get my prayer<span class="dot" data-ic="arrow"></span></button></div></section>
+    <footer><span>© 2026 Lumen</span><nav><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Support</a><a href="#">Delete account</a></nav></footer>
+  </div>
+</main>
+
+<!-- ───────── FUNNEL ───────── -->
+<div id="funnel" class="hidden">
+  <div class="ftop" id="ftop"><button class="ic-btn" id="back" aria-label="Back"></button><div class="prog"><i id="progBar"></i></div><span data-light="30"></span></div>
+  <div id="stage"></div>
+</div>
+<div id="bd"></div>
+<div id="sheet" role="dialog" aria-modal="true"></div>
+
+<script src="kit/kit.js"></script>
+<script>
+const {I,D,esc,light,art,chip,VERSES,NAME,buzz}=Kit;
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const THUMBS=['dawn','lake','meadow','dusk','sky','golden','evening','night'];
+
+/* static landing fills */
+function fillLanding(){
+  $$('[data-art]').forEach((el,i)=>{el.outerHTML=art(el.dataset.art,'','',{seed:i})});
+  $$('[data-ic]').forEach(el=>{el.innerHTML=I[el.dataset.ic](el.dataset.ic==='check'?13:20)});
+  $$('[data-chips]').forEach(el=>el.innerHTML=el.dataset.chips.split(',').map(chip).join(''));
+  $$('[data-doodle]').forEach(el=>el.innerHTML=D[el.dataset.doodle]());
+  $('.checks').innerHTML=['No card needed','Daily prayer free forever','Cancel in two taps'].map(t=>`<li>${I.check(15)}${t}</li>`).join('');
+  $('#libGrid').innerHTML=[['Morning Offering','dawn','3 min · Morning'],['Peace in Worry','lake','4 min · Anxiety'],['Psalm 23 Meditation','meadow','5 min · Psalms'],['Evening Examen','golden','6 min · Evening'],['Near the Broken-hearted','dusk','4 min · Grief'],['Blessing for Home','sky','3 min · Family'],['Night Prayer','evening','7 min · Evening'],['Rest in Safety','night','8 min · Sleep']].map(([t,s,m],i)=>`<a href="#" data-go="struggle">${art(s,'','',{seed:i+2,noBigTrees:true})}<div class="t">${t}<small>${m}</small></div></a>`).join('');
+  $('#back').innerHTML=I.back(18);
+  Kit.hydrate();
+}
+
+/* verse sheet */
+function openVerse(k){const v=VERSES[k];if(!v)return;openSheet(`<div class="grab"></div><div class="vs-ref">${v.ref}</div><p class="vs-text">${Kit.verseHTML(k)}</p><div style="display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;font-weight:700"><span>World English Bible · from our Bible database</span><button class="btn-line" style="height:42px">Read chapter</button></div>`)}
+document.addEventListener('click',e=>{const c=e.target.closest('[data-verse]');if(c){buzz();openVerse(c.dataset.verse)}});
+let sheetLock=false;
+function openSheet(html,after){const sh=$('#sheet');sh.innerHTML=html;Kit.hydrate(sh);$('#bd').classList.add('open');requestAnimationFrame(()=>sh.classList.add('open'));after&&after(sh)}
+function closeSheet(){$('#sheet').classList.remove('open');$('#bd').classList.remove('open')}
+$('#bd').addEventListener('click',()=>{if(!sheetLock)closeSheet()});
+
+/* ───────── funnel configs (mirror website/funnels/*.ts) ───────── */
+const Q={
+  denomination:{type:'single',key:'denomination',title:'Which tradition feels like home?',sub:`${NAME} will speak in a way that respects it.`,opts:[{t:'Catholic',v:'catholic'},{t:'Protestant',h:'Baptist, Non-denominational, Methodist, Lutheran…',v:'protestant'},{t:'Orthodox',v:'orthodox'},{t:"I'm not sure",v:'not_sure'},{t:"I'm exploring faith",v:'exploring'}]},
+  carrying:{type:'multi',key:'struggles',title:'What are you carrying right now?',sub:'Choose all that apply. It stays between you and God.',opts:[{t:'Anxiety or worry',v:'anxiety',s:'lake'},{t:'Grief or loss',v:'grief',s:'dusk'},{t:'Relationships',v:'relationships',s:'sky'},{t:'Family',v:'family',s:'meadow'},{t:'Work or money',v:'work',s:'golden'},{t:'Health',v:'health',s:'dawn'},{t:'Loneliness',v:'loneliness',s:'evening'},{t:'Gratitude',v:'gratitude',s:'meadow'},{t:'Seeking direction',v:'direction',s:'sky'}]},
+  frequency:{type:'single',key:'frequency',title:'How often do you pray now?',sub:'No wrong answers. Every path starts somewhere.',opts:[{t:'Rarely or never',v:'never',s:'night'},{t:'Sometimes',v:'sometimes',s:'evening'},{t:'Weekly',v:'weekly',s:'golden'},{t:'Daily',v:'daily',s:'dawn'}]},
+  obstacles:{type:'multi',key:'obstacles',title:'What gets in the way?',opts:[{t:'I forget',v:'forget',s:'sky'},{t:"I don't know what to say",v:'how',s:'lake'},{t:'No time',v:'time',s:'golden'},{t:'I feel distant from God',v:'distant',s:'evening'}]},
+  when:{type:'single',key:'prayerTime',title:'When would you like to pray?',opts:[{t:'Morning',h:'Start the day with God',v:'morning',s:'dawn'},{t:'Midday',h:'A pause in the busy hours',v:'midday',s:'sky'},{t:'Evening',h:'Let the day go',v:'evening',s:'golden'},{t:'Before sleep',h:'Rest in peace',v:'night',s:'night'}]},
+  reminder:{type:'time',key:'reminderTime',title:'When should we remind you?',sub:'One gentle reminder a day. Change it anytime.'},
+  ai:{type:'single',key:'aiComfort',title:'How do you feel about AI helping with prayer?',sub:'Honest question. You can turn the AI off later.',opts:[{t:"I'm comfortable with it",v:'comfortable',s:'meadow'},{t:"I'm unsure",h:"We'll show sources for every verse",v:'unsure',s:'sky'},{t:'Keep it in the background',h:'Prayers first, chat only if I ask',v:'background',s:'evening'}]},
+  goal:{type:'single',key:'weeklyGoal',title:'How many days a week feels doable?',sub:'Missed days never reset you to zero.',opts:[{t:'3 days',v:3,s:'meadow'},{t:'5 days',h:'Most people start here',v:5,s:'dawn'},{t:'Every day',v:7,s:'golden'}]},
+  name:{type:'text',key:'firstName',title:'What should we call you?',sub:'Optional. Your prayers will use your name.'},
+  heavy:{type:'scale',key:'heaviness',title:'How heavy does it feel lately?',statement:'“I feel like I’m carrying this on my own.”',lo:'Not at all',hi:'Completely'},
+  understand:{type:'multi',key:'topics',title:'What do you want to understand better?',opts:[{t:'A passage I read',v:'passage',s:'sky'},{t:'How to pray',v:'prayer',s:'dawn'},{t:'Why we suffer',v:'suffering',s:'dusk'},{t:'Forgiveness',v:'forgiveness',s:'lake'},{t:"God's will for me",v:'will',s:'meadow'},{t:'Who Jesus is',v:'jesus',s:'golden'}]},
+  translation:{type:'single',key:'translation',title:'Which Bible do you know?',opts:[{t:'World English Bible',h:'Modern, clear English',v:'WEB',s:'sky'},{t:'King James Version',h:'Classic',v:'KJV',s:'golden'},{t:'Douay-Rheims',h:'Catholic, with deuterocanon',v:'DRA',s:'evening'},{t:'Not sure',v:'WEB',s:'meadow'}]},
+  reading:{type:'single',key:'reading',title:'How often do you read the Bible?',opts:[{t:'Almost never',v:'never',s:'night'},{t:'Now and then',v:'sometimes',s:'evening'},{t:'Most days',v:'daily',s:'dawn'}]}
+};
+const FACT={
+  struggle:{type:'fact',bg:'bg-lav',doodle:'dove',title:"You don't have to carry it alone",quote:'“Come to me, all you who labor and are heavily burdened, and I will give you rest.”',chipk:'matt11',note:'People who name what they carry in prayer often say it feels lighter. That is where we start.'},
+  habit:{type:'fact',bg:'bg-butter',doodle:'sunrise',title:'Small beats perfect',stat:'3 min',body:'Most people who pray daily started with just a few minutes. A weekly goal you can keep matters more than a perfect streak.',src:'Insight: replace with a cited stat before launch'},
+  scripture:{type:'fact',bg:'bg-sage',doodle:'book',title:'Every verse is the real text',body:`When ${NAME} mentions a verse, you can tap it and read it straight from the Bible. References that don't exist are removed before you see them.`,src:'How Lumen works'}
+};
+const FUNNELS={
+  struggle:{scene:'dusk',landing:{title:'Carrying something heavy?',em:'Get a prayer for exactly that.',sub:"Answer a few gentle questions and receive a short prayer written for what you're going through."},
+    steps:[Q.carrying,Q.heavy,FACT.struggle,Q.denomination,Q.frequency,Q.obstacles,Q.ai,Q.name,{type:'loading',mq:{q:'Would you rather pray in the morning or the evening?',o:['Morning','Evening']}},{type:'plan'},{type:'email'},{type:'paywall'},{type:'success'}]},
+  habit:{scene:'dawn',landing:{title:'Build a daily prayer habit',em:'in 5 minutes a day.',sub:'A personal prayer each morning, a gentle reminder, and a weekly goal that forgives missed days.'},
+    steps:[Q.frequency,Q.obstacles,FACT.habit,Q.denomination,Q.when,Q.reminder,Q.goal,Q.name,{type:'loading',mq:{q:'Do you prefer short prayers or longer ones?',o:['Short (1–2 min)','Longer (5 min)']}},{type:'plan'},{type:'email'},{type:'paywall'},{type:'success'}]},
+  scripture:{scene:'lake',landing:{title:'Ask anything about the Bible.',em:'Answers with real verses.',sub:'A companion that explains Scripture gently and shows you the actual text for every verse it mentions.'},
+    steps:[Q.understand,Q.denomination,Q.ai,FACT.scripture,Q.translation,Q.reading,{...Q.carrying,title:'Anything on your heart we should know?',sub:'Optional. It helps us choose verses for you.'},Q.name,{type:'loading',mq:{q:'Would you like a verse of the day each morning?',o:['Yes, please','Not now']}},{type:'plan'},{type:'email'},{type:'paywall'},{type:'success'}]}
+};
+
+/* ───────── state ───────── */
+let F=null,S=null,VARIANT='A';
+const fresh=slug=>({slug,i:-1,hist:[],a:{},email:'',plan:'annual',timers:[]});
+function clearTimers(){S&&S.timers.forEach(t=>{clearTimeout(t);clearInterval(t)});if(S)S.timers=[]}
+const later=(f,ms)=>{const t=setTimeout(f,ms);S.timers.push(t);return t};
+const every=(f,ms)=>{const t=setInterval(f,ms);S.timers.push(t);return t};
+const firstName=()=>esc((S.a.firstName||'').trim()||'friend');
+const yourTitle=s=>firstName()==='friend'?s.charAt(0).toUpperCase()+s.slice(1):firstName()+', '+s;
+const ink=(label,attrs='',icon='arrow')=>`<button class="btn-ink full" ${attrs}>${label}<span class="dot">${I[icon](icon==='check'?18:20)}</span></button>`;
+
+function startFunnel(slug){F=FUNNELS[slug];S=fresh(slug);showView(slug);renderStep(-1)}
+const stepDef=i=>i<0?{type:'landing'}:F.steps[i];
+function next(){S.hist.push(S.i);renderStep(S.i+1)}
+function back(){if(!S.hist.length)return;closeSheet();renderStep(S.hist.pop(),'back')}
+$('#back').addEventListener('click',()=>{buzz();back()});
+
+function renderStep(i,dir='fwd'){
+  clearTimers();S.i=i;const d=stepDef(i);
+  $('#progBar').style.width=(i<0?0:Math.min(100,((i+1)/(F.steps.length-3))*100))+'%';
+  const noTop=['landing','loading','paywall','success'].includes(d.type);
+  $('#ftop').classList.toggle('hidden',noTop);
+  $('#back').classList.toggle('hide',i<0||d.type==='plan');
+  const v=build(d);const el=document.createElement('section');
+  el.className='scr'+(v.flush?' flush':'')+(dir==='back'?' back':'');el.innerHTML=v.html;
+  $('#stage').replaceChildren(el);Kit.hydrate(el);window.scrollTo({top:0});v.after&&v.after(el);
+}
+const thumb=(o,i)=>art(o.s||THUMBS[i%THUMBS.length],'th','',{noBigTrees:true,seed:i});
+function optHTML(o,i,multi,on){return `<button class="opt${on?' on':''}" style="--i:${i}" data-i="${i}">${thumb(o,i)}<span class="ot">${esc(o.t)}${o.h?`<small>${esc(o.h)}</small>`:''}</span>${multi?`<span class="box">${I.check(14)}</span>`:''}</button>`}
+
+function build(d){
+  switch(d.type){
+  case 'landing':{const L=F.landing;return{flush:true,html:`<div class="top-art" style="height:290px">${art(F.scene,'','',{noSun:true})}<span class="lt" style="top:70px">${light(130,'idle')}</span></div>
+    <div class="sheet-in"><span class="eyebrow" style="color:var(--peach-2)">${NAME}</span><h1 class="qt" style="font-size:34px">${L.title} <span class="hl">${L.em}</span></h1><p class="qs">${L.sub}</p></div>
+    <div class="foot" style="padding:18px 20px 4px">${ink('Start','data-next')}<p class="fine" style="font-size:13.5px;color:var(--muted)">The Bible, daily verse and a daily prayer are free forever.</p><p class="fine">By continuing you agree to our Terms and Privacy Policy.</p></div>`,
+    after(el){$('[data-next]',el).onclick=()=>{buzz();next()}}}}
+  case 'single':return{html:`<h1 class="qt">${d.title}</h1>${d.sub?`<p class="qs">${d.sub}</p>`:'<div style="height:12px"></div>'}<div class="opts">${d.opts.map((o,i)=>optHTML(o,i,false,S.a[d.key]===o.v)).join('')}</div>`,
+    after(el){$$('.opt',el).forEach(b=>b.onclick=()=>{buzz();S.a[d.key]=d.opts[+b.dataset.i].v;$$('.opt',el).forEach(x=>x.classList.toggle('on',x===b));later(next,260)})}};
+  case 'multi':{const sel=new Set(S.a[d.key]||[]);return{html:`<h1 class="qt">${d.title}</h1>${d.sub?`<p class="qs">${d.sub}</p>`:'<div style="height:12px"></div>'}<div class="opts">${d.opts.map((o,i)=>optHTML(o,i,true,sel.has(o.v))).join('')}</div><div class="foot">${ink('Continue',`data-next ${sel.size?'':'disabled'}`)}</div>`,
+    after(el){const btn=$('[data-next]',el);$$('.opt',el).forEach(b=>b.onclick=()=>{buzz();const v=d.opts[+b.dataset.i].v;sel.has(v)?sel.delete(v):sel.add(v);b.classList.toggle('on');S.a[d.key]=[...sel];btn.disabled=!sel.size});btn.onclick=()=>{buzz();next()}}}}
+  case 'scale':return{html:`<h1 class="qt">${d.title}</h1><p class="qs">How much do you agree?</p><div class="stmt bg-rose motif">${d.statement}</div><div class="scale">${[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${S.a[d.key]===n?'on':''}">${n}</button>`).join('')}</div><div class="scale-l"><span>${d.lo}</span><span>${d.hi}</span></div>`,
+    after(el){$$('.scale button',el).forEach(b=>b.onclick=()=>{buzz();S.a[d.key]=+b.dataset.n;$$('.scale button',el).forEach(x=>x.classList.toggle('on',x===b));later(next,260)})}};
+  case 'time':{const T=['06:30','07:00','07:30','08:00','12:30','18:00','20:00','21:00','22:00'];return{html:`<h1 class="qt">${d.title}</h1><p class="qs">${d.sub}</p><div class="times">${T.map(t=>`<button data-t="${t}" class="${S.a[d.key]===t?'on':''}">${t}</button>`).join('')}</div><div class="foot">${ink('Continue',`data-next ${S.a[d.key]?'':'disabled'}`)}</div>`,
+    after(el){const btn=$('[data-next]',el);$$('.times button',el).forEach(b=>b.onclick=()=>{buzz();S.a[d.key]=b.dataset.t;$$('.times button',el).forEach(x=>x.classList.toggle('on',x===b));btn.disabled=false});btn.onclick=()=>{buzz();next()}}}}
+  case 'text':return{html:`<h1 class="qt">${d.title}</h1><p class="qs">${d.sub}</p><input class="field" id="nm" maxlength="40" autocomplete="given-name" placeholder="First name" value="${esc(S.a[d.key]||'')}"><div class="foot">${ink('Continue','data-next')}<button class="link" data-skip>Skip</button></div>`,
+    after(el){const f=$('#nm',el);setTimeout(()=>f.focus(),300);$('[data-next]',el).onclick=()=>{buzz();S.a[d.key]=f.value.trim();next()};$('[data-skip]',el).onclick=()=>{S.a[d.key]='';next()};f.onkeydown=e=>{if(e.key==='Enter')$('[data-next]',el).click()}}};
+  case 'fact':return{html:`<div style="display:flex;justify-content:center;margin:6px 0 4px">${light(84,'idle')}</div><h1 class="qt" style="text-align:center">${d.title}</h1>
+    <div class="factc ${d.bg} motif">${d.stat?`<div class="stat">${d.stat}</div>`:''}${d.quote?`<p class="read" style="font-family:Literata,serif;font-size:20px;font-weight:400;max-width:22ch">${d.quote}</p><div style="margin-top:12px;position:relative;z-index:1">${chip(d.chipk)}</div>`:`<p style="margin-top:8px">${d.body}</p>`}${d.src?`<p class="src">${d.src}</p>`:''}<div class="doodle">${D[d.doodle]()}</div></div>
+    ${d.note?`<p class="qs" style="margin-top:18px;text-align:center;max-width:none">${d.note}</p>`:''}<div class="foot">${ink('Continue','data-next')}</div>`,
+    after(el){$('[data-next]',el).onclick=()=>{buzz();next()}}};
+  case 'loading':return loadingView(d);
+  case 'plan':return planView();
+  case 'email':return emailView();
+  case 'paywall':return paywallView();
+  case 'success':return successView();
+  }
+}
+
+function loadingView(d){
+  const steps=['Reading your answers','Choosing verses for you','Writing your 7-day path','Preparing your first prayer'];
+  return{flush:true,html:`<div class="top-art">${art(F.scene,'','',{noSun:true})}<span class="lt">${light(130,'thinking')}</span></div>
+    <div class="load" style="padding:18px 20px 0"><h1 class="qt">Preparing your prayer path</h1><p class="qs" style="margin:0">Just a moment, ${firstName()}.</p><div class="lprog"><i id="lbar"></i></div><div class="pct"><span id="pct">0</span>%</div>
+    <ul class="lsteps">${steps.map(s=>`<li><span class="dot">${I.check(13)}</span>${s}</li>`).join('')}</ul></div>`,
+  after(el){const pct=$('#pct',el),bar=$('#lbar',el),lis=$$('.lsteps li',el);let p=0,paused=false,asked=false;
+    const t=every(()=>{if(paused)return;p++;pct.textContent=p;bar.style.width=p+'%';const k=Math.min(3,Math.floor(p/25));
+      lis.forEach((li,i)=>{li.classList.toggle('ok',i<k||p===100);li.classList.toggle('act',i===k&&p<100)});
+      if(p===48&&!asked){asked=true;paused=true;ask(d.mq,()=>paused=false)}
+      if(p>=100){clearInterval(t);$('.light',el).dataset.state='celebrating';later(next,1200)}},55)}};
+}
+function ask(mq,done){sheetLock=true;
+  openSheet(`<div class="grab"></div><div style="display:flex;gap:14px;align-items:center;margin-bottom:16px">${light(54,'listening')}<div><small style="color:var(--muted);font-weight:700">Quick question while we prepare</small><h3 style="font-size:20px;line-height:1.25;margin-top:4px">${mq.q}</h3></div></div><div class="opts">${mq.o.map((o,i)=>`<button class="opt" style="--i:${i};padding:16px 18px" data-i="${i}"><span class="ot">${o}</span></button>`).join('')}</div>`,
+  sh=>$$('.opt',sh).forEach(b=>b.onclick=()=>{buzz();b.classList.add('on');S.a.micro=mq.o[+b.dataset.i];setTimeout(()=>{sheetLock=false;closeSheet();done()},300)}));
+}
+
+const DAY={anxiety:[['Handing over the worry','lake'],['Peace that guards the heart','sky']],grief:[['Near to the broken-hearted','dusk'],['Remembering with hope','evening']],relationships:[['Love that is patient','dusk'],['Words that heal','sky']],family:[['A prayer for home','meadow'],['Blessing each one by name','golden']],work:[['Daily bread','golden'],['Work as an offering','dawn']],health:[['Strength for the body','meadow'],['Rest in his care','night']],loneliness:[['Never alone','evening'],['Known by name','dawn']],gratitude:[['Counting the gifts','meadow'],['A thankful heart','golden']],direction:[['A lamp to my feet','sky'],['Trust for the next step','lake']]};
+function planDays(){const st=(S.a.struggles&&S.a.struggles.length?S.a.struggles:['direction','gratitude']);const pool=[];st.forEach(s=>pool.push(...(DAY[s]||[])));
+  const base=[['Beginning with God','dawn'],...pool,['Bringing it all together','golden'],['Peace that guards the heart','sky'],['A thankful heart','meadow'],['Resting in his care','night']];
+  const seen=new Set(),out=[];for(const x of base){if(!seen.has(x[0])){seen.add(x[0]);out.push(x)}if(out.length===7)break}return out}
+function samplePrayer(){const n=(S.a.firstName||'').trim();const st=S.a.struggles||[];
+  if(S.slug==='scripture')return{title:'Your first answer',lead:"You asked how to pray when you don't know what to say.",scene:'lake',text:'Start simply. Scripture says we can bring God anything, “by prayer and petition with thanksgiving.” You don\'t need perfect words; honest ones are enough.\n\nTry this tonight: name one worry, one person, and one thing you\'re thankful for. Then sit quietly for a minute, trusting that God is listening.',chips:['phil4','ps119']};
+  if(st.includes('grief'))return{title:'A prayer for a heavy heart',scene:'dusk',text:`Lord, you are near to the broken-hearted. ${n?n+' comes':'I come'} to you with a grief that words can't hold. Sit with me in this ache. Hold the ones I miss in your love, and give me strength for today, just today. Let your mercies, new every morning, meet me again tomorrow. Amen.`,chips:['ps34','lam3']};
+  if(S.slug==='habit')return{title:'A prayer for your mornings',scene:'dawn',text:'Lord, in the morning you hear my voice. Before the day gets loud, I give you these first few minutes. Steady my mind, soften my heart, and help me notice you in the ordinary moments. When I forget you, remind me gently. When I come back, welcome me home. Amen.',chips:['ps5','lam3']};
+  return{title:"A prayer for what you're carrying",scene:'lake',text:`Lord, ${n?'I bring '+n+' before you':'I come to you'} tonight with a heavy heart. You know every worry I've been holding on my own. I place them in your hands now, the ones I can name and the ones I can't. Give me your peace, the kind that guards my heart and my thoughts, and help me rest in your care. Amen.`,chips:['phil4','1pet5']};
+}
+function planView(){const days=planDays(),pr=samplePrayer();const dd=d=>{const x=new Date();x.setDate(x.getDate()+d);return x.toLocaleDateString('en-US',{weekday:'short'})};
+  return{html:`<h1 class="qt">${yourTitle('your 7&#8209;day prayer path')}</h1><p class="qs">Built from what you shared. Day 1 is ready now.</p>
+    <div class="path">${days.map(([t,s],i)=>`<div class="day${i===0?' today':''}" style="--i:${i}">${art(s,'','',{noBigTrees:true,seed:i})}<span><b>${t}</b><small>Day ${i+1} · ${i===0?'2 min':'2–3 min'}</small></span><span class="when">${i===0?'Today':dd(i)}</span></div>`).join('')}</div>
+    <div class="prayer">${art(pr.scene,'','',{noSun:true,noBigTrees:true})}<div class="in"><div class="ph"><span id="plight">${light(64,'thinking')}</span><div><small>${pr.lead?'Sample answer':'Day 1 · written for you just now'}</small><b class="display" style="font-size:19px;font-weight:600">${pr.title}</b></div></div>
+      ${pr.lead?`<p style="color:var(--muted);font-size:14px;margin-bottom:10px;font-weight:600">${pr.lead}</p>`:''}<div class="pt" id="ptext"><span class="caret"></span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;opacity:0;transition:opacity .5s" id="pchips">${pr.chips.map(chip).join('')}</div></div></div>
+    <p class="fine">Tap a verse to read it in full. Every verse comes from the Bible text, never from the AI.</p>
+    <div class="foot">${ink('Save my prayer path','data-next disabled')}</div>`,
+  after(el){const out=$('#ptext',el),words=pr.text.split(/(\s+)/);let k=0;const btn=$('[data-next]',el);
+    later(()=>{$('#plight .light',el).dataset.state='speaking';const t=every(()=>{k+=2;out.innerHTML=esc(words.slice(0,k).join(''))+'<span class="caret"></span>';
+      if(k>=words.length){clearInterval(t);out.innerHTML=esc(pr.text);$('#pchips',el).style.opacity=1;$('#plight .light',el).dataset.state='idle';btn.disabled=false}},55)},900);
+    btn.onclick=()=>{buzz();next()}}};
+}
+function emailView(){return{html:`<div class="art" style="height:150px;margin:6px 0 18px;border-radius:26px">${Kit.scene('sky')}</div><h1 class="qt">Where should we send your prayer path?</h1><p class="qs">We'll save your answers and your first prayer to your account.</p>
+  <input class="field" id="em" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="${esc(S.email)}">
+  <p class="fine" style="text-align:left;display:flex;gap:8px;margin-top:14px">${I.lock(16)}<span>We never sell your data or use your prayers for ads. Unsubscribe anytime.</span></p>
+  <div class="foot">${ink('Continue','data-next disabled')}</div>`,
+  after(el){const f=$('#em',el),b=$('[data-next]',el);const ok=()=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.value.trim());const upd=()=>b.disabled=!ok();upd();f.oninput=upd;setTimeout(()=>f.focus(),300);b.onclick=()=>{buzz();S.email=f.value.trim();next()};f.onkeydown=e=>{if(e.key==='Enter'&&ok())b.click()}}};
+}
+const PLANS={annual:{n:'Annual',d:'7 days free, then $59.99/year',p:'$59.99',u:'$5.00 / mo',tag:'Best value',renew:"Free for 7 days, then $59.99 per year. We'll email you 2 days before you're charged. Cancel anytime in 2 taps.",btn:'Start my free week'},
+  monthly:{n:'Monthly',d:'Billed monthly, no trial',p:'$9.99',u:'per month',renew:'$9.99 today, then $9.99 every month. Cancel anytime in 2 taps.',btn:'Continue · $9.99/month'}};
+const FREE_L=['Full Bible','Verse of the day','1 daily prayer','5 messages a day','Weekly goal'];
+const PREM_L=['Unlimited chat','Personal prayer + audio','Full prayer library','Journal & history','7 & 30-day paths'];
+const cmpHTML=()=>`<div class="cmp"><div><h4>Free forever</h4><ul>${FREE_L.map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="pm"><h4>Premium</h4><ul>${PREM_L.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`;
+const plansHTML=()=>`<div class="plans" id="plans" role="radiogroup">${Object.entries(PLANS).map(([k,p])=>`<button class="plan${S.plan===k?' on':''}" data-p="${k}" role="radio" aria-checked="${S.plan===k}">${p.tag?`<span class="tag2">${p.tag}</span>`:''}<span class="rd"></span><span><span class="pn">${p.n}</span><span class="pd">${p.d}</span></span><span class="pp">${p.p}<small>${p.u}</small></span></button>`).join('')}</div>`;
+function paywallView(){
+  const d=n=>{const x=new Date();x.setDate(x.getDate()+n);return x.toLocaleDateString('en-US',{month:'short',day:'numeric'})};
+  const body=VARIANT==='A'
+    ?`<h1 class="qt" style="margin-top:0;font-size:27px">${yourTitle('your prayer path is ready')}</h1><p class="qs" style="margin-bottom:0">Here's exactly what's free and what Premium adds. No surprises.</p>${cmpHTML()}${plansHTML()}`
+    :`<h1 class="qt" style="margin-top:0;font-size:27px">Try everything free for 7 days</h1><p class="qs">Your personal prayer, unlimited chat with ${NAME}, and the full guided library.</p>
+      <ul class="tl"><li><b>Today</b><span>Full access to your 7-day prayer path and every Premium feature.</span></li><li><b>${d(5)}</b><span>We email you that your trial is ending.</span></li><li><b>${d(7)}</b><span>Your plan starts at $59.99/year ($5/month). Cancel before and pay nothing.</span></li></ul>${plansHTML()}`;
+  return{flush:true,html:`<div class="pw-head">${art('golden')}<button class="ic-btn" data-free aria-label="Continue with free">${I.x(18)}</button></div>
+    <div class="pw-card">${body}<div style="margin-top:16px">${ink('','data-paymain')}</div><p class="renew" id="renew"></p><button class="link" data-free>Continue with the free version</button>
+    <p class="secure">${I.lock(14)}Secure checkout by Stripe · Apple Pay · Google Pay</p>${VARIANT==='B'?`<h4 style="margin:22px 0 0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">What stays free, forever</h4>${cmpHTML()}`:''}</div>`,
+  after(el){const pay=$('[data-paymain]',el);pay.insertBefore(document.createTextNode(''),pay.firstChild);
+    const upd=()=>{$('#renew',el).textContent=PLANS[S.plan].renew;pay.firstChild.textContent=PLANS[S.plan].btn};upd();
+    $('#plans',el).onclick=e=>{const b=e.target.closest('.plan');if(!b)return;buzz();S.plan=b.dataset.p;$$('.plan',el).forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-checked',x===b)});upd()};
+    pay.onclick=checkout;$$('[data-free]',el).forEach(b=>b.onclick=()=>{S.free=true;next()})}};
+}
+function checkout(){buzz();const p=PLANS[S.plan];const trial=S.plan==='annual';
+  openSheet(`<div class="grab"></div><h2 style="font-size:22px;margin-bottom:12px">Checkout</h2>
+    <div class="order"><div><span>${p.n} plan</span><span>${p.p}${trial?'/yr':'/mo'}</span></div>${trial?`<div><span>7-day free trial</span><span>−${p.p}</span></div>`:''}<div><span>Due today</span><span>${trial?'$0.00':p.p}</span></div></div>
+    <button class="paybtn" data-pay><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6s-2.5-1-2.5-3.8zM14.2 5.8c.6-.8 1.1-1.8 1-2.8-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.7-1 2.7 1 .1 2.1-.5 2.7-1.3z"/></svg>Pay</button>
+    <div class="or">or pay with card</div>
+    <label class="flabel" for="cc">Card number</label><input class="field" id="cc" inputmode="numeric" placeholder="4242 4242 4242 4242" maxlength="19" autocomplete="cc-number">
+    <div class="row2"><div><label class="flabel" for="ex">Expiry</label><input class="field" id="ex" inputmode="numeric" placeholder="MM/YY" maxlength="5"></div><div><label class="flabel" for="cv">CVC</label><input class="field" id="cv" inputmode="numeric" placeholder="123" maxlength="4"></div></div>
+    <div style="margin-top:16px">${ink(trial?'Start free trial':'Pay '+p.p,'data-pay','lock')}</div><p class="renew">${p.renew}</p><p class="fine">Prototype: in the product this is Stripe Checkout (test mode). No payment is taken.</p>`,
+  sh=>{const cc=$('#cc',sh),ex=$('#ex',sh);cc.oninput=()=>{cc.value=cc.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim()};ex.oninput=()=>{let v=ex.value.replace(/\D/g,'').slice(0,4);ex.value=v.length>2?v.slice(0,2)+'/'+v.slice(2):v};
+    $$('[data-pay]',sh).forEach(b=>b.onclick=()=>{buzz();if(b.classList.contains('paybtn'))b.textContent='Processing…';else b.firstChild.textContent='Processing… ';sheetLock=true;setTimeout(()=>{sheetLock=false;closeSheet();S.free=false;next()},1100)})});
+}
+function successView(){const prem=!S.free;
+  return{flush:true,html:`<div class="top-art" style="height:330px">${art('meadow','','',{noSun:true})}<span class="lt" style="top:90px">${light(150,'celebrating')}</span></div>
+    <div class="succ" style="padding:22px 20px 0"><h1 class="qt">You're in${firstName()==='friend'?'':', '+firstName()}.</h1>
+    <p class="qs" style="margin:0 auto 18px">${prem?'Your free week of Premium has started. Your first prayer is waiting in the app.':'Your free account is ready. Your daily prayer and verse are waiting in the app.'}</p>
+    ${ink('Open my prayer in the app','onclick="this.firstChild.textContent=\'Opening the app… \'"')}
+    <button class="store">${I.download(20)}Get the iPhone app</button>
+    <div class="mailnote bg-butter motif">Already installed? Log in with <b style="color:#2B211C">${esc(S.email||'you@example.com')}</b>. We've also emailed you a one-tap login link.</div>
+    ${prem?'<p class="fine">Trial ends in 7 days. Manage or cancel anytime from the link in your email.</p>':''}
+    <button class="link" onclick="startFunnel(S.slug)">Restart this funnel</button></div>`};
+}
+
+/* ───────── toolbar ───────── */
+function showView(v){$('#landing').classList.toggle('hidden',v!=='landing');$('#funnel').classList.toggle('hidden',v==='landing');$$('#viewSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));window.scrollTo({top:0})}
+$('#viewSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;closeSheet();b.dataset.v==='landing'?(clearTimers(),showView('landing')):startFunnel(b.dataset.v)};
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g){e.preventDefault();startFunnel(g.dataset.go)}});
+$('#pwSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;VARIANT=b.dataset.p;$$('#pwSeg button').forEach(x=>x.classList.toggle('on',x===b));if(S&&stepDef(S.i).type==='paywall')renderStep(S.i)};
+Kit.initTheme($('#thSeg'));
+Kit.initPalette($('#palSeg'),()=>{if($('#funnel').classList.contains('hidden'))location.reload();else renderStep(S.i)});
+fillLanding();
+</script>
+</body>
+</html>

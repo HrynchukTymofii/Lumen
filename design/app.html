@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lumen App Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kit/kit.css">
+<style>
+html,body{background:var(--page)}
+body{min-height:100vh}
+/* toolbar */
+.tb{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--page) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line2);font-size:13px}
+.tb b{font-family:'Outfit';font-weight:600;font-size:16px;margin-right:8px;display:flex;align-items:center;gap:8px}
+.tb .sp{flex:1}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--line2);border-radius:999px;padding:3px}
+.seg button{padding:6px 12px;border-radius:999px;color:var(--muted);font-weight:700;font-size:12.5px}
+.seg button.on{background:var(--ink);color:var(--bg)}
+@media (max-width:640px){.tb .sp{display:none}.tb b{width:100%}}
+
+.page{max-width:1260px;margin:0 auto;padding:28px 20px 60px}
+.proto{display:grid;grid-template-columns:230px 1fr 290px;gap:28px;align-items:start}
+@media (max-width:1100px){.proto{grid-template-columns:1fr}.side,.notes{order:2}}
+.side h3,.notes h3{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--peach-2);margin:4px 0 10px;font-weight:800}
+.side nav{display:grid;gap:3px}
+.side nav button{text-align:left;padding:9px 12px;border-radius:12px;color:var(--muted);font-weight:700;font-size:14px}
+.side nav button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow-sm)}
+.side nav .grp{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:14px 12px 4px;font-weight:800}
+@media (max-width:1100px){.side nav{display:flex;flex-wrap:wrap}.side nav .grp{width:100%}}
+.notes{font-size:14px;line-height:1.55;color:var(--muted)}
+.notes .n{background:var(--card);border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.notes b{color:var(--ink)}
+.notes code{font-size:12.5px;background:var(--bg);padding:1px 6px;border-radius:6px;color:var(--ink)}
+
+/* phone */
+.phone-wrap{display:flex;justify-content:center}
+.phone{position:relative;width:390px;height:844px;border-radius:48px;background:var(--bg);box-shadow:0 40px 80px -40px rgba(120,70,30,.55),0 0 0 1px var(--line2);overflow:hidden;display:flex;flex-direction:column;flex:none}
+:root[data-theme="dark"] .phone{box-shadow:0 40px 80px -30px rgba(0,0,0,.8),0 0 0 1px var(--line2)}
+@media (max-width:430px){.phone{width:calc(100vw - 24px);height:min(844px,calc(100vh - 110px));border-radius:36px}}
+.status{position:absolute;top:0;left:0;right:0;height:50px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 30px 8px;font-weight:800;font-size:15px;z-index:12;pointer-events:none}
+.status.on-art{color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.25)}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:116px;height:33px;border-radius:20px;background:#0b0908;z-index:13}
+.home{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:132px;height:5px;border-radius:5px;background:var(--ink);opacity:.8;z-index:14}
+.home.light-h{background:#fff}
+.scr{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;scrollbar-width:none}
+.scr::-webkit-scrollbar{display:none}
+.pad{padding:56px 20px 120px}
+.anim{animation:fadeIn .35s cubic-bezier(.2,.8,.2,1) both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* tab bar (reference: icon + label, active peach pill) */
+.tabs{position:absolute;left:0;right:0;bottom:0;height:92px;padding:10px 12px 26px;background:var(--card);display:flex;justify-content:space-around;z-index:10;border-radius:28px 28px 0 0;box-shadow:0 -10px 30px -18px rgba(120,70,30,.35)}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--muted);width:80px}
+.tabs .ti{width:58px;height:32px;border-radius:16px;display:grid;place-items:center;transition:background .25s}
+.tabs button.on{color:var(--ink)}
+.tabs button.on .ti{background:var(--peach);color:var(--on-pastel)}
+
+/* headers */
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.top h1{font-family:'Outfit';font-weight:600;font-size:27px}
+.top .acts{display:flex;gap:14px;align-items:center}
+.sub{color:var(--muted);font-size:14px;font-weight:600}
+.sh{display:flex;justify-content:space-between;align-items:baseline;margin:24px 0 12px}
+.sh h2{font-family:'Outfit';font-weight:600;font-size:19px}
+.sh a,.sh button{color:var(--peach-2);font-size:13px;font-weight:700;text-decoration:none}
+
+/* today carousel (reference: Recommendations) */
+.carousel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:0 20px;margin:0 -20px;padding:4px 20px 18px;scrollbar-width:none}
+.carousel::-webkit-scrollbar{display:none}
+.rec{flex:none;width:300px;scroll-snap-align:start;background:var(--card);border-radius:24px;box-shadow:var(--shadow);overflow:hidden;text-align:left}
+.rec .art{height:178px;border-radius:0}
+.rec .body{padding:14px 16px 16px}
+.rec h3{font-family:'Outfit';font-weight:600;font-size:18px}
+.rec p{color:var(--muted);font-size:13.5px;line-height:1.45;margin:4px 0 12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rec .tags{display:flex;gap:7px;flex-wrap:wrap}
+.rec .meta{display:flex;align-items:center;gap:6px;margin-top:12px;color:var(--peach-2);font-size:13px;font-weight:700}
+.dots{display:flex;justify-content:center;gap:7px;margin-top:-4px}
+.dots i{width:7px;height:7px;border-radius:4px;background:var(--peach);opacity:.55}
+.dots i.on{width:24px;background:var(--ink);opacity:1}
+
+/* overview (reference: Progress Overview) */
+.ov{display:grid;grid-template-columns:1fr 1px 1fr;background:var(--card);border-radius:22px;padding:16px 8px;box-shadow:var(--shadow-sm);text-align:center}
+.ov small{color:var(--muted);font-size:12.5px;font-weight:700}
+.ov b{display:block;font-family:'Outfit';font-weight:600;font-size:22px;margin-top:2px}
+.ov hr{border:0;background:var(--line2);width:1px}
+.week{display:flex;justify-content:space-between;margin-top:14px;padding:0 4px}
+.week div{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--dim)}
+.week i{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--line2);color:var(--on-pastel);font-style:normal}
+.week .done i{background:var(--peach);box-shadow:none}
+.week .grace i{background:var(--butter);box-shadow:none}
+.week .today{color:var(--ink)}
+.week .today i{box-shadow:inset 0 0 0 2px var(--ink)}
+.week .today.done i{box-shadow:none}
+.goal{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:20px;padding:10px;box-shadow:var(--shadow-sm)}
+.goal+.goal{margin-top:10px}
+.goal .art{width:56px;height:56px;border-radius:14px;flex:none}
+.goal .g{flex:1}
+.goal b{font-size:14.5px}
+.bar{height:6px;border-radius:6px;background:var(--line);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px;background:var(--peach)}
+.goal .n{text-align:right;font-family:'Outfit';font-weight:600;font-size:17px}
+.goal .n small{display:block;font-family:'Manrope';color:var(--muted);font-size:11px;font-weight:700}
+.up{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:16px;background:color-mix(in srgb,var(--peach) 22%,var(--card));font-weight:700;font-size:14px}
+.up+.up{margin-top:8px}
+.up small{color:var(--peach-2);font-weight:700;font-size:12.5px}
+
+.verse-card{position:relative;border-radius:24px;padding:18px 18px 16px;overflow:hidden}
+.verse-card q{display:block;font-family:'Literata',serif;font-size:18px;line-height:1.5;quotes:none;margin:8px 0 12px;max-width:24ch;position:relative;z-index:1}
+.verse-card .doodle{position:absolute;right:-6px;bottom:-4px;width:118px;opacity:.95}
+.verse-card .row{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
+.verse-card .ref{font-weight:800;font-size:13px}
+.talk{display:flex;align-items:center;gap:14px;border-radius:24px;padding:16px;width:100%;text-align:left;margin-top:12px}
+.talk b{font-family:'Outfit';font-weight:600;font-size:17px;display:block}
+.talk small{font-size:13px;font-weight:600;opacity:.75}
+.pray-btn{margin-top:14px}
+.done-chip{display:flex;align-items:center;justify-content:center;gap:8px;height:56px;border-radius:999px;background:var(--sage);color:var(--on-pastel);font-weight:800}
+
+/* library (reference: All exercises) */
+.chips-row{display:flex;gap:8px;overflow-x:auto;margin:14px -20px 4px;padding:2px 20px 6px;scrollbar-width:none}
+.chips-row::-webkit-scrollbar{display:none}
+.fchip{flex:none;height:34px;padding:0 15px;border-radius:999px;border:1.5px solid var(--ink);font-size:13px;font-weight:700;opacity:.8}
+.fchip.on{background:var(--ink);color:var(--bg);opacity:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.tile{background:var(--card);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-sm);text-align:left;position:relative}
+.tile .art{height:118px;border-radius:0}
+.tile .tt{padding:10px 12px 12px;font-family:'Outfit';font-weight:600;font-size:14.5px;line-height:1.25}
+.tile .tt small{display:block;font-family:'Manrope';color:var(--muted);font-weight:700;font-size:11.5px;margin-top:3px}
+.tile .lk{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.9);display:grid;place-items:center;color:#2B211C}
+.paths{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:2px 20px 8px;scrollbar-width:none}
+.paths::-webkit-scrollbar{display:none}
+.pathc{flex:none;width:230px;height:130px;border-radius:22px;position:relative;overflow:hidden;text-align:left}
+.pathc .art{position:absolute;inset:0;border-radius:0}
+.pathc .lab{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(255,255,255,.92);border-radius:14px;padding:9px 12px;color:#2B211C}
+.pathc .lab b{font-family:'Outfit';font-weight:600;font-size:15px;display:block}
+.pathc .lab small{font-size:11.5px;font-weight:700;color:#8A7B70}
+
+/* detail (reference: Resonant Breathing) */
+.hero-art{position:relative;height:380px}
+.hero-art .art{position:absolute;inset:0;border-radius:0}
+.hero-art .back{position:absolute;top:58px;left:18px}
+.hero-art .col{position:absolute;top:58px;right:18px;display:grid;gap:14px}
+.dcard{position:relative;margin:-110px 16px 0;background:var(--card);border-radius:28px;padding:20px 20px 22px;box-shadow:var(--shadow);z-index:2}
+.dcard h1{font-family:'Outfit';font-weight:600;font-size:23px}
+.dcard p{color:var(--muted);font-size:14px;line-height:1.5;margin:6px 0 14px}
+.slider{position:relative;height:6px;border-radius:6px;background:var(--line);margin:22px 4px 10px}
+.slider i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--peach)}
+.slider b{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:var(--peach-2);transform:translate(-50%,-50%);box-shadow:0 0 0 5px color-mix(in srgb,var(--peach) 45%,transparent)}
+.lens{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);padding:0 0 4px}
+.lens button.on{color:var(--ink)}
+.dinfo{padding:6px 22px 40px}
+.irow{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.irow:last-child{border:0}
+.irow h4{font-family:'Outfit';font-weight:600;font-size:16px}
+.flow{display:flex;border:1.5px solid var(--line2);border-radius:12px;overflow:hidden;font-size:12.5px;text-align:center}
+.flow div{flex:1;padding:7px 4px;border-right:1.5px solid var(--line2)}
+.flow div:last-child{border:0}
+.flow div b{display:block;background:color-mix(in srgb,var(--peach) 30%,transparent);margin:-7px -4px 6px;padding:6px 0;font-size:12px}
+.tips{list-style:none;display:grid;gap:6px;font-size:14px;color:var(--muted)}
+.tips li::before{content:"•";margin-right:8px;color:var(--ink)}
+
+/* player (reference: breathing player) */
+.player{position:absolute;inset:0;display:flex;flex-direction:column;color:#fff}
+.player .art{position:absolute;inset:0;border-radius:0}
+.player .shade{position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,.18),rgba(0,0,0,0) 30%,rgba(0,0,0,0) 55%,rgba(0,0,0,.45))}
+.player .ph{position:relative;display:flex;justify-content:space-between;align-items:center;padding:60px 22px 0}
+.player .ph h2{font-family:'Outfit';font-weight:600;font-size:21px;text-shadow:0 1px 8px rgba(0,0,0,.25)}
+.player .mid{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:0 30px}
+.player .line{font-family:"Literata",serif;font-size:20px;line-height:1.45;text-align:center;padding:14px 20px;border-radius:20px;background:rgba(20,30,28,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);text-shadow:0 1px 6px rgba(0,0,0,.2);transition:opacity .35s}
+.wave{position:relative;display:flex;align-items:center;justify-content:center;gap:3px;height:44px;padding:0 22px}
+.wave i{width:4px;border-radius:3px;background:#fff;opacity:.45}
+.wave i.p{opacity:1}
+.player .tm{position:relative;text-align:center;font-size:13px;font-weight:700;margin:6px 0 14px;opacity:.9}
+.player .ctr{position:relative;display:flex;justify-content:space-between;align-items:center;padding:0 40px 46px}
+.player .ctr .big{width:70px;height:70px;border-radius:50%;background:#fff;color:#2B211C;display:grid;place-items:center;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.player .ctr .sm{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.88);color:#2B211C;display:grid;place-items:center}
+
+/* chat */
+.chat{display:flex;flex-direction:column;height:100%}
+.chat-top{display:flex;align-items:center;gap:12px;padding:56px 18px 12px;background:var(--bg);border-bottom:1px solid var(--line);flex:none}
+.chat-top b{font-family:'Outfit';font-weight:600;font-size:18px;display:block}
+.chat-top small{color:var(--muted);font-size:12.5px;font-weight:600}
+.msgs{display:flex;flex-direction:column;gap:12px;padding:16px 16px 10px}
+.bub{max-width:84%;padding:12px 15px;border-radius:20px;line-height:1.5;font-size:15px;animation:fadeIn .3s both}
+.bub.me{align-self:flex-end;background:var(--ink);color:var(--bg);border-bottom-right-radius:6px}
+.bub.ai{align-self:flex-start;background:var(--card);border-bottom-left-radius:6px;box-shadow:var(--shadow-sm)}
+.bub.sys{align-self:center;max-width:94%;text-align:center;color:var(--muted);font-size:12px;background:transparent;padding:4px}
+.bub .vrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.bub .prayer-t{font-family:'Literata',serif;font-size:16px;line-height:1.6;display:block}
+.typing{display:inline-flex;gap:4px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:pulse 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+.crisis{align-self:stretch;border-radius:22px;padding:16px;background:var(--rose);color:var(--on-pastel)}
+.crisis>b{display:block;font-family:'Outfit';font-weight:600;font-size:17px;margin-bottom:4px}
+.crisis p{font-size:14px;line-height:1.5}
+.crisis .cb{display:flex;gap:8px;margin-top:12px}
+.crisis .cb button{flex:1;height:44px;border-radius:999px;background:#fff;font-weight:800;font-size:14px;color:#2B211C}
+.crisis .cb button:first-child{background:#2B211C;color:#fff}
+.softpw{align-self:stretch;border-radius:22px;overflow:hidden;background:var(--card);box-shadow:var(--shadow-sm)}
+.softpw .art{height:90px;border-radius:0}
+.softpw div.c{padding:14px 16px 16px}
+.softpw b{font-family:'Outfit';font-weight:600;font-size:17px;display:block}
+.softpw p{font-size:13.5px;color:var(--muted);line-height:1.45;margin:4px 0 12px}
+.quota{margin:0 16px 8px;padding:9px 14px;border-radius:14px;background:var(--card);font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;flex:none;font-weight:600}
+.quota b{color:var(--ink)}
+.quota .bar{width:110px;margin:0}
+.qp{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 10px;scrollbar-width:none;flex:none}
+.qp::-webkit-scrollbar{display:none}
+.qp button{flex:none;height:34px;padding:0 14px;border-radius:999px;border:1.5px solid var(--ink);font-size:13px;font-weight:700;opacity:.8;white-space:nowrap}
+.composer{flex:none;display:flex;gap:8px;align-items:center;padding:8px 14px 104px;background:var(--bg)}
+.composer input{flex:1;height:48px;border-radius:24px;border:1.5px solid var(--line2);background:var(--card);padding:0 18px;font-size:15px}
+.composer input:focus{outline:none;border-color:var(--peach-2)}
+.send{width:48px;height:48px;border-radius:50%;background:var(--peach);color:var(--on-pastel);display:grid;place-items:center;flex:none}
+
+/* sheet */
+.p-bd{position:absolute;inset:0;background:rgba(20,12,8,.45);z-index:20;opacity:0;pointer-events:none;transition:.3s}
+.p-bd.open{opacity:1;pointer-events:auto}
+.p-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:30px 30px 0 0;padding:10px 22px 40px;z-index:21;transform:translateY(105%);transition:transform .4s cubic-bezier(.2,.8,.2,1);max-height:80%;overflow:auto}
+.p-sheet.open{transform:none}
+.p-sheet:not(.open){visibility:hidden;transition:transform .4s,visibility 0s .4s}
+.grab{width:40px;height:5px;border-radius:5px;background:var(--line2);margin:0 auto 16px}
+.vs-ref{font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--peach-2)}
+.vs-text{font-family:'Literata',serif;font-size:20px;line-height:1.55;margin:12px 0 16px}
+.vs-text sup,.chap sup{font-family:'Manrope';font-size:10.5px;color:var(--muted);margin-right:3px;font-weight:800}
+
+/* onboarding */
+.ob-art{position:relative;height:470px}
+.ob-art .art{position:absolute;inset:0;border-radius:0}
+.ob-sheet{position:relative;margin-top:-40px;background:var(--bg);border-radius:32px 32px 0 0;padding:28px 24px 40px;min-height:420px;display:flex;flex-direction:column}
+.ob-sheet h1,.ob h1{font-family:'Outfit';font-weight:600;font-size:30px;line-height:1.12}
+.ob-sheet p.s,.ob p.s{color:var(--muted);font-size:15px;line-height:1.5;margin-top:10px}
+.ob-sheet .foot,.ob .foot{margin-top:auto;padding-top:22px;display:grid;gap:10px}
+.ob{display:flex;flex-direction:column;min-height:100%;padding:58px 22px 40px}
+.prog{display:flex;gap:6px;margin:4px 0;flex:1}
+.prog i{flex:1;height:5px;border-radius:5px;background:var(--line2)}
+.prog i.on{background:var(--peach-2)}
+.opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:10px 14px 10px 10px;border-radius:20px;background:var(--card);font-size:16px;font-weight:700;box-shadow:var(--shadow-sm);border:2px solid transparent;transition:.2s}
+.opt.on{border-color:var(--peach-2)}
+.opt .th{width:46px;height:46px;border-radius:14px;flex:none}
+.opt small{display:block;color:var(--muted);font-weight:600;font-size:12.5px}
+.opts{display:grid;gap:10px;margin-top:20px}
+.auth{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;border-radius:999px;font-weight:800;font-size:16px;width:100%}
+.auth.apple{background:var(--ink);color:var(--bg)}
+.auth.google{background:var(--card);box-shadow:var(--shadow-sm)}
+.auth.mail{border:1.5px solid var(--line2)}
+.fine{color:var(--dim);font-size:12px;line-height:1.5;text-align:center;font-weight:600}
+.notif{margin:22px 0 0;border-radius:22px;background:var(--card);padding:14px;display:flex;gap:12px;align-items:center;box-shadow:var(--shadow)}
+.notif b{font-size:14px}.notif p{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* paywall */
+.cmp{display:grid;grid-template-columns:1fr 1fr;border-radius:18px;overflow:hidden;margin:14px 0 6px;box-shadow:inset 0 0 0 1.5px var(--line2)}
+.cmp>div{padding:12px}
+.cmp .pm{background:var(--butter);color:var(--on-pastel)}
+.cmp h4{font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;font-weight:800}
+.cmp ul{list-style:none;display:grid;gap:6px;font-size:12.5px;line-height:1.3;font-weight:600}
+.cmp li{display:flex;gap:6px}.cmp li::before{content:"✓";font-weight:800;color:var(--peach-2)}
+.cmp .pm li::before{color:#2B211C}
+.plan{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:15px 16px;border-radius:20px;background:var(--card);box-shadow:var(--shadow-sm);border:2px solid transparent;margin-top:10px}
+.plan.on{border-color:var(--ink)}
+.plan .rd{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--dim);display:grid;place-items:center;flex:none}
+.plan.on .rd{box-shadow:none;background:var(--ink)}
+.plan.on .rd::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--bg)}
+.plan .pn{font-weight:800;display:block}.plan .pd{color:var(--muted);font-size:12.5px;font-weight:600}
+.plan .pp{margin-left:auto;text-align:right;font-family:'Outfit';font-weight:600;font-size:18px}.plan .pp small{display:block;font-family:'Manrope';color:var(--muted);font-weight:700;font-size:11px}
+.plan .tag2{position:absolute;top:-10px;left:16px;background:var(--peach);color:var(--on-pastel);font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:999px}
+.renew{color:var(--muted);font-size:12.5px;line-height:1.5;text-align:center;margin-top:10px;font-weight:600}
+
+/* lists */
+.list{background:var(--card);border-radius:22px;padding:2px 14px;box-shadow:var(--shadow-sm)}
+.li{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.li:last-child{border:0}
+.li .ico{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none;color:var(--on-pastel)}
+.li .t{flex:1;font-weight:700;font-size:15px}
+.li .t small{display:block;color:var(--muted);font-weight:600;font-size:12.5px;margin-top:1px}
+.li .r{color:var(--dim)}
+.tog{width:46px;height:28px;border-radius:14px;background:var(--line2);position:relative;flex:none;transition:.2s}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on{background:var(--peach-2)}
+.tog.on::after{left:21px}
+.sec{font-size:11.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:22px 4px 8px}
+.bars{display:flex;align-items:flex-end;gap:8px;height:100px;margin-top:14px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bars i{width:100%;border-radius:8px;background:var(--line2);display:block}
+.bars i.met{background:var(--peach)}
+.bars small{font-size:10.5px;color:var(--dim);font-weight:800}
+.chap{font-family:'Literata',serif;font-size:18.5px;line-height:1.75}
+.chap .hl{background:color-mix(in srgb,var(--butter) 80%,transparent);border-radius:4px;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:1px 2px;color:var(--on-pastel)}
+
+/* overview grid + brand */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:26px 18px}
+.mini{display:flex;flex-direction:column;align-items:center;gap:10px}
+.mini .holder{width:195px;height:422px;position:relative}
+.mini .phone{transform:scale(.5);transform-origin:top left;position:absolute;top:0;left:0;pointer-events:none}
+.mini b{font-size:13.5px}
+.h2{font-family:'Outfit';font-weight:600;font-size:38px;margin:6px 0 6px}
+.lead{color:var(--muted);font-size:16px;line-height:1.55;max-width:72ch;margin-bottom:22px}
+.lead code{font-size:13.5px;background:var(--card);padding:1px 6px;border-radius:6px;color:var(--ink)}
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+@media (max-width:900px){.board{grid-template-columns:repeat(2,1fr)}}
+.state{background:var(--card);border-radius:26px;padding:36px 16px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:270px;box-shadow:var(--shadow-sm)}
+.state h4{margin-top:auto;font-family:'Outfit';font-weight:600;font-size:17px}
+.state p{color:var(--muted);font-size:13px;line-height:1.45;margin-top:4px}
+.scenes{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:900px){.scenes{grid-template-columns:repeat(2,1fr)}}
+.scenes .art{height:150px}
+.scenes p{font-weight:800;font-size:14px;margin-top:8px}.scenes small{color:var(--muted);font-size:12.5px;display:block;font-weight:600}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.sw div{border-radius:18px;overflow:hidden;background:var(--card);box-shadow:var(--shadow-sm)}
+.sw i{display:block;height:64px}
+.sw span{display:block;padding:9px 12px;font-size:12.5px;font-weight:800}
+.sw small{display:block;color:var(--muted);font-weight:600}
+.type{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:900px){.type{grid-template-columns:1fr}}
+.type>div{background:var(--card);border-radius:22px;padding:22px;box-shadow:var(--shadow-sm)}
+section.blk{margin-top:44px}
+.eb{color:var(--peach-2)}
+</style>
+</head>
+<body>
+<div class="tb">
+  <b><span data-light="26"></span>Lumen app prototype</b>
+  <div class="seg" id="viewSeg"><button data-v="proto" class="on">Interactive</button><button data-v="grid">All screens</button><button data-v="brand">Mascot &amp; style</button></div>
+  <span class="sp"></span>
+  <div class="seg" id="tierSeg"><button data-t="free" class="on">Free user</button><button data-t="premium">Premium</button></div>
+  <div class="seg" id="palSeg" title="Colour palette"><button data-pal="dawn">Dawn</button><button data-pal="easter">Easter</button><button data-pal="olive">Olive</button></div>
+  <div class="seg" id="thSeg"><button data-t="light">Light</button><button data-t="dark">Dark</button></div>
+</div>
+
+<div class="page">
+  <div id="v-proto" class="proto">
+    <aside class="side"><h3>Screens</h3><nav id="screenNav"></nav></aside>
+    <div class="phone-wrap"><div class="phone" id="phone"></div></div>
+    <aside class="notes" id="notes"></aside>
+  </div>
+  <div id="v-grid" class="hidden"><span class="eyebrow eb">Overview</span><h2 class="h2">Every v0 screen</h2><p class="lead">Static snapshots. Use “Interactive” to click through.</p><div class="grid" id="grid"></div></div>
+  <div id="v-brand" class="hidden">
+    <span class="eyebrow eb">Mascot</span><h2 class="h2">The Light</h2>
+    <p class="lead">A flat illustrated sun with a dashed orbit: the same sun that rises in every landscape, so the mascot and the art feel like one world. No face, no halo, no wings. In the app: <code>components/Light.tsx</code> (react-native-svg + Reanimated), prop <code>state</code>.</p>
+    <div class="board" id="board"></div>
+    <section class="blk"><span class="eyebrow eb">Illustration</span><h2 class="h2">Eight landscapes, one per mood</h2><p class="lead">Flat layered vector scenes: sky, sun or moon, mountain ridges, pines, water with light stripes. Generated here from one function (<code>design/kit/kit.js</code>); for the product, export each once as an SVG file and reuse it on cards, players, the paywall and the web.</p><div class="scenes" id="scenes"></div></section>
+    <section class="blk"><span class="eyebrow eb">Colour</span><h2 class="h2">Three palettes to compare</h2><p class="lead">Switch Dawn / Easter / Olive in the toolbar. Light theme by default (cream + white cards). Pastels and illustrations look the same in dark mode and keep dark ink on them, like the SAT site.</p><div class="sw" id="swatches"></div></section>
+    <section class="blk"><span class="eyebrow eb">Type &amp; controls</span><h2 class="h2">Outfit, Manrope, Literata</h2>
+      <div class="type">
+        <div><small class="eyebrow eb">Outfit · titles</small><p class="display" style="font-size:30px;font-weight:600;margin-top:10px;line-height:1.1">Peace in Worry</p><p style="color:var(--muted);font-size:13px;margin-top:8px">Screen titles, card titles, numbers.</p></div>
+        <div><small class="eyebrow eb">Literata · Scripture &amp; prayers</small><p class="read" style="font-size:20px;line-height:1.5;margin-top:10px">“Your word is a lamp to my feet, and a light for my path.”</p><p style="color:var(--muted);font-size:13px;margin-top:8px">Only for text you read slowly.</p></div>
+        <div><small class="eyebrow eb">Manrope · interface</small><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px"><button class="btn-ink">Start praying<span class="dot" id="arrowSlot"></span></button><button class="btn-peach">Pray</button><span class="tag">Peace</span><span class="tag">Anxiety</span><span id="chipSlot"></span></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="kit/kit.js"></script>
+<script>
+const {I,D,esc,light,art,chip,VERSES,NAME}=Kit;
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+
+/* ───────── content ───────── */
+const LIB=[
+  {id:'peace',t:'Peace in Worry',d:'Hand over what keeps you up at night, one breath at a time.',scene:'lake',tags:['Anxiety','Peace'],min:4,cat:'Peace',chips:['phil4','1pet5']},
+  {id:'morning',t:'Morning Offering',d:'Give the first quiet minutes of your day to God.',scene:'dawn',tags:['Morning','Gratitude'],min:3,cat:'Morning',free:1,chips:['ps5','lam3']},
+  {id:'ps23',t:'Psalm 23 Meditation',d:'Rest beside still waters with the shepherd psalm.',scene:'meadow',tags:['Psalms','Rest'],min:5,cat:'Psalms',free:1,chips:['ps23']},
+  {id:'examen',t:'Evening Examen',d:'Look back on today with God: thanks, sorrow, hope.',scene:'golden',tags:['Evening','Reflection'],min:6,cat:'Evening',chips:['lam3']},
+  {id:'grief',t:'Near the Broken-hearted',d:'A gentle prayer for when you miss someone.',scene:'dusk',tags:['Grief','Comfort'],min:4,cat:'Grief',chips:['ps34','matt11']},
+  {id:'sleep',t:'Rest in Safety',d:'Lay the day down and sleep in peace.',scene:'night',tags:['Sleep','Peace'],min:8,cat:'Sleep',chips:['ps4']},
+  {id:'family',t:'Blessing for Home',d:'Pray for each person in your family by name.',scene:'sky',tags:['Family','Love'],min:3,cat:'Family',chips:['prov3']},
+  {id:'compline',t:'Night Prayer',d:'A short, ancient prayer to close the day.',scene:'evening',tags:['Evening','Tradition'],min:7,cat:'Evening',chips:['ps4']}
+];
+const PERSONAL={id:'personal',t:'Handing Over the Worry',d:'Written for you this morning, from what you shared about work and your dad’s surgery.',scene:'dawn',tags:['Personal','Peace'],min:2,chips:['phil4','1pet5'],
+  text:"Lord, I come to you this morning with the worries I've been holding on my own. You know the interview, the bills, and Dad's surgery on Friday. I place them in your hands now. Give me your peace, the kind that guards my heart and my thoughts, and help me notice you in the ordinary moments today. Amen."};
+const GENERAL={id:'general',t:'A Prayer for Today',d:'Today’s prayer for everyone praying with Lumen.',scene:'dawn',tags:['Daily','Gratitude'],min:1,chips:['lam3'],free:1,
+  text:"Lord, thank you for this new day. Your mercies are new every morning. Guide my steps, guard my words, and help me love the people you put in my path today. Amen."};
+const PHRASES=["Be still for a moment.","Breathe in: “Lord, you are near.”","Breathe out: “I give you my worry.”","“Casting all your worries on him, because he cares for you.”","Stay here as long as you need.","Amen."];
+const PHIL4=[[4,'Rejoice in the Lord always! Again I will say, “Rejoice!”'],[5,'Let your gentleness be known to all men. The Lord is at hand.'],[6,VERSES.phil4.v[0][1]],[7,VERSES.phil4.v[1][1]],[8,'Finally, brothers, whatever things are true, whatever things are honorable, whatever things are just, whatever things are pure, whatever things are lovely, whatever things are of good report: if there is any virtue, and if there is any praise, think about these things.'],[9,'The things which you learned, received, heard, and saw in me: do these things, and the God of peace will be with you.']];
+
+/* ───────── state ───────── */
+const todayIdx=(new Date().getDay()+6)%7;
+const P={screen:'today',premium:false,prayed:false,plan:'annual',pick:'catholic',chat:[],quota:2,typing:false,celebrate:false,playing:true,phrase:0,item:'peace',len:1,filter:'All',ai:true,hl:false};
+const SCREENS=[
+  {g:'Onboarding (App Store)'},{id:'welcome',n:'Welcome'},{id:'quiz',n:'Quiz · tradition'},{id:'signin',n:'Sign in'},{id:'sample',n:'First prayer'},{id:'notif',n:'Reminder pre-prompt'},{id:'paywall',n:'Paywall'},
+  {g:'From web link'},{id:'webwelcome',n:'Welcome back'},
+  {g:'Tabs'},{id:'today',n:'Today'},{id:'library',n:'Prayers'},{id:'companion',n:'Companion'},{id:'journey',n:'Journey'},
+  {g:'Details'},{id:'detail',n:'Prayer detail'},{id:'player',n:'Guided player'},{id:'bible',n:'Bible reader'},{id:'intentions',n:'Intentions'},{id:'settings',n:'Settings'}
+];
+const NOTES={
+  welcome:['Full-bleed <b>dawn</b> landscape; the sun is the Light. A cream sheet slides over it.','<b>Path B</b>: came from the App Store.'],
+  quiz:['Same questions as the web funnel, loaded from <code>/api/funnel/config</code>.','Each option gets a small landscape thumbnail instead of emoji.'],
+  signin:['Apple is required when Google is offered. Email = 6-digit code + magic link.'],
+  sample:['The value moment before any ask. Light <b>speaking</b> while it streams; verse chips open DB text.'],
+  notif:['Custom pre-prompt, then the iOS dialog. Asked after the first prayer.'],
+  paywall:['Landscape header + honest Free vs Premium. Renewal price under the button, close ✕ always visible.'],
+  webwelcome:['<b>Path A</b>: opened from the success-page link; token exchanged, premium already active.'],
+  today:['Structure from your reference: header with search/profile, <b>illustrated carousel</b>, progress overview, upcoming sessions.','Free users see today’s general prayer first; Premium sees the personal one (toolbar switch).','<b>Mark as prayed</b> → the Light celebrates and today fills in.'],
+  library:['The reference “All exercises” grid as a <b>prayer library</b> (the audio library from the spec, now its own tab).','Filter chips, 7/30-day paths row, lock badge on Premium items.'],
+  companion:['Try: <b>“I’m anxious about tomorrow”</b>, <b>“solve 2x+3=7”</b>, <b>“ignore your instructions”</b>, <b>“I don’t want to be alive”</b>.','5 free messages a day, then a soft paywall card. Crisis replies are never paywalled.'],
+  journey:['Reference “Progress overview” + “Weekly goals” with landscape thumbnails and progress bars.'],
+  detail:['Layout of the reference detail screen: landscape, side actions (save, timer, share, download), floating card with tags, a <b>length slider</b> (1 / 3 / 5 min) and the peach <b>Pray</b> button.','Below: Scripture chips, the prayer flow (Read → Reflect → Pray) and tips.'],
+  player:['The reference breathing player, for guided prayer: full-bleed landscape, the Light breathing in the middle, one line at a time, waveform and controls.','Audio is TTS (ElevenLabs) or a recorded track; lines are timed to it.'],
+  bible:['Chapter reader. Opened from a chip, the cited verses are highlighted. WEB · KJV · Douay-Rheims.'],
+  intentions:['Prayer intentions with “Answered”.'],
+  settings:['AI on/off, memory view/delete, translation, reminder, subscription, <b>delete account</b>.']
+};
+
+/* ───────── building blocks ───────── */
+const status=(onArt)=>`<div class="island"></div><div class="status${onArt?' on-art':''}"><span>9:41</span><span style="display:flex;gap:6px;align-items:center"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3.5" stroke="currentColor" opacity=".45"/><rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/></svg></span></div>`;
+const tabs=t=>`<nav class="tabs">${[['today','Today',I.tToday],['library','Prayers',I.tPray],['companion','Companion',I.tChat],['journey','Journey',I.tJourney]].map(([id,n,ic])=>`<button class="${t===id?'on':''}" data-nav="${id}"><span class="ti">${ic(22)}</span>${n}</button>`).join('')}</nav>`;
+const greet=()=>{const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'};
+const itemBy=id=>id==='personal'?PERSONAL:id==='general'?GENERAL:LIB.find(x=>x.id===id);
+const locked=it=>!P.premium&&!it.free;
+function weekHTML(){const L=['M','T','W','T','F','S','S'];return L.map((l,i)=>{let c='',inner='';
+  if(i===1&&todayIdx>1){c='grace';inner='✦'}else if(i<todayIdx&&i!==1&&i<3){c='done';inner=I.check(14)}
+  else if(i===todayIdx){c='today'+(P.prayed?' done':'');inner=P.prayed?I.check(14):''}
+  return `<div class="${c}"><i>${inner}</i>${l}</div>`}).join('')}
+const doneCount=()=>Math.min(3,todayIdx)+(P.prayed?1:0);
+function recCard(it){return `<button class="rec" data-open="${it.id}"><div style="position:relative">${art(it.scene,'','',{seed:it.id.length})}${it.id==='personal'?'<span class="pill bg-butter" style="position:absolute;top:12px;left:12px">Written for you</span>':''}</div>
+  <div class="body"><h3>${it.t}</h3><p>${it.d}</p><div class="tags">${it.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div><div class="meta">${I.clock(15)} ${it.min} min · ${locked(it)?'Premium':'audio + text'}</div></div></button>`}
+
+/* ───────── screens ───────── */
+const R={
+welcome:()=>`<div class="anim"><div class="ob-art">${art('dawn','','',{noSun:true})}<div style="position:absolute;left:50%;top:150px;transform:translateX(-50%)">${light(150,'idle')}</div></div>
+  <div class="ob-sheet"><span class="eyebrow" style="color:var(--peach-2)">${NAME}</span><h1 style="margin-top:8px">A daily prayer, made for you.</h1><p class="s">Personal prayers and gentle answers, always grounded in real Scripture.</p>
+  <div class="foot"><button class="btn-ink full" data-nav="quiz">Get started<span class="dot">${I.arrow()}</span></button><button class="btn-line" data-nav="signin">I already have an account</button><p class="fine" style="margin-top:4px">The Bible, verse of the day and a daily prayer are free forever.</p></div></div></div>`,
+quiz:()=>{const O=[['Catholic','','catholic','golden'],['Protestant','Baptist, Non-denominational, Methodist…','protestant','sky'],['Orthodox','','orthodox','evening'],["I'm not sure",'','not_sure','meadow'],["I'm exploring faith",'','exploring','dawn']];
+  return `<div class="ob anim"><div style="display:flex;align-items:center;gap:12px"><button class="ic-btn" data-nav="welcome" aria-label="Back" style="background:var(--card);color:var(--ink)">${I.back(18)}</button><div class="prog">${[1,0,0,0].map(o=>`<i class="${o?'on':''}"></i>`).join('')}</div></div>
+  <h1 style="margin-top:22px">Which tradition feels like home?</h1><p class="s">${NAME} will speak in a way that respects it.</p>
+  <div class="opts">${O.map(([t,h,v,sc],i)=>`<button class="opt${P.pick===v?' on':''}" data-pick="${v}">${art(sc,'th','',{noBigTrees:true,seed:i})}<span>${t}${h?`<small>${h}</small>`:''}</span></button>`).join('')}</div>
+  <div class="foot"><button class="btn-ink full" data-nav="signin">Continue<span class="dot">${I.arrow()}</span></button></div></div>`},
+signin:()=>`<div class="anim"><div class="ob-art" style="height:400px">${art('sky')}<button class="ic-btn" data-nav="quiz" aria-label="Back" style="position:absolute;top:58px;left:18px">${I.back(18)}</button></div>
+  <div class="ob-sheet" style="min-height:480px"><h1>Save your prayers</h1><p class="s">Your prayers, journal and week stay safe on any device.</p>
+  <div class="foot"><button class="auth apple" data-nav="sample"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.3.9-1.3 1.3-2.6 1.3-2.6s-2.5-1-2.5-3.8zM14.2 5.8c.6-.8 1.1-1.8 1-2.8-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.7-1 2.7 1 .1 2.1-.5 2.7-1.3z"/></svg>Continue with Apple</button>
+  <button class="auth google" data-nav="sample"><svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 01-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1-3.8 1-2.9 0-5.4-2-6.3-4.6H2.1v2.8A11 11 0 0012 23z"/><path fill="#FBBC05" d="M5.7 14c-.2-.7-.4-1.4-.4-2.1s.1-1.4.4-2.1V7H2.1a11 11 0 000 9.9z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1A11 11 0 002.1 7l3.6 2.8C6.6 7.3 9.1 5.4 12 5.4z"/></svg>Continue with Google</button>
+  <button class="auth mail" data-nav="sample">Continue with email</button><p class="fine">By continuing you agree to the Terms and Privacy Policy.</p></div></div></div>`,
+sample:()=>`<div class="anim"><div class="hero-art" style="height:330px">${art('dawn','','',{noSun:true})}<div style="position:absolute;left:50%;top:96px;transform:translateX(-50%)">${light(110,'speaking')}</div></div>
+  <div class="dcard" style="margin-top:-70px"><span class="eyebrow" style="color:var(--peach-2)">Written for you just now</span><h1 style="margin-top:6px">${PERSONAL.t}</h1>
+  <p class="read" style="font-size:17px;line-height:1.65;color:var(--ink);margin:12px 0 14px">${PERSONAL.text}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${PERSONAL.chips.map(chip).join('')}</div>
+  <div style="display:flex;justify-content:center;margin-top:20px"><button class="btn-peach" data-nav="notif" style="min-width:170px">Amen</button></div></div><div style="height:30px"></div></div>`,
+notif:()=>`<div class="anim"><div class="ob-art" style="height:420px">${art('golden','','',{noSun:true})}<div style="position:absolute;left:50%;top:130px;transform:translateX(-50%)">${light(130,'listening')}</div></div>
+  <div class="ob-sheet" style="min-height:460px"><h1>Can I remind you when your prayer is ready?</h1><p class="s">One gentle reminder a day at 7:30. Never more.</p>
+  <div class="notif">${light(38,'idle')}<div><b>${NAME}</b><p>Your prayer for today is ready. Take a quiet minute with God.</p></div></div>
+  <div class="foot"><button class="btn-ink full" data-nav="paywall">Yes, remind me<span class="dot">${I.bell(18)}</span></button><button class="btn-line" data-nav="paywall">Not now</button></div></div></div>`,
+paywall:()=>{const pl={annual:['Annual','7 days free, then $59.99/yr','$59.99','$5.00 / mo','Best value','Free for 7 days, then $59.99 per year. We remind you 2 days before. Cancel anytime in Settings.'],monthly:['Monthly','No trial','$9.99','per month','','$9.99 per month. Cancel anytime in Settings.']};
+  return `<div class="anim"><div class="hero-art" style="height:250px">${art('golden')}<button class="ic-btn" data-nav="today" aria-label="Close" style="position:absolute;top:58px;right:18px">${I.x(18)}</button></div>
+  <div class="dcard" style="margin-top:-60px"><h1>Pray with ${NAME} every day</h1><p style="margin-bottom:4px">What's free stays free. Premium adds the personal part.</p>
+  <div class="cmp"><div><h4>Free forever</h4><ul><li>Full Bible</li><li>Verse of the day</li><li>1 daily prayer</li><li>5 messages a day</li><li>Weekly goal</li></ul></div><div class="pm"><h4>Premium</h4><ul><li>Unlimited chat</li><li>Personal prayer + audio</li><li>Full prayer library</li><li>Journal &amp; history</li><li>7 &amp; 30-day paths</li></ul></div></div>
+  ${Object.entries(pl).map(([k,p])=>`<button class="plan${P.plan===k?' on':''}" data-plan="${k}">${p[4]?`<span class="tag2">${p[4]}</span>`:''}<span class="rd"></span><span><span class="pn">${p[0]}</span><span class="pd">${p[1]}</span></span><span class="pp">${p[2]}<small>${p[3]}</small></span></button>`).join('')}
+  <button class="btn-ink full" data-act="buy" style="margin-top:16px">${P.plan==='annual'?'Start my free week':'Continue · $9.99/month'}<span class="dot">${I.arrow()}</span></button><p class="renew">${pl[P.plan][5]}</p>
+  <div style="display:flex;justify-content:center;gap:18px;margin-top:6px"><button class="fine" style="text-decoration:underline" data-nav="today">Continue free</button><button class="fine" style="text-decoration:underline">Restore purchases</button></div></div><div style="height:30px"></div></div>`},
+webwelcome:()=>`<div class="anim"><div class="ob-art">${art('meadow','','',{noSun:true})}<div style="position:absolute;left:50%;top:140px;transform:translateX(-50%)">${light(150,'celebrating')}</div></div>
+  <div class="ob-sheet"><h1>Welcome, Sarah.</h1><p class="s">You're signed in as sarah@example.com and your <b style="color:var(--ink)">Premium trial is active</b>. Your 7-day prayer path is waiting.</p>
+  <div class="foot"><button class="btn-ink full" data-nav="notif">Continue<span class="dot">${I.arrow()}</span></button></div></div></div>`,
+today:()=>{const first=P.premium?PERSONAL:GENERAL;const recs=[first,LIB[1],LIB[2],LIB[0]];return `<div class="pad anim">
+  <div class="top"><h1>Today</h1><div class="acts">${I.search()}<button data-nav="settings" aria-label="Profile">${I.user()}</button></div></div>
+  <p class="sub">${greet()}, Sarah · ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</p>
+  <div class="sh"><h2>Today's prayer</h2><button data-nav="library">See all</button></div>
+  <div class="carousel" id="car">${recs.map(recCard).join('')}</div><div class="dots">${recs.map((_,i)=>`<i class="${i===0?'on':''}"></i>`).join('')}</div>
+  <div class="sh"><h2>This week</h2><button data-nav="journey">Show more</button></div>
+  <div class="ov"><div><small>Weekly goal</small><b>${doneCount()} of 5 days</b></div><hr><div><small>Time today</small><b>${P.prayed?'4 min':'0 min'}</b></div></div>
+  <div class="week">${weekHTML()}</div>
+  ${P.prayed?`<div class="done-chip pray-btn">${I.check(18)} Prayed today</div>`:`<button class="btn-ink full pray-btn" data-act="pray">Mark as prayed<span class="dot">${I.check(18)}</span></button>`}
+  <div class="sh"><h2>Verse of the day</h2></div>
+  <div class="verse-card bg-butter motif"><span class="eyebrow">Psalm 119:105</span><q>“Your word is a lamp to my feet, and a light for my path.”</q><div class="row"><span class="ref">World English Bible</span><button class="ic-btn" aria-label="Share" style="width:36px;height:36px;margin-right:110px">${I.share(16)}</button></div><div class="doodle">${D.book()}</div></div>
+  <button class="talk bg-lav motif" data-nav="companion">${light(52,P.celebrate?'celebrating':'idle')}<span><b>Talk about today</b><small>Ask ${NAME} to pray with you</small></span><span style="margin-left:auto">${I.chev()}</span></button>
+  <div class="sh"><h2>Upcoming</h2></div>
+  <div class="up">Evening Examen<small>Today 9:00 PM</small></div><div class="up">Rest in Safety<small>Today 10:30 PM</small></div>
+</div>`},
+library:()=>{const cats=['All','Morning','Evening','Peace','Psalms','Grief','Family','Sleep'];const items=LIB.filter(x=>P.filter==='All'||x.cat===P.filter);return `<div class="pad anim">
+  <div class="top"><h1>Prayers</h1><div class="acts">${I.search()}${I.filter()}</div></div>
+  <div class="chips-row">${cats.map(c=>`<button class="fchip${P.filter===c?' on':''}" data-filter="${c}">${c}</button>`).join('')}</div>
+  <div class="sh"><h2>Prayer paths</h2><button>All paths</button></div>
+  <div class="paths">${[['7 Days of Peace','lake','Day 3 of 7'],['Psalms for Hard Days','dusk','7 days'],['30 Days of Gratitude','meadow','30 days']].map(([t,s,m],i)=>`<button class="pathc" data-open="peace">${art(s,'','',{seed:i+4})}<span class="lab"><b>${t}</b><small>${m}${!P.premium&&i?' · Premium':''}</small></span></button>`).join('')}</div>
+  <div class="sh"><h2>${P.filter==='All'?'All prayers':P.filter}</h2><span class="sub">${items.length}</span></div>
+  <div class="grid2">${items.map(it=>`<button class="tile" data-open="${it.id}">${art(it.scene,'','',{seed:it.id.length+2,noBigTrees:true})}${locked(it)?`<span class="lk">${I.lock(13)}</span>`:''}<div class="tt">${it.t}<small>${it.min} min · ${it.cat}</small></div></button>`).join('')}</div>
+</div>`},
+companion:()=>{const left=Math.max(0,5-P.quota);return `<div class="chat anim">
+  <div class="chat-top">${light(46,P.typing?'speaking':'idle')}<div><b>${NAME}</b><small>${P.typing?'Writing…':'Here to pray with you'}</small></div><button class="ic-btn" style="margin-left:auto;background:var(--card);color:var(--ink)" data-act="toprayer" aria-label="Turn into a prayer">${I.sparkle(18)}</button></div>
+  <div class="scr" id="chatScroll"><div class="msgs">
+    <div class="bub sys">${NAME} is an AI companion, not a member of the clergy. It can make mistakes; verses are shown from the Bible text.</div>
+    <div class="bub ai">Hi Sarah. What's on your heart today? I can pray with you, explain a passage, or find a verse for what you're going through.</div>
+    ${P.chat.join('')}${P.typing?'<div class="bub ai"><span class="typing"><i></i><i></i><i></i></span></div>':''}
+  </div></div>
+  ${!P.premium?`<div class="quota"><span><b>${left} of 5</b> free messages today</span><span class="bar"><i style="width:${left/5*100}%"></i></span></div>`:''}
+  <div class="qp">${['Pray for me',"I'm struggling with…",'Give me a verse for…','Explain this verse','Help me forgive'].map(q=>`<button data-qp="${q}">${q}</button>`).join('')}</div>
+  <form class="composer" data-form="chat"><input id="chatIn" placeholder="Share what's on your heart…" maxlength="1000" autocomplete="off"><button class="send" aria-label="Send">${I.send(19)}</button></form>
+</div>`},
+journey:()=>{const W=[3,5,4,5,2,5,4,doneCount()];return `<div class="pad anim">
+  <div class="top"><h1>Journey</h1><div class="acts"><button data-nav="settings" aria-label="Settings">${I.settings(22)}</button></div></div>
+  <div class="sh" style="margin-top:12px"><h2>Progress overview</h2></div>
+  <div class="ov"><div><small>Days prayed</small><b>31</b></div><hr><div><small>This week</small><b>${doneCount()} / 5</b></div></div>
+  <div class="sh"><h2>Weekly goals</h2></div>
+  <div class="goal">${art('dawn','','',{noBigTrees:true})}<div class="g"><b>Daily prayer</b><div class="bar"><i style="width:${doneCount()/5*100}%"></i></div></div><div class="n">${doneCount()}/5<small>days</small></div></div>
+  <div class="goal">${art('lake','','',{noBigTrees:true})}<div class="g"><b>7 Days of Peace</b><div class="bar"><i style="width:43%"></i></div></div><div class="n">3/7<small>days</small></div></div>
+  <div class="goal">${art('meadow','','',{noBigTrees:true})}<div class="g"><b>Minutes with God</b><div class="bar"><i style="width:68%"></i></div></div><div class="n">24/35<small>min</small></div></div>
+  <div class="sh"><h2>Last 8 weeks</h2></div>
+  <div class="list" style="padding:14px 16px"><div class="bars">${W.map((d,i)=>`<div><i class="${d>=5?'met':''}" style="height:${Math.max(8,d/7*100)}%"></i><small>${i===7?'Now':'W'+(i+1)}</small></div>`).join('')}</div></div>
+  <div class="sh"><h2>Journal</h2></div>
+  <div class="list">
+    <button class="li" data-open="personal"><span class="ico bg-rose">${I.heart(18)}</span><span class="t">Saved prayers<small>12 prayers${P.premium?'':' · Premium'}</small></span><span class="r">${P.premium?I.chev():I.lock(14)}</span></button>
+    <button class="li" data-nav="intentions"><span class="ico bg-lav">${I.sparkle(18)}</span><span class="t">Prayer intentions<small>4 open · 3 answered</small></span><span class="r">${I.chev()}</span></button>
+    <button class="li"><span class="ico bg-sage">${I.note(18)}</span><span class="t">Notes<small>“Grateful for mom's call”</small></span><span class="r">${I.chev()}</span></button>
+    <button class="li" data-nav="bible"><span class="ico bg-butter">${I.book(18)}</span><span class="t">Bible<small>Douay-Rheims</small></span><span class="r">${I.chev()}</span></button></div>
+</div>`},
+detail:()=>{const it=itemBy(P.item);const L=[1,3,5];return `<div class="anim"><div class="hero-art">${art(it.scene,'','',{seed:3})}
+  <button class="ic-btn back" data-nav="${P.from||'library'}" aria-label="Back">${I.back(18)}</button>
+  <div class="col"><button class="ic-btn" aria-label="Save">${I.heart(18)}</button><button class="ic-btn" aria-label="Timer">${I.timer(18)}</button><button class="ic-btn" aria-label="Share">${I.share(18)}</button><button class="ic-btn" aria-label="Download">${I.download(18)}</button></div></div>
+  <div class="dcard"><h1>${it.t}</h1><p>${it.d}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${it.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+  <div class="slider"><i style="width:${P.len*50}%"></i><b style="left:${P.len*50}%"></b></div><div class="lens">${L.map((m,i)=>`<button class="${P.len===i?'on':''}" data-len="${i}">${m} min</button>`).join('')}</div>
+  <div style="display:flex;justify-content:center;margin-top:14px"><button class="btn-peach" data-act="${locked(it)?'locked':'startplay'}" style="min-width:150px">${locked(it)?I.lock(15)+' Unlock':'Pray'}</button></div></div>
+  <div class="dinfo">
+    <div class="irow"><h4>Scripture</h4><div style="display:flex;gap:7px;flex-wrap:wrap">${it.chips.map(chip).join('')}</div></div>
+    <div class="irow"><h4>Flow</h4><div class="flow"><div><b>Read</b>${['½','1','2'][P.len]} min</div><div><b>Reflect</b>${['¼','1','2'][P.len]} min</div><div><b>Pray</b>${['¼','1','1'][P.len]} min</div></div></div>
+    <div class="irow"><h4>Tips</h4><ul class="tips"><li>Find a quiet spot, phone on silence.</li><li>Read slowly; stop where a word stays with you.</li><li>End by telling God one thing in your own words.</li></ul></div>
+  </div></div>`},
+player:()=>{const it=itemBy(P.item);let w='';for(let i=0;i<38;i++){const h=8+Math.abs(Math.sin(i*1.7)*26)+(i%3)*4;w+=`<i class="${i<6+P.phrase*6?'p':''}" style="height:${h.toFixed(0)}px"></i>`}return `<div class="player">${art(it.scene,'','',{noSun:true})}<div class="shade"></div>
+  <div class="ph"><h2>${it.t}</h2><button class="ic-btn" data-nav="detail" aria-label="Close">${I.x(18)}</button></div>
+  <div class="mid">${light(170,P.playing?'speaking':'idle')}<p class="line" id="pline">${PHRASES[P.phrase]}</p></div>
+  <div class="wave">${w}</div><div class="tm">Step ${Math.min(4,P.phrase+1)} of 4 · ${Math.floor((10+P.phrase*30)/60)}:${String((10+P.phrase*30)%60).padStart(2,'0')} / 3:00</div>
+  <div class="ctr"><button class="sm" aria-label="Settings">${I.settings(20)}</button><button class="big" data-act="toggleplay" aria-label="${P.playing?'Pause':'Play'}">${P.playing?I.pause(28):I.play(28)}</button><button class="sm" aria-label="Timer">${I.hourglass(20)}</button></div></div>`},
+bible:()=>`<div class="pad anim"><div class="top"><button class="ic-btn" data-nav="journey" aria-label="Back" style="background:var(--card);color:var(--ink)">${I.back(18)}</button><div style="text-align:center"><span class="sub" style="font-size:12px">World English Bible</span><h1 style="font-size:22px">Philippians 4</h1></div><span style="width:40px"></span></div>
+  <div class="chips-row" style="justify-content:center;margin-top:8px">${['WEB','KJV','Douay-Rheims'].map((t,i)=>`<span class="fchip${i?'':' on'}" style="display:inline-flex;align-items:center">${t}</span>`).join('')}</div>
+  <p class="chap" style="margin-top:16px">${PHIL4.map(([n,t])=>`<span class="${P.hl&&(n===6||n===7)?'hl':''}"><sup>${n}</sup>${esc(t)}</span> `).join('')}</p>
+  <div style="display:flex;justify-content:space-between;margin-top:24px"><button class="btn-line" style="height:44px">← Chapter 3</button><button class="btn-line" style="height:44px">Colossians →</button></div></div>`,
+intentions:()=>`<div class="pad anim"><div class="top"><button class="ic-btn" data-nav="journey" aria-label="Back" style="background:var(--card);color:var(--ink)">${I.back(18)}</button><h1 style="font-size:22px">Intentions</h1><button class="ic-btn" aria-label="Add" style="background:var(--peach);color:#2B211C">${I.plus(18)}</button></div>
+  <div class="sec">Praying for</div><div class="list">${["Dad's surgery on Friday","Peace at work with my manager","My sister's job search","Wisdom about moving"].map((t,i)=>`<div class="li"><span class="ico bg-lav">${I.sparkle(16)}</span><span class="t">${t}<small>Added ${[2,5,9,14][i]} days ago</small></span><button class="tag soft" data-act="answer">Answered</button></div>`).join('')}</div>
+  <div class="sec">Answered</div><div class="list">${['Safe trip for the kids',"Mom's test results",'Courage to apologise to Jen'].map(t=>`<div class="li"><span class="ico bg-butter">${I.check(15)}</span><span class="t" style="color:var(--muted)">${t}</span></div>`).join('')}</div></div>`,
+settings:()=>`<div class="pad anim"><div class="top"><button class="ic-btn" data-nav="journey" aria-label="Back" style="background:var(--card);color:var(--ink)">${I.back(18)}</button><h1 style="font-size:22px">Settings</h1><span style="width:40px"></span></div>
+  <div class="sec">You</div><div class="list">${[['Name','Sarah'],['Tradition','Catholic'],['Bible translation','Douay-Rheims'],['Reminder','7:30 AM'],['Weekly goal','5 days']].map(([a,b])=>`<div class="li"><span class="t">${a}</span><span class="sub">${b}</span><span class="r">${I.chev(16)}</span></div>`).join('')}<div class="li"><span class="t">Hide weekly goal</span><span class="tog"></span></div></div>
+  <div class="sec">AI companion</div><div class="list"><div class="li"><span class="t">${NAME}<small>${P.ai?'On':'Off: Bible, prayers and journal only'}</small></span><button class="tog ${P.ai?'on':''}" data-act="ai" aria-label="Toggle AI"></button></div><div class="li"><span class="t">What ${NAME} remembers<small>Name, tradition, what you're carrying</small></span><span class="r">${I.chev(16)}</span></div></div>
+  <div class="sec">Subscription</div><div class="list"><div class="li"><span class="t">${P.premium?'Premium · Annual':'Free plan'}<small>${P.premium?'Trial ends Nov 23 · bought on web':'Upgrade anytime'}</small></span><span class="r">${I.chev(16)}</span></div></div>
+  <div class="sec">About</div><div class="list">${['Appearance','Privacy policy','Terms','Export my data','Log out'].map(t=>`<div class="li"><span class="t">${t}</span><span class="r">${I.chev(16)}</span></div>`).join('')}<div class="li"><span class="t" style="color:var(--danger)">Delete account</span></div></div>
+  <p class="fine" style="margin-top:16px">${NAME} is an AI companion, not a member of the clergy. It can make mistakes; verses are shown from the Bible text.</p></div>`
+};
+const TAB_OF={today:1,library:1,companion:1,journey:1};
+const ON_ART=['welcome','signin','sample','notif','paywall','webwelcome','detail','player'];
+function frame(id){const chat=id==='companion';return `${status(ON_ART.includes(id))}<div class="${chat?'':'scr'}" style="${chat?'flex:1;min-height:0;display:flex;flex-direction:column':''}">${R[id]()}</div>${TAB_OF[id]?tabs(id):''}<div class="home${id==='player'?' light-h':''}"></div><div class="p-bd"></div><div class="p-sheet"></div>`}
+
+/* ───────── interactive phone ───────── */
+const phone=$('#phone');let playTimer=null;
+function go(id){P.screen=id;if(id!=='bible')P.hl=false;clearInterval(playTimer);if(id==='player'){P.phrase=0;P.playing=true;startPlay()}render(false);if(id==='companion')scrollChat()}
+function startPlay(){clearInterval(playTimer);playTimer=setInterval(()=>{if(!P.playing||P.screen!=='player')return;const l=$('#pline',phone);if(l)l.style.opacity=0;setTimeout(()=>{P.phrase=(P.phrase+1)%PHRASES.length;render(true)},350)},3600)}
+function render(keepScroll=true){
+  const sc=$('.scr',phone)?.scrollTop||0;
+  phone.innerHTML=frame(P.screen);
+  if(keepScroll){const s=$('.scr',phone);if(s&&P.screen!=='companion')s.scrollTop=sc}
+  $$('#screenNav button[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===P.screen));
+  $('#notes').innerHTML=`<h3>Notes</h3>${(NOTES[P.screen]||[]).map(n=>`<div class="n">${n}</div>`).join('')}`;
+  const car=$('#car',phone);if(car)car.addEventListener('scroll',()=>{const i=Math.round(car.scrollLeft/314);$$('.dots i',phone).forEach((d,k)=>d.classList.toggle('on',k===i))},{passive:true});
+}
+function scrollChat(){const s=$('#chatScroll',phone);if(s)s.scrollTop=s.scrollHeight}
+function openSheet(html){const sh=$('.p-sheet',phone),bd=$('.p-bd',phone);sh.innerHTML='<div class="grab"></div>'+html;bd.classList.add('open');requestAnimationFrame(()=>sh.classList.add('open'))}
+function closeSheet(){$('.p-sheet',phone)?.classList.remove('open');$('.p-bd',phone)?.classList.remove('open')}
+function verseSheet(k){const v=VERSES[k];openSheet(`<div class="vs-ref">${v.ref}</div><p class="vs-text">${Kit.verseHTML(k)}</p><div style="display:flex;justify-content:space-between;align-items:center"><span class="sub" style="font-size:12.5px">WEB · from the Bible database</span>${k==='phil4'?'<button class="btn-line" style="height:42px" data-act="readch">Read chapter</button>':''}</div>`)}
+
+function reply(text){
+  const t=text.toLowerCase();
+  if(/alive|kill myself|end it|hurt myself|suicid/.test(t))return{cat:'crisis',html:`<div class="bub ai">I'm really glad you told me. You matter, and you don't have to carry this alone. Please reach out to someone right now.</div><div class="crisis"><b>You can talk to someone now</b><p>Call or text <b>988</b>, the Suicide &amp; Crisis Lifeline, free and 24/7. If you're in danger, call <b>911</b>.</p><div class="cb"><button>Call 988</button><button>Text 988</button><button>911</button></div></div>`};
+  if(/ignore|system prompt|instructions|pretend you|jailbreak/.test(t))return{cat:'jailbreak',html:`<div class="bub ai">I can't do that, but I'm glad to pray with you or explore a passage together.</div>`};
+  if(/2x|solve|python|code|essay|homework|math|capital of/.test(t))return{cat:'off_topic',html:`<div class="bub ai">I'm here to help you pray and reflect on Scripture, so I'll leave that one aside. Is there something on your heart today we can bring to God?</div>`};
+  if(/forgive/.test(t))return{cat:'on_topic',html:`<div class="bub ai">Forgiving can take time, and it doesn't mean pretending it didn't hurt. You can start by asking God for the willingness, even before you feel it. Shall I write a short prayer for that?<div class="vrow">${chip('john14')}</div></div>`};
+  if(/verse|scripture|bible/.test(t))return{cat:'on_topic',html:`<div class="bub ai">Here's one to hold onto today. When the next step isn't clear, Scripture invites us to trust rather than figure it all out alone.<div class="vrow">${chip('prov3')}${chip('ps119')}</div></div>`};
+  if(/pray/.test(t))return{cat:'on_topic',html:`<div class="bub ai"><span class="prayer-t">Lord, be close to Sarah today. Quiet the noise in her mind, give her strength for what's ahead, and let her feel your peace that guards her heart. Amen.</span><div class="vrow">${chip('phil4')}</div></div>`};
+  return{cat:'on_topic',html:`<div class="bub ai">That sounds like a lot to carry. Scripture invites us to bring exactly this to God instead of holding it alone, with thanksgiving even in the middle of it. Would you like to pray about it together?<div class="vrow">${chip('phil4')}${chip('1pet5')}</div></div>`};
+}
+function send(text){
+  text=text.trim();if(!text||P.typing)return;const r=reply(text);
+  const blocked=!P.premium&&P.quota>=5&&r.cat!=='crisis';
+  P.chat.push(`<div class="bub me">${esc(text)}</div>`);
+  if(blocked){P.chat.push(`<div class="softpw">${art('golden')}<div class="c"><b>You've used today's 5 free messages</b><p>Come back tomorrow, or keep talking now with Premium. Your daily prayer and the Bible stay free.</p><button class="btn-peach" data-nav="paywall" style="height:44px;font-size:15px">See Premium</button></div></div>`);render();scrollChat();return}
+  P.typing=true;render();scrollChat();
+  setTimeout(()=>{P.typing=false;if(r.cat==='on_topic')P.quota++;P.chat.push(r.html);render();scrollChat()},1100);
+}
+phone.addEventListener('click',e=>{
+  const v=e.target.closest('[data-verse]');if(v){Kit.buzz();verseSheet(v.dataset.verse);return}
+  if(e.target.closest('.p-bd')){closeSheet();return}
+  const o=e.target.closest('[data-open]');if(o){P.item=o.dataset.open;P.from=P.screen;P.len=1;go('detail');return}
+  const n=e.target.closest('[data-nav]');if(n){go(n.dataset.nav);return}
+  const pk=e.target.closest('[data-pick]');if(pk){P.pick=pk.dataset.pick;render();setTimeout(()=>go('signin'),260);return}
+  const pl=e.target.closest('[data-plan]');if(pl){P.plan=pl.dataset.plan;render();return}
+  const f=e.target.closest('[data-filter]');if(f){P.filter=f.dataset.filter;render();return}
+  const ln=e.target.closest('[data-len]');if(ln){P.len=+ln.dataset.len;render();return}
+  const q=e.target.closest('[data-qp]');if(q){const inp=$('#chatIn',phone);inp.value=q.dataset.qp.replace('…',' ');inp.focus();return}
+  const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;Kit.buzz();
+  if(act==='pray'){P.prayed=true;P.celebrate=true;render();setTimeout(()=>{P.celebrate=false;if(P.screen==='today')render()},2600)}
+  if(act==='locked')go('paywall');
+  if(act==='startplay')go('player');
+  if(act==='toggleplay'){P.playing=!P.playing;render()}
+  if(act==='buy'){P.premium=true;syncTier();go('today')}
+  if(act==='ai'){P.ai=!P.ai;render()}
+  if(act==='readch'){go('bible');P.hl=true;render()}
+  if(act==='answer'){a.closest('.li').style.opacity=.4;a.textContent='✦ Answered'}
+  if(act==='toprayer')openSheet(`<div style="display:flex;gap:12px;align-items:center">${light(50,'speaking')}<div><span class="vs-ref">Saved to your journal</span><b class="display" style="font-size:19px;font-weight:600;display:block">A prayer from today's talk</b></div></div><p class="vs-text" style="font-size:17px">Lord, thank you for listening when my thoughts were loud. I bring you what I shared today and trust you with what comes next. Amen.</p><button class="btn-ink full" data-nav="journey">Open journal<span class="dot">${I.arrow()}</span></button>`);
+});
+phone.addEventListener('submit',e=>{e.preventDefault();const inp=$('#chatIn',phone);const t=inp.value;inp.value='';send(t)});
+
+/* side nav + views */
+$('#screenNav').innerHTML=SCREENS.map(s=>s.g?`<span class="grp">${s.g}</span>`:`<button data-s="${s.id}">${s.n}</button>`).join('');
+$('#screenNav').onclick=e=>{const b=e.target.closest('[data-s]');if(b)go(b.dataset.s)};
+function renderGrid(){
+  const keep={playing:P.playing,phrase:P.phrase};P.playing=false;P.phrase=1;
+  $('#grid').innerHTML=SCREENS.filter(s=>s.id).map(s=>`<div class="mini"><div class="holder"><div class="phone">${frame(s.id)}</div></div><b>${s.n}</b></div>`).join('')+`<div class="mini"><div class="holder"><div class="phone" id="gsheet">${frame('companion')}</div></div><b>Verse sheet (from a chip)</b></div>`;
+  Object.assign(P,keep);
+  const g=$('#gsheet'),sh=$('.p-sheet',g);sh.innerHTML=`<div class="grab"></div><div class="vs-ref">${VERSES.phil4.ref}</div><p class="vs-text">${Kit.verseHTML('phil4')}</p><button class="btn-line" style="height:42px">Read chapter</button>`;sh.classList.add('open');$('.p-bd',g).classList.add('open');
+}
+function renderBrand(){
+  $('#board').innerHTML=[['idle','Idle','Slow breathing. Default everywhere.'],['listening','Listening','Pulses while you type.'],['speaking','Speaking','Ripples while a prayer streams or plays.'],['thinking','Thinking','Orbit spins while we prepare.'],['celebrating','Celebrating','Rays: prayed today, goal met, answered.']].map(([s,n,d])=>`<div class="state">${light(116,s)}<h4>${n}</h4><p>${d}</p></div>`).join('');
+  const use={dawn:'Morning, daily prayer, onboarding',golden:'Evening, paywall',lake:'Peace, anxiety',meadow:'Gratitude, Psalms, journey',dusk:'Grief, comfort',evening:'Night prayer',night:'Sleep',sky:'Family, hope, sign-in'};
+  $('#scenes').innerHTML=Kit.SCENE_NAMES.map(n=>`<div>${art(n)}<p>${n}<small>${use[n]}</small></p></div>`).join('');
+  $('#swatches').innerHTML=[['var(--bg)','Background','app background'],['var(--card)','Card','cards, sheets'],['var(--ink)','Ink','text, main button'],['var(--peach)','Accent','active tab, Pray'],['var(--peach-2)','Accent deep','links, chips, progress'],['var(--dot)','Button dot','circle on the main button'],['var(--butter)','Butter','pastel'],['var(--sage)','Sage','pastel'],['var(--lav)','Lavender','pastel'],['var(--rose)','Rose','pastel'],['var(--sky)','Sky','pastel']].map(([c,n,d])=>`<div><i style="background:${c}"></i><span>${n}<small>${d}</small></span></div>`).join('');
+  $('#arrowSlot').innerHTML=I.arrow();$('#chipSlot').innerHTML=chip('ps119');
+}
+function syncTier(){$$('#tierSeg button').forEach(b=>b.classList.toggle('on',b.dataset.t===(P.premium?'premium':'free')))}
+$('#tierSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;P.premium=b.dataset.t==='premium';syncTier();render();if(!$('#v-grid').classList.contains('hidden'))renderGrid()};
+$('#viewSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;const v=b.dataset.v;$$('#viewSeg button').forEach(x=>x.classList.toggle('on',x===b));['proto','grid','brand'].forEach(k=>$('#v-'+k).classList.toggle('hidden',k!==v));if(v==='grid')renderGrid();if(v==='brand')renderBrand()};
+Kit.initTheme($('#thSeg'));
+Kit.initPalette($('#palSeg'),()=>{render();if(!$('#v-grid').classList.contains('hidden'))renderGrid();if(!$('#v-brand').classList.contains('hidden'))renderBrand()});
+Kit.hydrate();
+go('today');
+</script>
+</body>
+</html>
