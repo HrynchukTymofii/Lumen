@@ -1,0 +1,226 @@
+// Prisma schema: https://pris.ly/d/prisma-schema
+// Full target schema lives in docs/SPEC.md §4; models are added here as features get built.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────── Identity (SPEC §4, §5) ─────────
+
+enum Platform {
+  ios
+  android
+  web
+}
+
+enum Denomination {
+  catholic
+  protestant
+  orthodox
+  not_sure
+  exploring
+}
+
+enum Translation {
+  WEB
+  KJV
+  DRA
+}
+
+enum AiComfort {
+  comfortable
+  unsure
+  background
+}
+
+enum PaywallVariant {
+  A
+  B
+}
+
+model User {
+  id                 String          @id @default(uuid())
+  email              String          @unique
+  emailVerifiedAt    DateTime?
+  firstName          String?
+  appleSub           String?         @unique
+  googleSub          String?         @unique
+  timezone           String          @default("America/New_York")
+
+  // Profile (from the quiz or settings). Faith answers are sensitive data: stored only after explicit consent.
+  denomination       Denomination?
+  translation        Translation     @default(WEB)
+  struggles          String[] // ["anxiety","grief"]
+  burden             Int? // 1..5, "how heavy does it feel"
+  prayerFrequency    String? // never|sometimes|weekly|daily
+  obstacles          String[]
+  prayerTime         String? // morning|evening
+  aiComfort          AiComfort?
+  aiEnabled          Boolean         @default(true)
+  weeklyGoal         Int             @default(5) // 3..7
+  sensitiveConsentAt DateTime? // checkbox at sign-up (GDPR art. 9)
+  marketingOptIn     Boolean         @default(false)
+
+  // Acquisition
+  funnelSlug         String?
+  paywallVariant     PaywallVariant?
+  utmSource          String?
+  utmMedium          String?
+  utmCampaign        String?
+  utmContent         String?
+  utmTerm            String?
+  signupPlatform     Platform?
+  stripeCustomerId   String?         @unique
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  loginTokens        LoginToken[]
+  entitlements       Entitlement[]
+}
+
+enum LoginTokenPurpose {
+  email_code // 6-digit code + a link in the same email; userId is set once the email is known to us
+  web_to_app // one-time link from the web success page into the app
+}
+
+model LoginToken {
+  id        String            @id @default(uuid())
+  purpose   LoginTokenPurpose
+  email     String
+  tokenHash String            @unique // sha256(link token); the raw token is only in the link
+  codeHash  String? // sha256(6-digit code), email_code only
+  attempts  Int               @default(0)
+  userId    String?
+  user      User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime // code: +15 min, link: +24 h
+  usedAt    DateTime?
+  createdAt DateTime          @default(now())
+
+  @@index([email])
+}
+
+// ───────── Payments (SPEC §9) ─────────
+
+enum EntitlementSource {
+  stripe
+  app_store
+  play
+}
+
+enum EntitlementStatus {
+  trial
+  active
+  grace
+  canceled // still has access until currentPeriodEnd
+  expired
+}
+
+model Entitlement {
+  id               String            @id @default(uuid())
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source           EntitlementSource
+  productId        String // annual_59_99 | monthly_9_99
+  externalId       String            @unique // Stripe subscription id / RevenueCat original_transaction_id
+  status           EntitlementStatus
+  trialEndsAt      DateTime?
+  currentPeriodEnd DateTime
+  canceledAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([userId])
+}
+
+// Idempotency for Stripe + RevenueCat webhooks
+model WebhookEvent {
+  id          String   @id // provider event id
+  provider    String
+  type        String
+  processedAt DateTime @default(now())
+}
+
+// ───────── Admin ─────────
+
+// One-time 6-digit code for /admin/login (only for emails in ADMIN_EMAILS)
+model AdminLoginCode {
+  id        String    @id @default(uuid())
+  email     String
+  codeHash  String                     // sha256(code)
+  attempts  Int       @default(0)
+  expiresAt DateTime                   // +15 min
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+}
+
+// ───────── Library content (SPEC §8.8) ─────────
+// Content is data, not app code: edited in /admin, files on R2, no app release needed.
+
+enum ContentStatus {
+  draft
+  review
+  published
+  archived
+}
+
+model AudioTrack {
+  id            String          @id @default(uuid())
+  slug          String          @unique
+  title         String
+  subtitle      String?
+  category      String // morning, evening, peace, psalms, grief, family, sleep
+  tags          String[]
+  scene         String          @default("dawn") // key of a scene built into the app; unknown → "dawn"
+  scriptureRefs String[] // "Phil.4.6-7"
+  variants      Json            @default("[]") // [{ minutes: 1|3|5, url, durationSec, lines: [{ t, text }] }]
+  isPremium     Boolean         @default(true)
+  status        ContentStatus   @default(draft)
+  publishAt     DateTime? // scheduled release; null = as soon as published
+  order         Int             @default(0)
+  source        String          @default("ai") // ai | human
+  reviewedBy    String? // admin email; required to publish
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  pathDays      PrayerPathDay[]
+
+  @@index([status, category])
+}
+
+model PrayerPath {
+  id        String          @id @default(uuid())
+  slug      String          @unique // "7-days-of-peace"
+  title     String
+  subtitle  String?
+  scene     String          @default("dawn")
+  isPremium Boolean         @default(true)
+  status    ContentStatus   @default(draft)
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  days      PrayerPathDay[]
+}
+
+model PrayerPathDay {
+  pathId  String
+  day     Int
+  trackId String
+  path    PrayerPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  track   AudioTrack @relation(fields: [trackId], references: [id])
+
+  @@id([pathId, day])
+}
+
+// Single row; bumped on every publish so apps know to refetch the catalog
+model ContentVersion {
+  id        Int      @id @default(1)
+  version   Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
