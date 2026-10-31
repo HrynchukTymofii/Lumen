@@ -1,0 +1,15 @@
+// Values from .env.local / EAS env. EXPO_PUBLIC_ values are inlined at build time, so they must be
+// written out in full (no destructuring) and must never hold secrets.
+
+// The website; the API lives under /api. On a phone, localhost is the phone itself: use the computer's LAN IP.
+export const SITE_URL = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
+// Empty = analytics off (dev builds without a key)
+export const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? "";
+export const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
+
+export const APP_NAME = "Lumen";
+
+// Google sign-in: empty = the button is hidden
+export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
+export const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";

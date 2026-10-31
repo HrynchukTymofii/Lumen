@@ -1,3 +1,6 @@
+// NOTE: Stripe won't work for us (no legal entity, Stripe doesn't onboard Ukraine; SPEC §9). Kept as the reference
+// shape for web checkout until a replacement (Paddle / WayForPay / monobank) is chosen; syncSubscription → Entitlement
+// is the part a new provider's webhook should mirror.
 import "server-only";
 import Stripe from "stripe";
 import { HttpError } from "@/lib/admin-auth";
