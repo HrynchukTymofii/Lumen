@@ -28,3 +28,16 @@ Add packages with `npx expo install <package>` so versions match the Expo SDK.
 - `lib/errorReporting.ts` sends crashes and caught errors to `POST /api/app/error` (`AppError` table).
 - `lib/analytics.ts`: PostHog, off without `EXPO_PUBLIC_POSTHOG_KEY` and on web. Its event map copies
   `website/lib/analytics/events.ts`; keep them in sync.
+
+## Onboarding
+
+- Signed out: `(onboarding)/welcome` → `quiz/[step]` → `sign-in` (→ `email` → `email-code`). Signed in with quiz
+  answers still waiting: `sample-prayer`. "Amen" sends the answers (`POST /api/me/onboarding`) and opens the app.
+  The root layout picks the screen with `Stack.Protected` guards.
+- Shared with the website (imported as `@website/...`, see `metro.config.js`): `website/funnels/options.ts` (answer
+  options) and `website/lib/kit/art.ts` (landscape scenes). Those files must not import anything outside themselves.
+- Colors are CSS variables in `global.css` (Olive palette, light + dark), used as Tailwind classes (`bg-bg`,
+  `text-ink`, `bg-olive`…). Fonts: `font-display` (Outfit), `font-sans` / `font-sans-bold` (Manrope), `font-serif`
+  (Literata, Scripture and prayers only).
+- Sign in with Apple shows on iOS only. Google needs `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` / `_IOS_CLIENT_ID` and a
+  development build; without them the button is hidden. Expo Go and web show email only.

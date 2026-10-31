@@ -629,6 +629,15 @@ flag — no denormalised flag to get out of sync.
 signed-in / signed-out screens with `Stack.Protected`. Tested on Expo web against the local API: code login, wrong
 code, token refresh via `x-refreshed-token`, sign-out on 401, sign-out button.
 
+**Built (31.10, app onboarding, Path B):** welcome → `quiz/[step]` (carrying, tradition, prayer time, AI comfort, with
+the options from `website/funnels/options.ts`) → sign-in (Apple on iOS, Google when the client ids are set, email) →
+`sample-prayer` (same `/api/funnel/sample-prayer` as the web) → "Amen" sends the answers to `POST /api/me/onboarding`.
+Answers wait in AsyncStorage until then (PDR_pl `pendingCategories` pattern). The sign-in screen asks for explicit
+consent before faith / struggle answers are stored (unticked by default); without it only the non-sensitive answers
+are saved. Apple and Google hooks are adapted from PDR_pl `hooks/useAppleLogin.ts` / `useGoogleLogin.ts`.
+Shared with the website through Metro `watchFolders` + the `@website/*` path: `funnels/options.ts` and
+`lib/kit/art.ts` (scenes). Notifications pre-prompt and the in-app paywall are not built yet.
+
 **Drop from PDR_pl:** NextAuth (the website has no password login; web users log in with a magic link), passwords +
 bcrypt (email login is passwordless: 6-digit code or link), `platform`/`ACCOUNT_PLATFORMS` multi-app logic.
 
@@ -794,6 +803,15 @@ celebrating Light. History = list of past weeks with done counts.
 ---
 
 ## 7. AI companion
+
+**Built (31.10, server):** Bible tables + `npm run bible:import` (WEB 35,168 / KJV 31,102 / DRA 35,805 verses,
+73 books), reference parser (`lib/bible/refs.ts`), keyword search ranked by distinct words matched, topic map
+(94 passages, 26 topics), Voyage embeddings ready behind `VOYAGE_API_KEY` (`npm run bible:embed`), Bible routes
+(§6.8 + `/api/bible/passage`). Companion routes (§6.6 minus "turn into a prayer"): Haiku classifier with a keyword
+crisis net, fixed replies, quota, retrieval, Sonnet streaming with `[[Pn]]` markers, server-side refusal fallback
+(`fallbacks: "default"`), AES-256-GCM messages and titles, `AiUsage` cost rows. Search indexes live in a `search`
+Postgres schema outside Prisma. Not yet: memory summaries, "turn into a prayer", `ai-eval.ts`, a Postgres rate
+limiter, DRA Psalm renumbering. Untested until `ANTHROPIC_API_KEY` is set: the Sonnet/Haiku calls themselves.
 
 ### 7.1 Models (verified 29.10.2026)
 
