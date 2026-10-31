@@ -1,8 +1,9 @@
 import type { PlanId } from "@/lib/plans";
+import type { Option } from "./options";
 
 // Funnel engine types (SPEC §8.2). A funnel is data: adding one = a new config file, no new components.
 
-export type Option = { value: string; label: string; hint?: string };
+export type { Option };
 
 export type Answers = {
   struggles?: string[];
