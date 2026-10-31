@@ -47,6 +47,14 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={signedIn && onboarded} redirectTo={home}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="prayer/[slug]" />
+        <Stack.Screen name="player/[slug]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
+        <Stack.Screen name="companion/[id]" />
+        <Stack.Screen name="bible" />
+        <Stack.Screen name="bible/[book]/[chapter]" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
       </Stack.Protected>
       <Stack.Protected guard={signedIn && !onboarded} redirectTo={home}>
         <Stack.Screen name="sample-prayer" />
