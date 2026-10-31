@@ -1,0 +1,58 @@
+/* Web app shell + screens (SPEC §8.9). Uses the .site tokens from site.css. */
+
+.site {
+  .wa { display: grid; grid-template-columns: 240px 1fr; min-height: 100dvh; }
+  .wa-side { position: sticky; top: 0; height: 100dvh; padding: 22px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 26px; }
+  .wa-side .brand { padding: 0 8px; }
+  .wa-tabs { display: grid; gap: 4px; }
+  .wa-tabs a {
+    display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 16px; text-decoration: none; font-weight: 800; color: var(--muted);
+    &:hover { color: var(--ink); }
+    &.on { color: var(--ink); }
+  }
+  .wa-tabs .ic { width: 44px; height: 34px; border-radius: 999px; display: grid; place-items: center; }
+  .wa-tabs a.on .ic { background: var(--peach); color: #26301f; }
+  .wa-main { width: 100%; max-width: 760px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  @media (max-width: 820px) {
+    .wa { grid-template-columns: 1fr; }
+    .wa-side { position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: auto; z-index: 20; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); border-right: 0; border-top: 1px solid var(--line); background: var(--bg); }
+    .wa-side .brand { display: none; }
+    .wa-tabs { grid-template-columns: repeat(4, 1fr); }
+    .wa-tabs a { flex-direction: column; gap: 3px; padding: 4px 0; font-size: 11.5px; }
+    .wa-main { padding: 18px 16px 110px; }
+  }
+
+  .wa-h1 { font-size: clamp(30px, 6vw, 40px); line-height: 1.08; }
+  .wa-lead { color: var(--muted); font-weight: 600; margin-top: 6px; }
+  .wa-sec { margin-top: 28px; }
+  .wa-sec > h2 { font-size: 22px; margin-bottom: 12px; }
+  .wa-card { background: var(--card); border-radius: 26px; padding: 22px; box-shadow: var(--shadow-sm); }
+  .wa-card + .wa-card { margin-top: 14px; }
+  .wa-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+  .wa-hero { position: relative; border-radius: 30px; overflow: hidden; min-height: 220px; display: flex; align-items: flex-end; margin-top: 18px; }
+  .wa-hero > .art { position: absolute; inset: 0; border-radius: 0; }
+  .wa-hero .in { position: relative; margin: 14px; background: var(--card); border-radius: 22px; padding: 18px 20px; width: 100%; box-shadow: var(--shadow); }
+  .wa-hero .in h2 { font-size: 22px; }
+  .prayer-text { font-family: var(--f-read); font-size: 17.5px; line-height: 1.7; }
+  .prayer-text p + p { margin-top: 12px; }
+  .wa-verse q { display: block; font-family: var(--f-read); font-size: 19px; line-height: 1.55; quotes: none; margin: 8px 0 10px; }
+
+  .wa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 640px) { .wa-grid { grid-template-columns: 1fr 1fr; } }
+  .wa-tile { display: block; background: var(--card); border-radius: 22px; overflow: hidden; text-decoration: none; box-shadow: var(--shadow-sm); position: relative; }
+  .wa-tile .art { height: 120px; border-radius: 0; }
+  .wa-tile .t { padding: 10px 12px 12px; font-family: var(--f-display); font-weight: 600; }
+  .wa-tile small { display: block; font-family: var(--f-body); color: var(--muted); font-weight: 700; font-size: 12px; margin-top: 2px; }
+  .wa-lock { position: absolute; top: 10px; right: 10px; background: var(--ink); color: var(--bg); font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 99px; }
+
+  .wa-empty { text-align: center; padding: 34px 20px; color: var(--muted); font-weight: 600; line-height: 1.5; }
+  .wa-field { display: grid; gap: 6px; margin-top: 14px; font-weight: 800; font-size: 14px; }
+  .wa-field input, .wa-field select {
+    height: 48px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--line2); background: var(--bg); color: var(--ink); font: inherit; font-weight: 600;
+  }
+  .wa-danger { background: none; border: 0; color: #b2413a; font-weight: 800; cursor: pointer; padding: 0; text-decoration: underline; }
+  .wa-ok { color: var(--check); font-weight: 800; font-size: 14px; }
+  audio { width: 100%; margin-top: 14px; }
+}

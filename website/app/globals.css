@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* Brand tokens: Olive palette (SPEC §3). Pastels keep dark ink in both themes. */
+@theme inline {
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-outfit);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-literata);
+
+  --color-page: #ecEADF;
+  --color-bg: #faf8f1;
+  --color-card: #ffffff;
+  --color-ink: #26301f;
+  --color-muted: #717866;
+  --color-line: #e9e6d9;
+  --color-line-2: #d8d4c2;
+  --color-olive: #c5d19e;
+  --color-olive-deep: #5f7334;
+  --color-gold: #e3c771;
+  --color-butter: #f2e4b4;
+  --color-sage: #d8e3c4;
+  --color-sky: #d6e3e0;
+  --color-lav: #e3e0ea;
+  --color-rose: #efdacf;
+  --color-danger: #c0453f;
+}
