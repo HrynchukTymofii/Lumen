@@ -44,44 +44,49 @@ enum PaywallVariant {
 }
 
 model User {
-  id                 String          @id @default(uuid())
-  email              String          @unique
-  emailVerifiedAt    DateTime?
-  firstName          String?
-  appleSub           String?         @unique
-  googleSub          String?         @unique
-  timezone           String          @default("America/New_York")
+  id              String    @id @default(uuid())
+  email           String    @unique
+  emailVerifiedAt DateTime?
+  firstName       String?
+  appleSub        String?   @unique
+  googleSub       String?   @unique
+  timezone        String    @default("America/New_York")
 
   // Profile (from the quiz or settings). Faith answers are sensitive data: stored only after explicit consent.
   denomination       Denomination?
-  translation        Translation     @default(WEB)
+  translation        Translation   @default(WEB)
   struggles          String[] // ["anxiety","grief"]
   burden             Int? // 1..5, "how heavy does it feel"
   prayerFrequency    String? // never|sometimes|weekly|daily
   obstacles          String[]
   prayerTime         String? // morning|evening
   aiComfort          AiComfort?
-  aiEnabled          Boolean         @default(true)
-  weeklyGoal         Int             @default(5) // 3..7
+  aiEnabled          Boolean       @default(true)
+  // Short notes the companion keeps about the user (name, struggles, intentions); viewable and deletable
+  memorySummary      String?
+  weeklyGoal         Int           @default(5) // 3..7
   sensitiveConsentAt DateTime? // checkbox at sign-up (GDPR art. 9)
-  marketingOptIn     Boolean         @default(false)
+  marketingOptIn     Boolean       @default(false)
 
   // Acquisition
-  funnelSlug         String?
-  paywallVariant     PaywallVariant?
-  utmSource          String?
-  utmMedium          String?
-  utmCampaign        String?
-  utmContent         String?
-  utmTerm            String?
-  signupPlatform     Platform?
-  stripeCustomerId   String?         @unique
+  funnelSlug       String?
+  paywallVariant   PaywallVariant?
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmContent       String?
+  utmTerm          String?
+  signupPlatform   Platform?
+  stripeCustomerId String?         @unique
 
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  loginTokens        LoginToken[]
-  entitlements       Entitlement[]
+  loginTokens   LoginToken[]
+  entitlements  Entitlement[]
+  appErrors     AppError[]
+  conversations Conversation[]
+  aiUsage       AiUsage[]
 }
 
 enum LoginTokenPurpose {
@@ -152,9 +157,9 @@ model WebhookEvent {
 model AdminLoginCode {
   id        String    @id @default(uuid())
   email     String
-  codeHash  String                     // sha256(code)
+  codeHash  String // sha256(code)
   attempts  Int       @default(0)
-  expiresAt DateTime                   // +15 min
+  expiresAt DateTime // +15 min
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
@@ -223,4 +228,155 @@ model ContentVersion {
   id        Int      @id @default(1)
   version   Int      @default(0)
   updatedAt DateTime @updatedAt
+}
+
+// ───────── App diagnostics (SPEC §10, copied from PDR_pl) ─────────
+
+// Crash and error reports from the phone app. userId is null for signed-out installs.
+model AppError {
+  id          String   @id @default(uuid())
+  userId      String?
+  type        String   @default("error") // "crash" | "error"
+  message     String
+  stack       String?
+  isFatal     Boolean?
+  page        String? // screen path where it happened
+  platform    Platform
+  osVersion   String?
+  deviceModel String?
+  appVersion  String?
+  createdAt   DateTime @default(now())
+
+  // Reports outlive a deleted account (they hold no personal data besides the id)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ───────── Bible (SPEC §4, §6.8) ─────────
+// Filled by `npm run bible:import` (WEB, KJV, Douay-Rheims; all public domain). Book ids and names live in
+// lib/bible/books.ts; ranges are { bookId, chapter, verseStart, verseEnd } everywhere.
+// The search indexes (full text + pgvector) live in the separate `search` Postgres schema, which Prisma
+// doesn't manage: Prisma can't express a tsvector GIN or an HNSW index (see the bible migration, lib/bible/search.ts).
+
+enum Testament {
+  OT
+  NT
+  DC // deuterocanonical: in the Catholic and Orthodox Bibles
+}
+
+model BibleBook {
+  id        Int          @id // 1..66 in the usual order, then 67..73 deuterocanon
+  osis      String       @unique // "Phil", "1John"
+  name      String
+  testament Testament
+  verses    BibleVerse[]
+}
+
+model BibleVerse {
+  translation Translation
+  bookId      Int
+  chapter     Int
+  verse       Int
+  text        String
+
+  book BibleBook @relation(fields: [bookId], references: [id])
+
+  @@id([translation, bookId, chapter, verse])
+}
+
+// Hand-picked verses per topic (anxiety, grief…): boosts search and feeds the sample prayer
+model TopicVerse {
+  id         Int    @id @default(autoincrement())
+  topic      String
+  bookId     Int
+  chapter    Int
+  verseStart Int
+  verseEnd   Int
+  weight     Float  @default(1)
+
+  @@unique([topic, bookId, chapter, verseStart])
+  @@index([topic])
+}
+
+model VerseOfDay {
+  date       String @id // "2026-11-16"
+  bookId     Int
+  chapter    Int
+  verseStart Int
+  verseEnd   Int
+}
+
+// ───────── Companion (SPEC §6.6, §7) ─────────
+
+enum MessageRole {
+  user
+  assistant
+}
+
+enum SafetyCategory {
+  on_topic
+  off_topic
+  jailbreak
+  crisis
+  abuse
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId, updatedAt])
+}
+
+model Message {
+  id             String          @id @default(uuid())
+  conversationId String
+  role           MessageRole
+  content        String // AES-256-GCM encrypted (lib/crypto.ts)
+  citations      Json            @default("[]") // [{ bookId, chapter, verseStart, verseEnd }]
+  category       SafetyCategory? // classifier result, on user messages
+  flagged        Boolean         @default(false) // crisis and abuse, for human review
+  reviewedAt     DateTime?
+  createdAt      DateTime        @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([flagged])
+}
+
+// Messages sent per user-local day (free 5, premium soft cap 100)
+model ChatQuota {
+  userId String
+  date   String // "2026-11-16" in the user's timezone
+  count  Int    @default(0)
+
+  @@id([userId, date])
+}
+
+// One row per model call, for cost per user (SPEC §7.7). Kept, without the user, after account deletion.
+model AiUsage {
+  id           String   @id @default(uuid())
+  userId       String?
+  kind         String // chat | classify | title | memory | prayer | embed | tts
+  model        String
+  inputTokens  Int      @default(0)
+  cachedTokens Int      @default(0)
+  outputTokens Int      @default(0)
+  costMicroUsd Int      @default(0)
+  latencyMs    Int?
+  createdAt    DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([userId])
 }

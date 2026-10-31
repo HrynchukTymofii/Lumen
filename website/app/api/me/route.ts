@@ -45,7 +45,14 @@ const patch = z
 export const PATCH = handle(async (req: NextRequest) => {
   const session = await requireUser(req);
   const data = patch.parse(await readJson(req));
-  const user = await prisma.user.update({ where: { id: session.id }, data: { ...data, firstName: data.firstName || null } });
+  const user = await prisma.user.update({
+    where: { id: session.id },
+    data: {
+      ...data,
+      // An empty name clears it; leaving the field out keeps it
+      ...(data.firstName !== undefined && { firstName: data.firstName || null }),
+    },
+  });
   return NextResponse.json({ user: publicUser(user) });
 });
 

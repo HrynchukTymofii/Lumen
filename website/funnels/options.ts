@@ -1,6 +1,7 @@
-import type { Option } from "./types";
-
 // Reusable answer options. The values are stored on the user, so keep them stable.
+// No imports on purpose: the phone app imports this file directly (app/metro.config.js).
+
+export type Option = { value: string; label: string; hint?: string };
 
 export const STRUGGLES: Option[] = [
   { value: "anxiety", label: "Worry or anxiety" },
