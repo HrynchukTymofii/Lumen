@@ -39,6 +39,10 @@ const config: ExpoConfig = {
     "expo-localization",
     "expo-splash-screen",
     "expo-apple-authentication",
+    // Guided prayers keep playing with the screen locked
+    ["expo-audio", { enableBackgroundPlayback: true }],
+    // Daily reminders are scheduled on the phone (lib/notifications.ts)
+    ["expo-notifications", { color: "#5F7334" }],
     ...(googleIosClientId
       ? [["@react-native-google-signin/google-signin", { iosUrlScheme: `com.googleusercontent.apps.${googleIosClientId}` }] as [string, object]]
       : []),
