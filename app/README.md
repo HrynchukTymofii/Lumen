@@ -41,3 +41,19 @@ Add packages with `npx expo install <package>` so versions match the Expo SDK.
   (Literata, Scripture and prayers only).
 - Sign in with Apple shows on iOS only. Google needs `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` / `_IOS_CLIENT_ID` and a
   development build; without them the button is hidden. Expo Go and web show email only.
+
+## Main app
+
+- Tabs (`app/(tabs)`): **Today · Prayers · Companion · Journey**. Settings opens from Journey (`app/settings.tsx`).
+  `/` redirects to `/today`. Stacked over the tabs: `prayer/[slug]`, `player/[slug]`, `companion/[id]`, `bible`,
+  `bible/[book]/[chapter]`, `paywall` (modal).
+- Streak: `GET /api/today` returns the week; "Mark as prayed" and finishing a prayer in the player call
+  `POST /api/today/prayed`. Missed days never reset anything; one grace day a week (`POST /api/today/grace`).
+- Player: `expo-audio`, keeps playing with the screen locked.
+- Reminders: scheduled on the phone with `expo-notifications` (`lib/notifications.ts`), not pushed from the server.
+  The next 7 days are scheduled at the time in Settings and today is skipped once prayed; Today re-schedules on load.
+- Purchases: RevenueCat (`lib/purchases.ts`). Set `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `_ANDROID_KEY`. The RevenueCat
+  user id is our user id; after a purchase the app calls `POST /api/me/sync-purchases`, and the website's
+  `/api/webhooks/revenuecat` keeps it in step. Premium always comes from `GET /api/me`.
+- `expo-audio`, `expo-notifications` and `react-native-purchases` are native: after installing, rebuild the
+  development build (`npx expo run:android` / `run:ios`). Expo Go can't make real purchases.
