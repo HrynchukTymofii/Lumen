@@ -65,6 +65,10 @@ model User {
   // Short notes the companion keeps about the user (name, struggles, intentions); viewable and deletable
   memorySummary      String?
   weeklyGoal         Int           @default(5) // 3..7
+  streakHidden       Boolean       @default(false)
+  // Daily reminder, scheduled on the phone (SPEC §10.3). "07:30" in the user's local time
+  reminderTime       String?
+  remindersEnabled   Boolean       @default(true)
   sensitiveConsentAt DateTime? // checkbox at sign-up (GDPR art. 9)
   marketingOptIn     Boolean       @default(false)
 
@@ -87,6 +91,7 @@ model User {
   appErrors     AppError[]
   conversations Conversation[]
   aiUsage       AiUsage[]
+  completions   PrayerCompletion[]
 }
 
 enum LoginTokenPurpose {
@@ -252,6 +257,22 @@ model AppError {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// ───────── Soft streak (SPEC §6.5) ─────────
+
+// One row per day someone prayed, in their own timezone. Missed days never reset anything; one grace day a
+// week can fill a missed day.
+model PrayerCompletion {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      String // user-local "YYYY-MM-DD"
+  prayerId  String? // the library track, when it came from the player
+  isGrace   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
 }
 
 // ───────── Bible (SPEC §4, §6.8) ─────────

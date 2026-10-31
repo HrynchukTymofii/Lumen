@@ -31,6 +31,15 @@ export const GET = handle(async (req: NextRequest) => {
   return res;
 });
 
+function validTimezone(tz: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const patch = z
   .object({
     firstName: z.string().trim().max(40).nullable(),
@@ -38,7 +47,11 @@ const patch = z
     translation: z.enum(["WEB", "KJV", "DRA"]),
     aiEnabled: z.boolean(),
     weeklyGoal: z.number().int().min(3).max(7),
-    timezone: z.string().max(60),
+    streakHidden: z.boolean(),
+    // "07:30", local time; the phone schedules the reminder
+    reminderTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+    remindersEnabled: z.boolean(),
+    timezone: z.string().max(60).refine(validTimezone, "Unknown timezone"),
   })
   .partial();
 
