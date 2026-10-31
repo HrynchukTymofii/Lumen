@@ -1,3 +1,43 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Olive palette (SPEC §3, design/kit/kit.css), as RGB channels for Tailwind's alpha syntax */
+:root {
+  --page: 236 234 223;
+  --bg: 250 248 241;
+  --card: 255 255 255;
+  --ink: 38 48 31;
+  --muted: 113 120 102;
+  --dim: 170 174 158;
+  --line: 233 230 217;
+  --line2: 216 212 194;
+  --olive: 197 209 158;
+  --olive-deep: 95 115 52;
+  --gold: 227 199 113;
+  --butter: 242 228 180;
+  --sage: 216 227 196;
+  --sky: 214 227 224;
+  --lav: 227 224 234;
+  --rose: 239 218 207;
+  --on-pastel: 38 48 31;
+  --danger: 192 69 63;
+}
+
+.dark:root {
+  --page: 12 15 9;
+  --bg: 20 26 16;
+  --card: 29 37 24;
+  --ink: 238 240 228;
+  --muted: 156 163 142;
+  --dim: 95 104 82;
+  --line: 38 47 31;
+  --line2: 53 65 44;
+  --olive-deep: 195 211 141;
+  --butter: 232 219 172;
+  --sage: 207 219 187;
+  --sky: 206 220 217;
+  --lav: 218 215 226;
+  --rose: 229 209 198;
+  --danger: 232 122 112;
+}

@@ -11,6 +11,9 @@ type Source = "web" | "app_store" | "play_store";
 type Placement = "funnel" | "onboarding" | "companion_quota" | "library" | "settings";
 
 export type AnalyticsEvents = {
+  quiz_started: { funnel_slug: string };
+  quiz_step_completed: { funnel_slug: string; step_id: string; answer: string | string[] };
+  sample_prayer_generated: { latency_ms: number };
   paywall_viewed: { variant: string; placement: Placement };
   plan_selected: { product_id: string };
   trial_started: { product_id: string; source: Source };

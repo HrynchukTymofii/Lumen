@@ -3,8 +3,10 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { identifyUser, resetUser } from "@/lib/analytics";
 import { setApiToken, setAuthHandlers } from "@/lib/api/client";
 import { deleteMe, getMe, updateMe } from "@/lib/api/me";
+import { submitOnboarding } from "@/lib/api/onboarding";
 import type { LoginResponse, MeResponse, Premium, ProfilePatch, User } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
+import { clearPendingOnboarding, getPendingOnboarding } from "@/lib/onboarding";
 import { deleteSecure, getSecure, setSecure } from "@/lib/storage";
 
 // Adapted from PDR_pl context/AuthContext.tsx: the token and the last known account live in SecureStore,
@@ -20,12 +22,16 @@ interface AuthContextType {
   token: string | null;
   user: User | null;
   premium: Premium;
+  // False while quiz answers from before the sign-in wait to be sent (the sample prayer screen is next)
+  onboarded: boolean;
   signIn: (res: LoginResponse) => Promise<void>;
   signOut: () => Promise<void>;
   // Re-reads the account and premium status (after a purchase, on returning to the app)
   refresh: () => Promise<void>;
   updateProfile: (patch: ProfilePatch) => Promise<User>;
   deleteAccount: () => Promise<void>;
+  // Sends the quiz answers to the account and opens the app
+  finishOnboarding: () => Promise<void>;
 }
 
 const FREE: Premium = { active: false };
@@ -36,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [status, setStatus] = useState<Status>("loading");
   const [token, setTokenState] = useState<string | null>(null);
   const [account, setAccount] = useState<MeResponse | null>(null);
+  const [onboarded, setOnboarded] = useState(true);
   // The token a running request belongs to, so a slow answer can't bring back a signed-out account
   const tokenRef = useRef<string | null>(null);
 
@@ -56,6 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = useCallback(async () => {
     await saveToken(null);
     await saveAccount(null);
+    await clearPendingOnboarding();
     resetUser();
     setStatus("signedOut");
   }, [saveToken, saveAccount]);
@@ -80,6 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await saveToken(res.token);
       await saveAccount({ user: res.user, premium: FREE });
       identifyUser(res.user, false);
+      setOnboarded(!(await getPendingOnboarding()));
       setStatus("signedIn");
       // Premium status isn't part of the login answer
       refresh();
@@ -95,6 +104,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
     [saveAccount, account],
   );
+
+  const finishOnboarding = useCallback(async () => {
+    const pending = await getPendingOnboarding();
+    if (pending) {
+      const user = await submitOnboarding(pending.answers, pending.sensitiveConsent);
+      await saveAccount({ user, premium: account?.premium ?? FREE });
+      await clearPendingOnboarding();
+    }
+    setOnboarded(true);
+  }, [saveAccount, account]);
 
   const deleteAccount = useCallback(async () => {
     await deleteMe();
@@ -125,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       tokenRef.current = storedToken;
       setApiToken(storedToken);
+      setOnboarded(!(await getPendingOnboarding()));
       setTokenState(storedToken);
 
       let cached: MeResponse | null = null;
@@ -160,11 +180,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token,
         user: account?.user ?? null,
         premium: account?.premium ?? FREE,
+        onboarded,
         signIn,
         signOut,
         refresh,
         updateProfile,
         deleteAccount,
+        finishOnboarding,
       }}
     >
       {children}

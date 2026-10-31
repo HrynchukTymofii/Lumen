@@ -37,3 +37,27 @@ export interface MeResponse {
 export type ProfilePatch = Partial<Pick<User, "firstName" | "denomination" | "translation" | "aiEnabled" | "weeklyGoal">> & {
   timezone?: string;
 };
+
+// Quiz answers, same shape as the web funnel (website/funnels/types.ts Answers)
+export interface Answers {
+  struggles?: string[];
+  burden?: number;
+  denomination?: string;
+  prayerFrequency?: string;
+  obstacles?: string[];
+  aiComfort?: string;
+  firstName?: string;
+  prayerTime?: string;
+}
+
+export interface Citation {
+  ref: string;
+  text: string;
+}
+
+export interface SamplePrayer {
+  title: string;
+  text: string;
+  citations: Citation[];
+  source: "ai" | "template";
+}
