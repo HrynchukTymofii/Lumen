@@ -50,7 +50,7 @@ sharp and testable; the build list is ~2× what a small team can finish well. Cu
 2. **Prices & trial:** start with `annual_59_99` ($59.99/yr, 7-day trial) and `monthly_9_99` ($9.99/mo, no trial). Keep the 7-day trial (30 days can't show conversion in our window).
 3. **Platforms:** iOS only for v0. Expo makes Android cheap later; use funnel device split to decide.
 4. **First ad budget:** `struggle` — strongest emotional hook, and its quiz answers make the most personal sample prayer.
-5. **Stripe:** test mode for the build; switch to live only if business details are ready by ~10.11.
+5. **Stripe:** ~~test mode for the build~~ **won't work**: no legal entity, Ukraine not supported (31.10). Web payment provider TBD (§9).
 
 ---
 
@@ -98,7 +98,7 @@ under `website/app/api/*`. No separate server.
 | Neon Postgres | DB (+ `pgvector` extension) | Free tier | Dev |
 | Anthropic API | Chat (Sonnet 5.5), classifier + cheap tasks (Haiku 5.5) | Pay as you go | Dev |
 | Voyage AI (or OpenAI embeddings) | Verse embeddings (Anthropic has no embeddings endpoint) | Pay as you go, one-off ~31k verses | Dev |
-| Stripe | Web checkout, Apple/Google Pay, Customer Portal | Test mode → live | Founder |
+| ~~Stripe~~ **won't work** (no legal entity, Ukraine not supported, see §9) | Web checkout, Apple/Google Pay, Customer Portal | Replace: Paddle / WayForPay / monobank (TBD) | Founder |
 | RevenueCat | In-app subscriptions, entitlement webhooks | Free under revenue threshold | Dev |
 | Apple Developer | App Store, TestFlight, Sign in with Apple, universal links | $99/yr | Founder |
 | Resend | Magic links, welcome, trial-ending emails | Free tier | Dev |
@@ -623,6 +623,12 @@ flag — no denormalised flag to get out of sync.
 `proxy.ts`), `lib/auth/users.ts`, routes `/api/auth/{email/start,email/verify,link/exchange,apple,google,logout}`,
 `/api/me` (GET/PATCH/DELETE). Email codes and one-time links share one `LoginToken` table.
 
+**Built (31.10, app):** `app/context/AuthContext.tsx` (`status`, `user`, `premium`, `signIn`, `signOut`, `refresh`,
+`updateProfile`, `deleteAccount`), `app/lib/api/{client,auth,me,types}.ts`, `app/lib/analytics.ts`,
+`app/lib/errorReporting.ts` + `POST /api/app/error` (`AppError` model), email-code sign-in screens. Root layout gates
+signed-in / signed-out screens with `Stack.Protected`. Tested on Expo web against the local API: code login, wrong
+code, token refresh via `x-refreshed-token`, sign-out on 401, sign-out button.
+
 **Drop from PDR_pl:** NextAuth (the website has no password login; web users log in with a magic link), passwords +
 bcrypt (email login is passwordless: 6-digit code or link), `platform`/`ACCOUNT_PLATFORMS` multi-app logic.
 
@@ -1095,6 +1101,8 @@ account, same subscription (a web purchase unlocks the phone app and the other w
 
 ## 9. Payments & experiments
 
+> **Stripe won't work for us (31.10).** Nobody on the team has a registered legal entity, and Stripe doesn't onboard Ukraine. The Stripe code in `website/` stays only as a reference for how web checkout plugs in. Web payments need another provider, e.g. Paddle (merchant of record) or a Ukrainian one (WayForPay, monobank acquiring). Not decided yet; App Store payments via RevenueCat are unaffected.
+
 ### 9.1 Products
 
 | Key | Stripe | App Store (RevenueCat) | Trial |
@@ -1287,5 +1295,5 @@ a **development build** (not Expo Go).
 1. Companion name (placeholder **Lumen**) and app name for the App Store.
 2. Domain.
 3. Prices final? (`$59.99/yr` with 7-day trial, `$9.99/mo`).
-4. Stripe live by ~10.11 or test mode for the demo.
+4. ~~Stripe live by ~10.11 or test mode for the demo.~~ Stripe won't work (no legal entity, Ukraine not supported). Pick a web payment provider: Paddle, WayForPay or monobank (not urgent).
 5. Who records the 10–20 audio prayers and who reviews generated prayer texts theologically (ideally one Catholic + one Protestant reviewer).
