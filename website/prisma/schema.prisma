@@ -137,7 +137,7 @@ model Entitlement {
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   source           EntitlementSource
   productId        String // annual_59_99 | monthly_9_99
-  externalId       String            @unique // Stripe subscription id / RevenueCat original_transaction_id
+  externalId       String            @unique // Stripe subscription id / "revenuecat:<userId>" (one row, synced from RevenueCat)
   status           EntitlementStatus
   trialEndsAt      DateTime?
   currentPeriodEnd DateTime
