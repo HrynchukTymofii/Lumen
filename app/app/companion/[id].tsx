@@ -5,9 +5,10 @@ import { KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, TextInput, 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light, type LightState } from "@/components/Light";
 import { IconButton } from "@/components/ui/Button";
-import { BackIcon, BookIcon, SendIcon } from "@/components/ui/icons";
+import { BackIcon, BookIcon, MicIcon, SendIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { ChatError, getConversation, sendMessage } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
 import type { ChatMessage, CrisisResource } from "@/lib/api/types";
@@ -36,6 +37,15 @@ export default function ChatScreen() {
   const [quotaHit, setQuotaHit] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
+  // What was typed before the mic was tapped; the spoken words go after it
+  const typed = useRef("");
+  const voice = useVoiceInput((said) => setInput((typed.current ? `${typed.current} ` : "") + said));
+  const toggleVoice = () => {
+    if (voice.listening) return voice.stop();
+    typed.current = input.trim();
+    voice.start();
+  };
+
   useEffect(() => {
     getConversation(id).then(
       (conv) => {
@@ -60,8 +70,10 @@ export default function ChatScreen() {
   const send = async () => {
     const text = input.trim();
     if (!text || sending) return;
+    if (voice.listening) voice.cancel();
     setInput("");
     setNotice(null);
+    setQuotaHit(false);
     setSending(true);
     setStatus("Reading your message");
     if (!title) setTitle(text.slice(0, 60));
@@ -110,7 +122,7 @@ export default function ChatScreen() {
       setNotice(
         err instanceof ChatError
           ? err.code === "quota"
-            ? "You’ve used today’s messages. They come back tomorrow, or unlimited with Premium."
+            ? null // shown as the gentle card above the input
             : err.message
           : "No connection. Check your internet and try again.",
       );
@@ -163,11 +175,21 @@ export default function ChatScreen() {
         {messages?.map((m) => (m.role === "user" ? <UserBubble key={m.id} text={m.text} /> : <Reply key={m.id} message={m} status={m === last ? status : null} />))}
       </ScrollView>
 
-      {notice && <Text className="px-5 pb-2 font-sans text-sm text-danger">{notice}</Text>}
+      {(notice ?? voice.error) && <Text className="px-5 pb-2 font-sans text-sm text-danger">{notice ?? voice.error}</Text>}
       {quotaHit && (
-        <Pressable onPress={() => router.push("/paywall")} accessibilityRole="button" className="mx-4 mb-2 rounded-full bg-ink py-3 active:opacity-80">
-          <Text className="text-center font-sans-bold text-sm text-bg">Try Premium free for 7 days</Text>
-        </Pressable>
+        // Someone may have just opened up about something hard: no "limit reached", and their words stay in the box
+        <View className="mx-4 mb-2 gap-3 rounded-3xl bg-card px-5 py-4">
+          <Text className="font-sans text-base leading-6 text-ink">
+            Thank you for sharing this with me. We’ve reached the end of today’s conversation, and I’ll be here again
+            tomorrow. Your message is saved below.
+          </Text>
+          <Text className="font-sans text-sm leading-5 text-muted">
+            Until then, you could bring it to God in prayer, or share it with someone you trust.
+          </Text>
+          <Pressable onPress={() => router.push("/paywall")} accessibilityRole="button" className="rounded-full bg-ink py-3 active:opacity-80">
+            <Text className="text-center font-sans-bold text-sm text-bg">Keep talking with Premium</Text>
+          </Pressable>
+        </View>
       )}
 
       <View className="flex-row items-end gap-2 border-t border-line bg-card px-3 pt-2.5" style={{ paddingBottom: insets.bottom + 10 }}>
@@ -181,6 +203,16 @@ export default function ChatScreen() {
           className="max-h-32 min-h-11 flex-1 rounded-3xl bg-bg px-4 py-2.5 font-sans text-base text-ink"
           autoFocus={Boolean(prompt) && autoSend !== "1"}
         />
+        {voice.available && (
+          <Pressable
+            onPress={toggleVoice}
+            accessibilityRole="button"
+            accessibilityLabel={voice.listening ? "Stop speaking" : "Speak a message"}
+            className={`h-11 w-11 items-center justify-center rounded-full ${voice.listening ? "bg-olive" : "bg-bg"}`}
+          >
+            {voice.listening ? <Light size={26} state="listening" /> : <MicIcon color={c.ink} />}
+          </Pressable>
+        )}
         <Pressable
           onPress={send}
           disabled={!input.trim() || sending}

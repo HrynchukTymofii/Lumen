@@ -1,12 +1,13 @@
 import { useRef, useState, type ComponentRef } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BoldIcon, ListIcon, QuoteIcon, TrashIcon } from "./ui/icons";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { Light } from "./Light";
+import { MicIcon, TrashIcon } from "./ui/icons";
 import { useColors } from "./ui/theme";
 
-// A tall drawer for writing: Bible notes, intentions and reflections. Optional title, then the body with a small
-// formatting bar. Formatting is plain-text markup (**bold**, "• " bullets, "> " quotes) that RichText draws, so
-// notes stay readable anywhere they're copied to.
+// A tall drawer for writing: Bible notes, intentions and reflections. Optional title, then the body, which can
+// also be spoken. Plain text (RichText still draws markup in notes written before the formatting bar was removed).
 
 type Selection = { start: number; end: number };
 
@@ -34,12 +35,11 @@ export function NoteDrawer({
   onDelete?: () => void;
 }) {
   const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
   const c = useColors();
   const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState(initialBody);
-  // The cursor is tracked, and only set on the input right after a formatting change (a controlled selection
-  // makes the cursor jump while typing on Android)
+  // The cursor is tracked, and only set on the input right after dictation (a controlled selection makes the
+  // cursor jump while typing on Android)
   const selRef = useRef<Selection>({ start: initialBody.length, end: initialBody.length });
   const [forced, setForced] = useState<Selection | undefined>();
   const setSel = (s: Selection) => {
@@ -48,61 +48,40 @@ export function NoteDrawer({
   };
   const input = useRef<ComponentRef<typeof TextInput>>(null);
 
-  // Wraps the selection in ** (or inserts an empty pair to type into)
-  const bold = () => {
+  // Dictation goes in at the cursor; the words arrive as they're spoken, so each update replaces the last one
+  const around = useRef({ before: "", after: "" });
+  const voice = useVoiceInput((said) => {
+    const { before, after } = around.current;
+    const spaced = (before && !/\s$/.test(before) ? " " : "") + said;
+    setBody(before + spaced + after);
+    setSel({ start: before.length + spaced.length, end: before.length + spaced.length });
+  });
+  const toggleVoice = () => {
+    if (voice.listening) return voice.stop();
     const sel = selRef.current;
-    const picked = body.slice(sel.start, sel.end);
-    const next = `${body.slice(0, sel.start)}**${picked}**${body.slice(sel.end)}`;
-    setBody(next);
-    const cursor = picked ? sel.end + 4 : sel.start + 2;
-    setSel({ start: cursor, end: cursor });
-    input.current?.focus();
+    around.current = { before: body.slice(0, sel.start), after: body.slice(sel.end) };
+    voice.start();
   };
 
-  // Adds or removes a line prefix on every line the selection touches
-  const prefix = (mark: string) => {
-    const sel = selRef.current;
-    const lineStart = body.lastIndexOf("\n", sel.start - 1) + 1;
-    const nextBreak = body.indexOf("\n", sel.end);
-    const lineEnd = nextBreak === -1 ? body.length : nextBreak;
-    const lines = body.slice(lineStart, lineEnd).split("\n");
-    const allMarked = lines.every((l) => l.startsWith(mark));
-    const changed = lines.map((l) => (allMarked ? l.slice(mark.length) : l.startsWith(mark) ? l : mark + l)).join("\n");
-    const next = body.slice(0, lineStart) + changed + body.slice(lineEnd);
-    setBody(next);
-    const cursor = lineStart + changed.length;
-    setSel({ start: cursor, end: cursor });
-    input.current?.focus();
+  const save = () => {
+    voice.cancel();
+    onSave({ title, body });
   };
-
-  // A new line inside a list or quote carries the marker on
-  const onChangeText = (text: string) => {
-    const sel = selRef.current;
-    if (text.length === body.length + 1 && text[sel.start] === "\n") {
-      const lineStart = body.lastIndexOf("\n", sel.start - 1) + 1;
-      const line = body.slice(lineStart, sel.start);
-      const mark = line.startsWith("• ") ? "• " : line.startsWith("> ") ? "> " : null;
-      if (mark && line.length > mark.length) {
-        const next = `${text.slice(0, sel.start + 1)}${mark}${text.slice(sel.start + 1)}`;
-        setBody(next);
-        const cursor = sel.start + 1 + mark.length;
-        setSel({ start: cursor, end: cursor });
-        return;
-      }
-    }
-    setBody(text);
+  const cancel = () => {
+    voice.cancel();
+    onClose();
   };
-
-  const save = () => onSave({ title, body });
 
   return (
     <Modal transparent animationType="slide" onRequestClose={save} statusBarTranslucent navigationBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 justify-end">
         <Pressable onPress={save} className="absolute inset-0 bg-black/40" accessibilityLabel="Save and close" />
-        <View className="rounded-t-[28px] bg-card" style={{ height: height - insets.top - 12, paddingBottom: insets.bottom + 8 }}>
+        {/* Fills the space above the keyboard rather than a fixed height, so the keyboard never pushes its top
+            (the verse, the cursor) off the screen */}
+        <View className="flex-1 rounded-t-[28px] bg-card" style={{ marginTop: insets.top + 12, paddingBottom: insets.bottom + 8 }}>
           <View className="mt-2.5 h-1 w-10 self-center rounded-full bg-line" />
           <View className="flex-row items-center justify-between px-5 pt-3">
-            <Pressable onPress={onClose} accessibilityRole="button" hitSlop={8}>
+            <Pressable onPress={cancel} accessibilityRole="button" hitSlop={8}>
               <Text className="font-sans-bold text-base text-muted">Cancel</Text>
             </Pressable>
             <Text className="mx-3 flex-1 text-center font-sans-bold text-base text-ink" numberOfLines={1}>
@@ -135,7 +114,7 @@ export function NoteDrawer({
             <TextInput
               ref={input}
               value={body}
-              onChangeText={onChangeText}
+              onChangeText={setBody}
               selection={forced}
               onSelectionChange={(e) => {
                 selRef.current = e.nativeEvent.selection;
@@ -153,16 +132,13 @@ export function NoteDrawer({
             />
           </ScrollView>
 
+          {voice.error && <Text className="px-5 pb-1 font-sans text-sm text-danger">{voice.error}</Text>}
           <View className="flex-row items-center gap-1 border-t border-line px-3 pt-2">
-            <Tool label="Bold" onPress={bold}>
-              <BoldIcon color={c.ink} />
-            </Tool>
-            <Tool label="Bulleted list" onPress={() => prefix("• ")}>
-              <ListIcon color={c.ink} />
-            </Tool>
-            <Tool label="Quote" onPress={() => prefix("> ")}>
-              <QuoteIcon color={c.ink} />
-            </Tool>
+            {voice.available && (
+              <Tool label={voice.listening ? "Stop speaking" : "Speak"} onPress={toggleVoice}>
+                {voice.listening ? <Light size={24} state="listening" /> : <MicIcon size={20} color={c.ink} />}
+              </Tool>
+            )}
             <View className="flex-1" />
             {onDelete && (
               <Tool label="Delete" onPress={onDelete}>

@@ -117,6 +117,14 @@ export function SendIcon({ size = 18, color }: IconProps) {
   );
 }
 
+export function MicIcon({ size = 18, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
 // A path climbing a hill (Journey tab)
 export function JourneyIcon({ size = 22, color }: IconProps) {
   return (
@@ -345,30 +353,3 @@ export function TrashIcon({ size = 20, color }: IconProps) {
   );
 }
 
-// Note drawer formatting
-export function BoldIcon({ size = 20, color }: IconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M7 4.5h6a3.5 3.5 0 010 7H7zM7 11.5h7a3.8 3.8 0 010 7.5H7z" stroke={color} {...line} strokeWidth={2.6} />
-    </Svg>
-  );
-}
-
-export function ListIcon({ size = 20, color }: IconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20" stroke={color} {...line} />
-      <Circle cx={5} cy={6.5} r={1.2} fill={color as string} />
-      <Circle cx={5} cy={12} r={1.2} fill={color as string} />
-      <Circle cx={5} cy={17.5} r={1.2} fill={color as string} />
-    </Svg>
-  );
-}
-
-export function QuoteIcon({ size = 20, color }: IconProps) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M5 5.5v13M9.5 8.5h9.5M9.5 12h9.5M9.5 15.5h6" stroke={color} {...line} />
-    </Svg>
-  );
-}
