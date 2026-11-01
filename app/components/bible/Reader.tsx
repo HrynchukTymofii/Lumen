@@ -43,6 +43,9 @@ import { BookPicker } from "./BookPicker";
 // names the chapter on screen ("Genesis 2 ⌄"), which opens the book picker; the bookmark saves that chapter.
 // Tapping a verse selects it and opens a sheet: highlight colors, Note (a full drawer), Copy, Share, Ask.
 
+// The tab bar's top corner radius (app/(tabs)/_layout.tsx)
+const TAB_BAR_RADIUS = 26;
+
 export interface Loc {
   osis: string;
   chapter: number;
@@ -277,9 +280,17 @@ export function BibleReader({ start, pointed, tab }: { start: Loc; pointed?: { f
       )}
 
       {verseInfo && (
+        // In the tab it reaches down behind the tab bar, so the bar's rounded corners show the sheet, not a gap
         <View
-          className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-card px-6 pt-3"
-          style={{ paddingBottom: insets.bottom + 16, shadowColor: "#000", shadowOpacity: 0.14, shadowRadius: 18, elevation: 14 }}
+          className="absolute left-0 right-0 rounded-t-[28px] bg-card px-6 pt-3"
+          style={{
+            bottom: tab ? -TAB_BAR_RADIUS : 0,
+            paddingBottom: tab ? TAB_BAR_RADIUS + 16 : insets.bottom + 16,
+            shadowColor: "#000",
+            shadowOpacity: 0.14,
+            shadowRadius: 18,
+            elevation: 14,
+          }}
         >
           <View className="mb-3 h-1 w-10 self-center rounded-full bg-line" />
           <View className="flex-row items-center">
@@ -406,15 +417,11 @@ const ChapterBlock = memo(function ChapterBlock({
               onPress={() => onVerse(chapter.book.osis, chapter.chapter, v.v)}
               suppressHighlighting
               // Plain styles, not classes: nested Text spans on Android only reliably take these.
-              // Android also draws no dotted underlines, so a selected verse gets a tint as well.
+              // A selected verse is only underlined. Solid, not dotted: iOS draws dotted underlines itself and
+              // ignores the line height, so they land too high; Android draws no dotted underlines at all.
               style={[
                 tint ? { backgroundColor: tint, color: c.onPastel } : null,
-                isSelected && {
-                  backgroundColor: tint ?? c.select,
-                  textDecorationLine: "underline",
-                  textDecorationStyle: "dotted",
-                  textDecorationColor: c.oliveDeep,
-                },
+                isSelected && { textDecorationLine: "underline", textDecorationStyle: "solid", textDecorationColor: c.oliveDeep },
               ]}
             >
               <Text className="font-sans text-[11px]" style={{ color: tint ? c.onPastel : c.dim }}>
