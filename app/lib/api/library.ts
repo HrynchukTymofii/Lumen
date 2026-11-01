@@ -14,3 +14,9 @@ export async function getLibrary() {
   cached = data;
   return data;
 }
+
+// Track ids prayed most by everyone in the last 30 days, most first. Empty while there's too little to rank.
+export async function getTrending() {
+  const { data } = await api.get<{ ids: string[] }>("/library/trending");
+  return data.ids;
+}

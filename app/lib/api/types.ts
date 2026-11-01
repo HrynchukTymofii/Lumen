@@ -91,6 +91,9 @@ export interface Streak {
 export interface Journey {
   weeks: { start: string; done: number; goal: number }[]; // last 8, oldest first
   totals: { daysPrayed: number; prayers: number };
+  // Days prayed this month and the five before it, oldest first (missing from servers before the calendar)
+  days?: { date: string; grace: boolean }[];
+  today?: string;
 }
 
 // Bible (website/app/api/bible/*)
@@ -127,6 +130,7 @@ export interface Track {
   category: string;
   tags: string[];
   scene: string;
+  imageUrl: string | null; // cover picture; null → draw the scene
   scriptureRefs: string[];
   isPremium: boolean;
   locked: boolean;

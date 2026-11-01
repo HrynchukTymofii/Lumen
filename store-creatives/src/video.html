@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumen Listing Video</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Manrope:wght@500;600;700;800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400;1,7..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kit.css">
+<style>body{overflow:hidden;background:#10150C}</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="art.js"></script>
+<script src="kit.js"></script>
+<script>
+/* Listing video in the Night glow style, after PDR's search-23-PhoneTilt: the headline on the left, a tilted phone on
+   the right walking through Bible → companion → audio prayer → Today. 15 s, drawn at 2000×1333 and zoomed to 3456×2304.
+   Everything is a pure function of t (render(t)), so frames can be captured one by one; the first and last frames
+   match (empty night, phone off-screen) so the video loops cleanly.
+   video.html?t=5.2 shows one frame for checking. */
+const T = 15, W = 2000, H = 1333, ZOOM = 3456 / 2000;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ramp = (t, a, b) => clamp((t - a) / (b - a));
+const ease = (t, a, b) => { const x = ramp(t, a, b); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const easeOut = (t, a, b) => 1 - Math.pow(1 - ramp(t, a, b), 3);
+const easeIn = (t, a, b) => Math.pow(ramp(t, a, b), 3);
+const appear = (t, a, d = .3) => { const p = easeOut(t, a, a + d); return `opacity:${p};transform:translateY(${(1 - p) * 18}px)`; };
+const clock = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+const STEPS = [
+  { at: 0,     line: "Read the <em>Bible</em>",          sub: "Highlight, take notes, bookmark",   screen: bibleAt },
+  { at: 3.75,  line: "Ask the <em>companion</em>",       sub: "Every answer quotes Scripture",     screen: companionAt },
+  { at: 7.5,   line: "Listen and <em>pray along</em>",   sub: "Guided prayers, read aloud",        screen: playerAt },
+  { at: 11.25, line: "A prayer for <em>every moment</em>", sub: "Morning, evening, sleep and more", screen: todayAt },
+];
+
+/* ---------- animated screens (402×874 pt), lt = seconds since the scene began ---------- */
+const sweep = (color, p) => `background:linear-gradient(${color},${color}) no-repeat 0 0/${(p * 100).toFixed(1)}% 100%;border-radius:4px;box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:2px 0`;
+
+function bibleAt(lt) {
+  const p1 = ease(lt, .7, 1.2), p4 = ease(lt, 1.3, 1.9), p6 = ease(lt, 2.0, 2.4), sheet = ease(lt, 2.3, 2.8);
+  return `<div class="abs" style="inset:0;background:var(--bg)">
+    <div class="abs" style="left:20px;right:20px;top:66px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="display" style="font-size:30px;line-height:36px">Bible</div>
+        <div style="display:flex;gap:10px"><div class="round">${ic.search("#26301F", 20)}</div><div class="round">${ic.menu("#26301F", 20)}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;margin-top:12px;gap:6px">
+        <span style="font-weight:800;font-size:20px">Psalms 23</span>${ic.chevDown("#26301F", 18)}
+        <span style="margin-left:auto">${ic.bookmark("#5F7334", 24, lt > 3.1)}</span>
+      </div>
+    </div>
+    <div class="abs" style="left:20px;right:20px;top:182px">
+      <div class="display" style="font-size:30px;line-height:40px">Psalm 23</div>
+      <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:2px 0 16px">World English Bible</div>
+      <div class="serif verse" style="font-size:19px;line-height:34px">
+        <sup>1</sup><span style="${sweep("#F2E4B4", p1)}">Yahweh is my shepherd: I shall lack nothing.</span>
+        <sup>2</sup>He makes me lie down in green pastures. He leads me beside still waters.
+        <sup>3</sup>He restores my soul. He guides me in the paths of righteousness for his name’s sake.
+        <sup>4</sup><span style="${sweep("#D8E3C4", p4)}">Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me.</span> Your rod and your staff, they comfort me.
+        <sup>5</sup>You prepare a table before me in the presence of my enemies. You anoint my head with oil. My cup runs over.
+        <sup>6</sup><span style="${sweep("#F2E4B4", p6)}">Surely goodness and loving kindness shall follow me all the days of my life,</span> and I will dwell in Yahweh’s house forever.
+      </div>
+    </div>
+    <div class="abs" style="left:0;right:0;bottom:0;transform:translateY(${(1 - sheet) * 105}%);background:var(--card);border-radius:28px 28px 0 0;padding:12px 24px 40px;box-shadow:0 -10px 30px rgba(0,0,0,.1)">
+      <div style="width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px"></div>
+      <div style="display:flex;align-items:center"><span style="width:40px"></span><span style="flex:1;text-align:center;font-weight:800;font-size:18px">Psalm 23:6</span>
+        <span style="width:40px;height:40px;border-radius:50%;background:var(--bg);display:grid;place-items:center">${ic.close("#26301F", 16)}</span></div>
+      <div style="display:flex;justify-content:center;gap:16px;margin-top:16px">
+        ${["butter", "sage", "sky", "rose"].map((c, i) => `<span style="width:44px;height:44px;border-radius:50%;background:var(--${c});display:grid;place-items:center;${i === 0 ? "border:2.5px solid #26301F" : ""}">${i === 0 ? ic.check("#26301F", 16) : ""}</span>`).join("")}
+      </div>
+      <div style="margin-top:16px;background:var(--bg);border-radius:16px;padding:12px 16px;color:${lt > 3.0 ? "var(--ink)" : "var(--dim)"};font-size:15px">${lt > 3.0 ? "Read this every morning".slice(0, Math.floor((lt - 3.0) * 40)) : "Add a note…"}</div>
+      <div style="display:flex;justify-content:center;gap:16px;margin-top:16px">
+        ${[["Note", ic.note], ["Copy", ic.copy], ["Share", ic.share], ["Ask", ic.chat]].map(([t, f]) =>
+          `<div style="width:64px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:56px;height:56px;border-radius:50%;background:var(--bg);display:grid;place-items:center">${f("#26301F", 22)}</span><span style="font-weight:800;font-size:12px">${t}</span></div>`).join("")}
+      </div>
+    </div>
+    ${statusBar(false, false)}</div>`;
+}
+
+function companionAt(lt) {
+  const status = lt < 1.25 ? "Searching the Scriptures…" : "Reading Philippians 4, Matthew 6…";
+  const replied = lt >= 1.8;
+  const typed = "I can’t stop worrying about my job. What does the Bible say about anxiety?";
+  const nChars = Math.floor(ramp(lt, 0, .35) * typed.length);
+  const cite = (r, t, a) => `<div style="border:1.5px solid rgba(95,115,52,.4);border-radius:16px;padding:12px 16px;${appear(lt, a)}">
+      <div style="display:flex;align-items:center;gap:8px;color:var(--oliveDeep);font-weight:800;font-size:14px">${ic.book("#5F7334", 15)}${r} · WEB</div>
+      <div class="serif" style="margin-top:4px;font-size:15px;line-height:24px;color:var(--muted)">${t}</div></div>`;
+  return `<div class="abs" style="inset:0;background:var(--bg)">
+    <div class="abs" style="left:0;right:0;top:0;padding:60px 16px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--bg)">
+      <span style="width:40px;height:40px;display:grid;place-items:center">${ic.back("#26301F", 20)}</span>
+      <span style="flex:1;font-weight:800;font-size:16px">Finding peace when anxious</span>${light(36)}
+    </div>
+    <div class="abs" style="left:16px;right:16px;top:136px;display:flex;flex-direction:column;gap:12px">
+      ${lt >= .45 ? `<div style="align-self:flex-end;max-width:85%;background:var(--olive);border-radius:24px 24px 8px 24px;padding:12px 16px;font-size:16px;line-height:24px;${appear(lt, .45)}">${typed}</div>` : ""}
+      <div style="max-width:92%;display:flex;flex-direction:column;gap:8px">
+        ${lt >= .8 && !replied ? `<div style="align-self:flex-start;background:var(--card);border-radius:24px 24px 24px 8px;padding:12px 16px;font-size:15px;font-style:italic;color:var(--muted);${appear(lt, lt < 1.25 ? .8 : 1.25, .2)}">${status}</div>` : ""}
+        ${replied ? `<div style="background:var(--card);border-radius:24px 24px 24px 8px;padding:12px 16px;font-size:16px;line-height:24px;${appear(lt, 1.8)}">That weight is real, and you don’t have to carry it alone. Paul says to bring every worry to God in prayer, with thanks, and promises a peace that guards your heart.</div>` : ""}
+        ${lt >= 2.2 ? cite("Philippians 4:6–7", "In nothing be anxious, but in everything, by prayer and petition with thanksgiving, let your requests be made known to God.", 2.2) : ""}
+        ${lt >= 2.55 ? cite("Matthew 6:34", "Therefore don’t be anxious for tomorrow, for tomorrow will be anxious for itself.", 2.55) : ""}
+        ${lt >= 2.95 ? `<div style="background:var(--card);border-radius:24px 24px 24px 8px;padding:12px 16px;font-size:16px;line-height:24px;${appear(lt, 2.95)}">Would you like me to pray with you about it now?</div>` : ""}
+      </div>
+    </div>
+    <div class="abs" style="left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 12px 38px;display:flex;gap:8px;align-items:flex-end">
+      <div style="flex:1;min-height:44px;border-radius:24px;background:var(--bg);padding:11px 16px;font-size:16px;line-height:22px;color:${lt < .45 && nChars ? "var(--ink)" : "var(--dim)"}">${lt < .45 && nChars ? typed.slice(0, nChars) : "Write a message"}</div>
+      <span style="width:44px;height:44px;border-radius:50%;background:var(--ink);opacity:${lt < .45 && nChars ? 1 : .3};display:grid;place-items:center">${ic.send("#FAF8F1", 18)}</span>
+    </div>
+    ${statusBar(false, false)}</div>`;
+}
+
+// The Light speaking: rings ripple out of the sphere (periodic in global time so nothing jumps)
+function speakingLight(size, gt) {
+  const rings = [0, 1, 2].map(i => {
+    const ph = ((gt / 2.1) + i / 3) % 1;
+    return `<circle cx="50" cy="60" r="${(28 + ph * 22).toFixed(2)}" fill="none" stroke="#F5C77E" stroke-width="1.4" opacity="${(.75 * (1 - ph)).toFixed(3)}"/>`;
+  }).join("");
+  const s = 1 + .03 * Math.sin(gt * 2 * Math.PI / 2.2);
+  return `<div style="position:relative;width:${size}px;height:${size}px">
+    <svg class="abs" style="inset:0;overflow:visible" width="${size}" height="${size}" viewBox="0 0 100 100">${rings}</svg>
+    <div class="abs" style="inset:0;transform:scale(${s.toFixed(4)});transform-origin:50% 60%">${light(size, { aura: .6 })}</div></div>`;
+}
+
+function playerAt(lt, gt) {
+  const prog = .3 + lt * .014, a = 1 - ramp(lt, 1.9, 2.2), b = ramp(lt, 2.1, 2.4);
+  return `<div class="abs" style="inset:0">${scene("dusk", { seed: 3 })}
+    <div class="abs" style="left:16px;right:16px;top:62px;display:flex;justify-content:space-between;align-items:center">
+      <span class="round">${ic.close("#26301F", 18)}</span><span style="font-weight:800;font-size:14px;color:rgba(255,255,255,.9)">10 min</span><span style="width:44px"></span>
+    </div>
+    <div class="abs" style="left:0;right:0;top:210px;display:grid;place-items:center">${speakingLight(150, gt)}</div>
+    <div class="abs" style="left:16px;right:16px;bottom:50px;background:rgba(255,255,255,.9);border-radius:28px;padding:20px 24px 24px">
+      <div class="kicker">Evening Examen</div>
+      <div style="position:relative;margin-top:12px;min-height:96px">
+        <div class="serif abs" style="inset:0;font-size:19px;line-height:32px;opacity:${a}">Lord, as this day comes to an end, I place every moment of it in Your hands.</div>
+        <div class="serif abs" style="inset:0;font-size:19px;line-height:32px;opacity:${b}">Thank You for the gifts I noticed today, and for the ones I missed.</div>
+      </div>
+      <div style="margin-top:16px;height:6px;border-radius:3px;background:var(--line);overflow:hidden"><div style="width:${(prog * 100).toFixed(2)}%;height:100%;background:var(--oliveDeep);border-radius:3px"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--muted)"><span>${clock(prog * 600)}</span><span>10:00</span></div>
+      <div style="display:flex;justify-content:center;align-items:center;gap:32px;margin-top:12px">
+        ${ic.skip("#26301F", 24)}
+        <span style="width:64px;height:64px;border-radius:50%;background:var(--ink);display:grid;place-items:center">${ic.pause("#FAF8F1", 26)}</span>
+        ${ic.skip("#26301F", 24, true)}
+      </div>
+    </div>
+    ${statusBar(true, false)}</div>`;
+}
+
+const SLIDES_TODAY = [
+  ["golden", 7, "Morning", "Morning Offering", "5 · 10 min · Begin the day with God"],
+  ["lake", 2, "Peace", "Be Still", "10 min · Rest in His presence"],
+  ["night", 5, "Sleep", "Night Prayer", "15 min · Lay the day down"],
+];
+function todayAt(lt) {
+  const hero = 542, pos = ease(lt, .9, 1.4) + ease(lt, 2.1, 2.6); // 0 → 1 → 2
+  const dot = Math.round(pos);
+  return `<div class="abs" style="inset:0;background:var(--bg)">
+    <div class="abs" style="left:0;top:0;width:402px;height:${hero}px;overflow:hidden;background:#1D2518">
+      <div class="abs" style="left:0;top:0;height:100%;width:${402 * 3}px;display:flex;transform:translateX(${(-pos * 402).toFixed(2)}px)">
+        ${SLIDES_TODAY.map(([sc, seed, chip, title, sub]) => `<div style="position:relative;width:402px;height:100%;flex:none">
+          ${scene(sc, { seed })}
+          <div class="abs" style="inset:0;background:linear-gradient(180deg,rgba(0,0,0,.28) 0%,rgba(0,0,0,0) 26%,rgba(0,0,0,0) 48%,rgba(0,0,0,.62) 100%)"></div>
+          <div class="abs" style="inset:0;display:grid;place-items:center"><div style="width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,.85);display:grid;place-items:center;padding-left:4px">${ic.play("#141A10", 34)}</div></div>
+          <div class="abs" style="left:24px;right:24px;bottom:44px"><span class="chip">${chip}</span>
+            <div class="display" style="margin-top:10px;font-size:30px;line-height:36px;color:#fff">${title}</div>
+            <div style="margin-top:4px;font-size:16px;color:rgba(255,255,255,.85)">${sub}</div></div></div>`).join("")}
+      </div>
+      <div class="abs" style="left:0;right:0;bottom:16px;display:flex;gap:6px;justify-content:center">
+        ${[0, 1, 2, 3, 4].map(i => `<i style="width:${i === dot ? 16 : 6}px;height:6px;border-radius:3px;background:${i === dot ? "#fff" : "rgba(255,255,255,.45)"}"></i>`).join("")}</div>
+      <div class="abs" style="left:20px;right:20px;top:62px;display:flex;justify-content:space-between;align-items:center">
+        <div class="display" style="font-size:34px;color:#fff">Today</div>
+        <div style="display:flex;gap:10px"><div class="glass">${ic.search("#fff", 20)}</div><div class="glass">${ic.bell("#fff", 20)}</div></div>
+      </div>
+    </div>
+    <div class="abs" style="left:16px;right:16px;top:${hero + 20}px">
+      <div style="display:flex;align-items:center;gap:16px;background:var(--lav);border-radius:28px;padding:20px">
+        ${light(48)}
+        <div style="flex:1"><div class="display" style="font-size:20px;line-height:28px">Ask the companion</div>
+        <div style="font-size:15px;line-height:20px;color:rgba(38,48,31,.75);margin-top:2px">Questions on faith, answered from Scripture</div></div>
+        ${ic.chev("#26301F", 20)}
+      </div>
+      <div class="card" style="margin-top:24px;padding:20px 24px 24px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="kicker">Today’s prayer</span>${light(34)}</div>
+        <div class="display" style="font-size:24px;line-height:32px;margin-top:4px">For a peaceful heart</div>
+      </div>
+    </div>
+    ${tabBar("Today", 402)}
+    ${statusBar(true, false)}</div>`;
+}
+
+/* ---------- frame ---------- */
+function phoneShell(content, w, style) {
+  const bez = w * .034, sw = w - bez * 2, k = sw / 402, sh = 874 * k, rad = w * .155;
+  return `<div class="device" style="width:${w}px;height:${sh + bez * 2}px;border-radius:${rad}px;${style}">
+    <div class="screen" style="left:${bez}px;top:${bez}px;width:${sw}px;height:${sh}px;border-radius:${rad - bez}px">
+      <div class="app" style="width:402px;height:874px;transform:scale(${k})">${content}</div>
+      <div class="island" style="top:${11 * k}px;width:${124 * k}px;height:${36 * k}px"></div>
+    </div></div>`;
+}
+
+const STATIC_BG = nightSky(W, H, 90) + glow(1530, 690, 1500, .42);
+
+function render(t) {
+  // Which scene, and the push from the previous one (.55 s, inside the phone)
+  let i = STEPS.length - 1; while (i > 0 && t < STEPS[i].at) i--;
+  const lt = t - STEPS[i].at, push = i > 0 ? ease(lt, 0, .55) : 1;
+  const layer = (html, x) => `<div class="abs" style="inset:0;transform:translateX(${(x * 100).toFixed(2)}%)">${html}</div>`;
+  let screen = layer(STEPS[i].screen(lt, t), 1 - push);
+  if (push < 1) screen = layer(STEPS[i - 1].screen(STEPS[i].at - STEPS[i - 1].at + lt, t), -.32 * push) + `<div class="abs" style="inset:0;background:rgba(0,0,0,${.25 * push})"></div>` + screen;
+
+  // Phone: rises in, floats, sinks out (both ends off-screen so the loop is seamless)
+  const y = (1 - easeOut(t, .1, 1.1)) * 1300 + easeIn(t, 14.0, 14.9) * 1300 + Math.sin(t * 2 * Math.PI / 7.5) * 8;
+  const rot = -5 + Math.sin(t * 2 * Math.PI / 15) * 1.2;
+  const pw = 600;
+  const phoneHtml = phoneShell(screen, pw, `left:${1530 - pw / 2}px;top:${62 + y}px;transform:rotate(${rot.toFixed(3)}deg)`);
+
+  // Copy: crossfades at each scene change, fades in after the phone and out before it leaves
+  const textOp = k => {
+    const s = STEPS[k], end = k + 1 < STEPS.length ? STEPS[k + 1].at : T;
+    const inA = k === 0 ? .5 : s.at - .05, outB = k + 1 < STEPS.length ? end - .1 : 14.2;
+    return Math.min(easeOut(t, inA, inA + .45), 1 - ramp(t, outB - .3, outB));
+  };
+  const copy = STEPS.map((s, k) => {
+    const o = textOp(k); if (o <= 0) return "";
+    return `<div class="abs" style="left:150px;width:900px;top:440px;opacity:${o.toFixed(3)};transform:translateY(${((1 - o) * 26).toFixed(1)}px)">
+      ${headline(s.line, { size: 128, color: "#FAF3DF", accent: "#FFD98C", align: "left" })}
+      <div style="margin-top:30px;font-size:44px;font-weight:600;color:rgba(250,243,223,.66)">${s.sub}</div></div>`;
+  }).join("");
+  const brandOp = Math.min(easeOut(t, .3, .8), 1 - ramp(t, 14.2, 14.6));
+  const dots = `<div class="abs" style="left:150px;top:950px;display:flex;gap:12px;opacity:${brandOp}">${STEPS.map((s, k) => `<i style="height:10px;border-radius:5px;width:${k === i ? 46 : 10}px;background:${k === i ? "#FFD98C" : "rgba(250,243,223,.3)"}"></i>`).join("")}</div>`;
+  const brand = `<div class="abs" style="left:140px;top:210px;display:flex;align-items:center;gap:18px;opacity:${brandOp}">${light(96, { aura: .6 })}<span class="display" style="font-size:60px;color:#FAF3DF">Lumen</span></div>`;
+
+  document.getElementById("root").innerHTML = `<div class="stage" style="width:${W}px;height:${H}px;zoom:${ZOOM}">${STATIC_BG}${brand}${copy}${dots}${phoneHtml}</div>`;
+}
+window.render = render;
+render(+(new URLSearchParams(location.search).get("t") || 5.2));
+document.fonts.ready.then(() => { document.title = "ready"; });
+</script>
+</body>
+</html>

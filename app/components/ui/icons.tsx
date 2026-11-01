@@ -181,3 +181,194 @@ export function CloseIcon({ size = 18, color }: IconProps) {
     </Svg>
   );
 }
+
+// Bible verse actions
+export function HighlightIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M14.5 4.5l5 5L11 18H6v-5z" stroke={color} {...line} />
+      <Path d="M4 21h16" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function NoteIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M20 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h6" stroke={color} {...line} />
+      <Path d="M17.5 3.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function CopyIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M9 9h10a2 2 0 012 2v8a2 2 0 01-2 2h-8a2 2 0 01-2-2z" stroke={color} {...line} />
+      <Path d="M5 15H4.5A1.5 1.5 0 013 13.5V5a2 2 0 012-2h8.5A1.5 1.5 0 0115 4.5V5" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+// Home, Discover, Me
+export function SearchIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={11} cy={11} r={7} stroke={color} {...line} />
+      <Path d="M20.5 20.5l-4.5-4.5" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function BellIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15zM10 21h4" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function HomeIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 19z" stroke={color} {...line} />
+      <Path d="M9 14.5c1.6 1.4 4.4 1.4 6 0" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function CompassIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={12} cy={12} r={9} stroke={color} {...line} />
+      <Path d="M15.5 8.5l-2 5-5 2 2-5z" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function StarIcon({ size = 22, color, filled }: IconProps & { filled?: boolean }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"
+        stroke={color}
+        {...line}
+        fill={filled ? (color as string) : "none"}
+      />
+    </Svg>
+  );
+}
+
+export function HeartIcon({ size = 22, color, filled }: IconProps & { filled?: boolean }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0112 7.3a4.3 4.3 0 017.5 2.5C19.5 15.4 12 20 12 20z"
+        stroke={color}
+        {...line}
+        fill={filled ? (color as string) : "none"}
+      />
+    </Svg>
+  );
+}
+
+export function ClockIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Circle cx={12} cy={12} r={9} stroke={color} {...line} />
+      <Path d="M12 7v5l3 2" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function DownloadIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M12 4v11M7 10.5l5 5 5-5M5 20h14" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function ShareIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M12 15V4M7.5 8L12 3.5 16.5 8M5 12.5V19a1.5 1.5 0 001.5 1.5h11A1.5 1.5 0 0019 19v-6.5" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function GiftIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M4 9.5h16V13H4zM5.5 13h13v7.5h-13zM12 9.5v11M12 9.5C10.5 6 7 5.5 7 7.8 7 9.5 12 9.5 12 9.5zM12 9.5c1.5-3.5 5-4 5-1.7 0 1.7-5 1.7-5 1.7z" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function BookmarkIcon({ size = 22, color, filled }: IconProps & { filled?: boolean }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M6.5 3.5h11V21L12 16.5 6.5 21z" stroke={color} {...line} fill={filled ? (color as string) : "none"} />
+    </Svg>
+  );
+}
+
+export function MenuIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M4 7h16M4 12h16M4 17h16" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function ChevronDownIcon({ size = 18, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M6 9.5l6 6 6-6" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+export function BoltIcon({ size = 22, color, filled }: IconProps & { filled?: boolean }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z" stroke={color} {...line} fill={filled ? (color as string) : "none"} />
+    </Svg>
+  );
+}
+
+export function TrashIcon({ size = 20, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M4.5 6.5h15M9.5 6.5V4h5v2.5M6.5 6.5l1 14h9l1-14" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+// Note drawer formatting
+export function BoldIcon({ size = 20, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M7 4.5h6a3.5 3.5 0 010 7H7zM7 11.5h7a3.8 3.8 0 010 7.5H7z" stroke={color} {...line} strokeWidth={2.6} />
+    </Svg>
+  );
+}
+
+export function ListIcon({ size = 20, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20" stroke={color} {...line} />
+      <Circle cx={5} cy={6.5} r={1.2} fill={color as string} />
+      <Circle cx={5} cy={12} r={1.2} fill={color as string} />
+      <Circle cx={5} cy={17.5} r={1.2} fill={color as string} />
+    </Svg>
+  );
+}
+
+export function QuoteIcon({ size = 20, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M5 5.5v13M9.5 8.5h9.5M9.5 12h9.5M9.5 15.5h6" stroke={color} {...line} />
+    </Svg>
+  );
+}

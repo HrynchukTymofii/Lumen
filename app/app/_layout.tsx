@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { trackScreen } from "@/lib/analytics";
 import { flushPendingErrors, initErrorReporting, setCurrentPage } from "@/lib/errorReporting";
+import { useApplyTheme } from "@/lib/themePref";
 import "../global.css";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -18,6 +19,7 @@ flushPendingErrors();
 function RootNavigator() {
   const { status, onboarded } = useAuth();
   const pathname = usePathname();
+  useApplyTheme();
   // Outfit (titles), Manrope (UI), Literata (Scripture and prayers), SPEC §3
   const [fontsLoaded, fontError] = useFonts({
     Outfit_600SemiBold,
@@ -51,9 +53,18 @@ function RootNavigator() {
         <Stack.Screen name="prayer/[slug]" />
         <Stack.Screen name="player/[slug]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
         <Stack.Screen name="companion/[id]" />
-        <Stack.Screen name="bible" />
         <Stack.Screen name="bible/[book]/[chapter]" />
+        <Stack.Screen name="bible/notes" />
+        <Stack.Screen name="search" options={{ animation: "fade" }} />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="list/[key]" />
+        <Stack.Screen name="journal/[kind]" />
+        <Stack.Screen name="streak" />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="settings/profile" />
+        <Stack.Screen name="settings/general" />
+        <Stack.Screen name="settings/subscription" />
+        <Stack.Screen name="settings/legal" />
         <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
       </Stack.Protected>
       <Stack.Protected guard={signedIn && !onboarded} redirectTo={home}>

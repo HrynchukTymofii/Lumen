@@ -34,12 +34,17 @@ export async function resetPurchases() {
   await Purchases.logOut().catch(() => {});
 }
 
-/** The packages of the current offering ($rc_annual, $rc_monthly), yearly first. */
+// The paywall sells yearly and monthly only. The weekly product stays in the store and the offering, but isn't shown.
+const SHOWN = ["ANNUAL", "MONTHLY"];
+
+/** The yearly and monthly packages of the current offering ($rc_annual, $rc_monthly), yearly first. */
 export async function getPackages(): Promise<PurchasesPackage[]> {
   if (!configured) return [];
   const offerings = await Purchases.getOfferings();
   const packages = offerings.current?.availablePackages ?? [];
-  return [...packages].sort((a) => (a.packageType === "ANNUAL" ? -1 : 1));
+  return packages
+    .filter((p) => SHOWN.includes(p.packageType))
+    .sort((a, b) => SHOWN.indexOf(a.packageType) - SHOWN.indexOf(b.packageType));
 }
 
 // Tells the server right away, so Premium doesn't wait for the webhook

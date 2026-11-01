@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumen Icon Options</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Five app-icon options built from the Light mascot (app/components/Light.tsx).
+   Each icon is a 1024×1024 SVG; open icon-options.html?only=<n> to render just one at full size for export. */
+:root{--bg:#FAF8F1;--ink:#26301F;--muted:#717866;--card:#fff;--line:#E9E6D9}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:Manrope,system-ui,sans-serif;padding:48px 24px 80px}
+h1{font-family:Outfit,sans-serif;font-weight:600;font-size:40px;text-align:center}
+.sub{text-align:center;color:var(--muted);margin:8px 0 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px;max-width:1700px;margin:0 auto}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:28px;display:flex;flex-direction:column;align-items:center;gap:18px}
+.big{width:260px;height:260px;border-radius:22.37%;overflow:hidden;box-shadow:0 18px 40px rgba(38,48,31,.18)}
+.big svg,.sm svg{width:100%;height:100%;display:block}
+.row{display:flex;align-items:flex-end;gap:18px}
+.sm{overflow:hidden;border-radius:22.37%;box-shadow:0 4px 10px rgba(0,0,0,.12)}
+.name{font-family:Outfit,sans-serif;font-size:24px;font-weight:600}
+.desc{color:var(--muted);font-size:14px;text-align:center;line-height:1.5;max-width:280px}
+.home{background:linear-gradient(160deg,#3a4a6b,#1d2438);border-radius:18px;padding:16px 22px 10px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.home span{color:#fff;font-size:12px}
+body.only{padding:0;background:transparent}
+body.only .page{display:none}
+#solo svg{width:1024px;height:1024px;display:block}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Lumen: icon options</h1>
+  <p class="sub">The Light mascot in five settings. Each is shown large, at Settings size, and on a home screen.</p>
+  <div class="grid" id="grid"></div>
+</div>
+<div id="solo"></div>
+<script>
+// Shared mascot: aura + lit sphere + halo, centred at (cx, cy) with radius r (in a 1024 box)
+function light(p, {cx=512, cy=560, r=250, aura=.5, haloW=1, haloStroke=24, haloGlow=.25}={}){
+  const hy = cy - r*1.43, hrx = r*0.63*haloW, hry = r*0.17;
+  return `
+  <defs>
+    <radialGradient id="${p}aura" cx="${cx}" cy="${cy}" r="${r*1.75}" gradientUnits="userSpaceOnUse">
+      <stop offset=".45" stop-color="#FFD98C" stop-opacity="${aura}"/><stop offset="1" stop-color="#FFD98C" stop-opacity="0"/></radialGradient>
+    <radialGradient id="${p}body" cx="${cx}" cy="${cy}" r="${r*1.07}" fx="${cx-r*.3}" fy="${cy-r*.4}" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFBEC"/><stop offset=".35" stop-color="#FFE4A3"/><stop offset=".75" stop-color="#FBC676"/>
+      <stop offset=".92" stop-color="#F5AE6C" stop-opacity=".8"/><stop offset="1" stop-color="#F5AE6C" stop-opacity="0"/></radialGradient>
+    <linearGradient id="${p}under" x1="0" y1="0" x2="0" y2="1">
+      <stop offset=".55" stop-color="#E8935A" stop-opacity="0"/><stop offset="1" stop-color="#E8935A" stop-opacity=".3"/></linearGradient>
+    <linearGradient id="${p}halo" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F5AE6C"/><stop offset=".5" stop-color="#FFF1C9"/><stop offset="1" stop-color="#F5AE6C"/></linearGradient>
+  </defs>
+  <circle cx="${cx}" cy="${cy}" r="${r*1.75}" fill="url(#${p}aura)"/>
+  <circle cx="${cx}" cy="${cy}" r="${r*1.07}" fill="url(#${p}body)"/>
+  <circle cx="${cx}" cy="${cy}" r="${r*.96}" fill="url(#${p}under)"/>
+  <ellipse cx="${cx-r*.33}" cy="${cy-r*.41}" rx="${r*.3}" ry="${r*.18}" fill="#fff" opacity=".4" transform="rotate(-30 ${cx-r*.33} ${cy-r*.41})"/>
+  <ellipse cx="${cx}" cy="${hy}" rx="${hrx}" ry="${hry}" fill="none" stroke="#FFD98C" stroke-width="${haloStroke*2.6}" opacity="${haloGlow}"/>
+  <ellipse cx="${cx}" cy="${hy}" rx="${hrx}" ry="${hry}" fill="none" stroke="url(#${p}halo)" stroke-width="${haloStroke}"/>`;
+}
+
+const ICONS = [
+  { name: "Cream", desc: "Closest to the app itself: the Light on the warm cream background used across Lumen.",
+    svg: p => `<rect width="1024" height="1024" fill="#FAF8F1"/>
+      <defs><radialGradient id="${p}bg" cx="512" cy="560" r="640" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFF4D6"/><stop offset="1" stop-color="#F3EEDD"/></radialGradient></defs>
+      <rect width="1024" height="1024" fill="url(#${p}bg)"/>${light(p,{cy:580,r:255,aura:.55})}` },
+
+  { name: "Night glow", desc: "The Light on the app's dark-mode olive night. Stands out on any home screen.",
+    svg: p => `<defs><radialGradient id="${p}bg" cx="512" cy="580" r="720" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#34401F"/><stop offset=".6" stop-color="#1A2213"/><stop offset="1" stop-color="#10150C"/></radialGradient></defs>
+      <rect width="1024" height="1024" fill="url(#${p}bg)"/>
+      ${[[180,190,5],[830,240,4],[760,140,3],[240,820,4],[860,760,5],[130,520,3]].map(([x,y,s])=>`<circle cx="${x}" cy="${y}" r="${s}" fill="#FFE9B8" opacity=".7"/>`).join("")}
+      ${light(p,{cy:580,r:245,aura:.7,haloGlow:.4})}` },
+
+  { name: "Olive", desc: "The brand olive (#5F7334) as the field, so the gold sphere reads as warm light on green.",
+    svg: p => `<defs><linearGradient id="${p}bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7A8F47"/><stop offset="1" stop-color="#4E6029"/></linearGradient></defs>
+      <rect width="1024" height="1024" fill="url(#${p}bg)"/>${light(p,{cy:580,r:250,aura:.55,haloGlow:.35})}` },
+
+  { name: "Dawn", desc: "The Light rising over a soft horizon at sunrise: morning prayer, a new day.",
+    svg: p => `<defs>
+        <linearGradient id="${p}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E3E0EA"/><stop offset=".5" stop-color="#EFDACF"/><stop offset="1" stop-color="#F7D9A8"/></linearGradient>
+        <linearGradient id="${p}hill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C5D19E"/><stop offset="1" stop-color="#8FA35C"/></linearGradient>
+        <linearGradient id="${p}hill2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7A8F47"/><stop offset="1" stop-color="#5F7334"/></linearGradient></defs>
+      <rect width="1024" height="1024" fill="url(#${p}sky)"/>
+      ${light(p,{cy:560,r:230,aura:.65})}
+      <path d="M0 760 Q300 690 560 740 T1024 720 V1024 H0Z" fill="url(#${p}hill)"/>
+      <path d="M0 860 Q340 800 640 850 T1024 840 V1024 H0Z" fill="url(#${p}hill2)"/>` },
+
+  { name: "Light & Word", desc: "The Light resting over an open Bible. Says Bible + companion in a single glance.",
+    svg: p => `<defs><linearGradient id="${p}bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6DF"/><stop offset="1" stop-color="#F2E4B4"/></linearGradient>
+        <linearGradient id="${p}pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F3EEDD"/></linearGradient></defs>
+      <rect width="1024" height="1024" fill="url(#${p}bg)"/>
+      ${light(p,{cy:450,r:190,aura:.6})}
+      <g>
+        <path d="M512 760 C430 712 300 700 190 716 L190 860 C300 846 430 856 512 900Z" fill="#5F7334"/>
+        <path d="M512 760 C594 712 724 700 834 716 L834 860 C724 846 594 856 512 900Z" fill="#4E6029"/>
+        <path d="M512 742 C430 690 310 680 214 692 L214 832 C310 822 430 832 512 880Z" fill="url(#${p}pg)"/>
+        <path d="M512 742 C594 690 714 680 810 692 L810 832 C714 822 594 832 512 880Z" fill="url(#${p}pg)"/>
+        <path d="M512 742 V880" stroke="#D8CFB0" stroke-width="6"/>
+        ${[0,1,2,3].map(i=>`<path d="M${262} ${730+i*26} C330 ${724+i*26} 400 ${730+i*26} 466 ${752+i*26}" stroke="#E2D9BC" stroke-width="9" fill="none" stroke-linecap="round"/>
+        <path d="M${762} ${730+i*26} C694 ${724+i*26} 624 ${730+i*26} 558 ${752+i*26}" stroke="#E2D9BC" stroke-width="9" fill="none" stroke-linecap="round"/>`).join("")}
+      </g>` },
+];
+
+const wrap = (svg, size) => `<svg viewBox="0 0 1024 1024" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+
+// The chosen icon (2 · Night glow) split for Android's adaptive icon, and the subscription images built on it
+const nightBg = p => `<defs><radialGradient id="${p}bg" cx="512" cy="580" r="720" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#34401F"/><stop offset=".6" stop-color="#1A2213"/><stop offset="1" stop-color="#10150C"/></radialGradient></defs>
+  <rect width="1024" height="1024" fill="url(#${p}bg)"/>`;
+const stars = list => list.map(([x, y, s]) => `<circle cx="${x}" cy="${y}" r="${s}" fill="#FFE9B8" opacity=".7"/>`).join("");
+const EXTRA = {
+  // Adaptive foreground: the mascot inside Android's 66% safe zone, transparent around it
+  "android-fg": p => `<g transform="translate(512 512) scale(.62) translate(-512 -540)">${light(p, { cy: 580, r: 245, aura: .7, haloGlow: .4 })}</g>`,
+  "android-bg": p => nightBg(p) + stars([[180, 190, 5], [830, 240, 4], [760, 140, 3], [240, 820, 4], [860, 760, 5], [130, 520, 3]]),
+  // Monochrome (themed icons): a flat white sphere and halo
+  "android-mono": () => `<g transform="translate(512 512) scale(.62) translate(-512 -540)"><circle cx="512" cy="580" r="262" fill="#fff"/><ellipse cx="512" cy="230" rx="154" ry="42" fill="none" stroke="#fff" stroke-width="30"/></g>`,
+};
+const SUBS = { week: "Weekly", month: "Monthly", year: "Yearly" };
+// Plain on purpose (App Review accepts these): the plan name and "SUBSCRIPTION" each spanning the full width, centred.
+// fitText() then sizes each line so it fills 920 of the 1024px.
+const sub = (p, word) => `<rect width="1024" height="1024" fill="#141A10"/>
+  <text class="fit" x="512" y="500" text-anchor="middle" font-family="Outfit" font-weight="700" font-size="200" fill="#FAF3DF">${word.toUpperCase()}</text>
+  <text class="fit" x="512" y="660" text-anchor="middle" font-family="Outfit" font-weight="700" font-size="100" fill="#FFD98C">SUBSCRIPTION</text>`;
+function fitText(root) {
+  root.querySelectorAll("text.fit").forEach(t => {
+    const fs = +t.getAttribute("font-size");
+    t.setAttribute("font-size", (fs * 920 / t.getComputedTextLength()).toFixed(1));
+  });
+  // Re-centre the pair vertically: plan name above the middle, SUBSCRIPTION below it, 50px apart
+  root.querySelectorAll("svg").forEach(svg => {
+    const [a, b] = svg.querySelectorAll("text.fit");
+    if (!a) return;
+    const ha = a.getBBox().height * .72, hb = b.getBBox().height * .72, gap = 50, top = (1024 - ha - gap - hb) / 2;
+    a.setAttribute("y", (top + ha).toFixed(1));
+    b.setAttribute("y", (top + ha + gap + hb).toFixed(1));
+  });
+}
+
+const q = new URLSearchParams(location.search);
+const only = q.get("only");
+if (q.get("x") || q.get("sub")) {
+  document.body.classList.add("only");
+  const svg = q.get("x") ? EXTRA[q.get("x")]("x") : sub("s", SUBS[q.get("sub")]);
+  document.getElementById("solo").innerHTML = wrap(svg, 1024);
+  document.fonts.load("700 100px Outfit").then(() => document.fonts.ready).then(() => { fitText(document); document.title = "ready"; });
+} else if (only) {
+  document.body.classList.add("only");
+  document.getElementById("solo").innerHTML = wrap(ICONS[+only - 1].svg("solo"), 1024);
+  document.fonts.ready.then(() => { document.title = "ready"; });
+} else {
+  document.getElementById("grid").innerHTML = ICONS.map((ic, i) => `
+    <div class="opt">
+      <div class="name">${i + 1}. ${ic.name}</div>
+      <div class="big">${wrap(ic.svg("b" + i), 260)}</div>
+      <div class="row">
+        <div class="sm" style="width:87px;height:87px">${wrap(ic.svg("m" + i), 87)}</div>
+        <div class="sm" style="width:58px;height:58px">${wrap(ic.svg("s" + i), 58)}</div>
+        <div class="home"><div class="sm" style="width:60px;height:60px">${wrap(ic.svg("h" + i), 60)}</div><span>Lumen</span></div>
+      </div>
+      <div class="desc">${ic.desc}</div>
+    </div>`).join("");
+  document.getElementById("grid").insertAdjacentHTML("afterend", `<h1 style="margin-top:56px">Subscriptions</h1>
+    <p class="sub">In-app purchase images, 1024×1024, built on the chosen icon (2 · Night glow).</p>
+    <div class="grid" style="max-width:1000px">${Object.entries(SUBS).map(([k, w]) => `<div class="opt"><div class="big" style="border-radius:24px">${wrap(sub("g" + k, w), 260)}</div></div>`).join("")}</div>`);
+  document.fonts.load("700 100px Outfit").then(() => fitText(document));
+}
+</script>
+</body>
+</html>

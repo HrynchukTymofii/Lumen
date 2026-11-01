@@ -1,0 +1,53 @@
+/* Lumen App Store creatives.
+   creatives.html?v=<style>&s=<1-5>&d=phone|ipad   one screenshot at export size
+   creatives.html?v=header-cream|header-night      the App Store header
+   No params: a gallery of everything, scaled down.
+   Screens are drawn in iOS points (iPhone 402×874, iPad 768×1024) and scaled into the device frames,
+   with the app's own colors, fonts and landscape scenes (src/art.js = website/lib/kit/art.ts). */
+:root{
+  --ink:#26301F; --bg:#FAF8F1; --muted:#717866; --dim:#AAAE9E; --card:#fff; --line:#E9E6D9; --line2:#DCD8C8;
+  --olive:#C5D19E; --oliveDeep:#5F7334; --butter:#F2E4B4; --sage:#D8E3C4; --sky:#D6E3E0; --rose:#EFDACF; --lav:#E3E0EA; --gold:#E3C771;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#fff}
+body{font-family:Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink)}
+body.export{overflow:hidden}
+.abs{position:absolute}
+.stage{position:relative;overflow:hidden;transform-origin:0 0}
+.display{font-family:Outfit,sans-serif;font-weight:600}
+.serif{font-family:Literata,Georgia,serif}
+.scene-fill{position:absolute;inset:0;overflow:hidden}
+.scene-fill svg{width:100%;height:100%;display:block}
+
+/* ---------- device frames ---------- */
+.device{position:absolute;background:#1b1f17;box-shadow:0 40px 90px rgba(20,26,16,.32),0 0 0 2px #3a4033 inset}
+.device .screen{position:absolute;overflow:hidden;background:var(--bg)}
+.device .island{position:absolute;left:50%;transform:translateX(-50%);background:#000;border-radius:999px;z-index:50}
+.app{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;background:var(--bg)}
+
+/* status bar */
+.sb{position:absolute;left:0;right:0;top:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 34px 0 46px;font-family:-apple-system,"SF Pro Text",Manrope,sans-serif;font-weight:700;font-size:17px;z-index:40}
+.sb .r{display:flex;gap:6px;align-items:center}
+.sb.ipad{height:28px;padding:0 22px;font-size:14px;font-weight:600}
+
+/* ---------- shared app atoms ---------- */
+.tabbar{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:26px 26px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.08);display:flex;justify-content:space-around;padding-top:10px;z-index:30}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600;font-size:11px;color:var(--muted);width:70px}
+.tab.on{color:var(--oliveDeep)}
+.glass{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.22);backdrop-filter:blur(8px);display:grid;place-items:center}
+.round{width:44px;height:44px;border-radius:50%;background:var(--card);display:grid;place-items:center}
+.chip{display:inline-block;background:rgba(255,255,255,.2);border-radius:8px;padding:4px 10px;font-weight:600;font-size:13px;color:#fff}
+.card{background:var(--card);border-radius:28px}
+.kicker{font-weight:800;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--oliveDeep)}
+.tile{position:relative;overflow:hidden;border-radius:24px;aspect-ratio:1.34}
+.tile .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.6))}
+.tile .lbl{position:absolute;left:0;right:0;bottom:14px;text-align:center;color:#fff;font-weight:800;font-size:17px}
+.verse sup{font-family:Manrope;font-size:11px;color:var(--dim);vertical-align:super;margin-right:3px}
+.hl{border-radius:4px;padding:2px 0;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+
+/* ---------- gallery ---------- */
+.gallery{padding:40px;background:#EFECE2}
+.gallery h2{font-family:Outfit;font-weight:600;font-size:28px;margin:34px 0 6px}
+.gallery p{color:var(--muted);margin-bottom:16px}
+.gallery .row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.gallery .cell{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.08)}

@@ -18,6 +18,10 @@ export function setApiToken(value: string | null) {
   token = value;
 }
 
+export function hasApiToken() {
+  return Boolean(token);
+}
+
 export function setAuthHandlers(handlers: { onRefreshed: (token: string) => void; onUnauthorized: () => void }) {
   onRefreshed = handlers.onRefreshed;
   onUnauthorized = handlers.onUnauthorized;

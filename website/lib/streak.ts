@@ -83,12 +83,20 @@ export async function applyGrace(user: StreakUser) {
   return getStreak(user);
 }
 
-/** Journey: the last 8 weeks (oldest first) and totals (SPEC §6.7). */
+/** Journey: the last 8 weeks (oldest first), totals (SPEC §6.7) and every day prayed in the last ~6 months. */
 export async function getJourney(user: StreakUser) {
-  const thisWeek = weekStart(localDate(user.timezone));
+  const today = localDate(user.timezone);
+  const thisWeek = weekStart(today);
   const starts = Array.from({ length: 8 }, (_, i) => addDays(thisWeek, (i - 7) * 7));
+  // The app's activity calendar shows this month and the five before it
+  const calendarFrom = `${addMonths(today.slice(0, 7), -5)}-01`;
+  const from = calendarFrom < starts[0] ? calendarFrom : starts[0];
   const [recent, daysPrayed, prayers] = await Promise.all([
-    prisma.prayerCompletion.findMany({ where: { userId: user.id, date: { gte: starts[0] } }, select: { date: true } }),
+    prisma.prayerCompletion.findMany({
+      where: { userId: user.id, date: { gte: from } },
+      select: { date: true, isGrace: true },
+      orderBy: { date: "asc" },
+    }),
     prisma.prayerCompletion.count({ where: { userId: user.id, isGrace: false } }),
     prisma.prayerCompletion.count({ where: { userId: user.id, prayerId: { not: null } } }),
   ]);
@@ -99,5 +107,27 @@ export async function getJourney(user: StreakUser) {
       goal: user.weeklyGoal,
     })),
     totals: { daysPrayed, prayers },
+    days: recent.filter((r) => r.date >= calendarFrom).map((r) => ({ date: r.date, grace: r.isGrace })),
+    today,
   };
+}
+
+// "YYYY-MM" plus n months
+function addMonths(month: string, n: number) {
+  const [y, m] = month.split("-").map(Number);
+  const total = y * 12 + (m - 1) + n;
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
+}
+
+/** Library track ids prayed most in the last 30 days, most first (Trending on the app's Home). */
+export async function getTrending(limit = 10) {
+  const since = new Date(Date.now() - 30 * DAY_MS);
+  const rows = await prisma.prayerCompletion.groupBy({
+    by: ["prayerId"],
+    where: { prayerId: { not: null }, createdAt: { gte: since } },
+    _count: { prayerId: true },
+    orderBy: { _count: { prayerId: "desc" } },
+    take: limit,
+  });
+  return rows.map((r) => r.prayerId!).filter(Boolean);
 }

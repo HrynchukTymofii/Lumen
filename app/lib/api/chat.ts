@@ -32,6 +32,7 @@ export async function deleteConversation(id: string) {
 // What the reply stream sends (website/lib/ai/companion.ts ChatEvent)
 export type ChatEvent =
   | { event: "meta"; data: { category: MessageCategory; quota: Omit<Quota, "premium"> } }
+  | { event: "status"; data: { step: "searching" | "reading" | "writing"; refs?: string[] } }
   | { event: "delta"; data: { text: string } }
   | { event: "done"; data: { messageId: string; citations: Passage[]; refused?: boolean } }
   | { event: "blocked"; data: { category: MessageCategory; messageId: string; text: string; resources?: CrisisResource[] } }

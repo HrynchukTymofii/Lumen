@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumen Store Creatives</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Manrope:wght@500;600;700;800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400;1,7..72,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<div id="root"></div>
+<script src="art.js"></script>
+<script src="kit.js"></script>
+<script>
+/* =============================== render =============================== */
+const SIZE = { phone: [603, 1311, 1206, 2622], ipad: [1032, 1376, 2064, 2752], header: [2000, 857, 3840, 1646], listing: [2000, 1333, 3840, 2560] };
+
+function slide(style, s, device) {
+  const [W, H] = SIZE[device];
+  return STYLES[style](SLIDES[s - 1], s - 1, W, H, device === "ipad");
+}
+function stage(html, size, zoom) {
+  const [W, H] = SIZE[size];
+  return `<div class="stage" style="width:${W}px;height:${H}px;zoom:${zoom}">${html}</div>`;
+}
+
+const q = new URLSearchParams(location.search);
+const v = q.get("v"), root = document.getElementById("root");
+if (v) {
+  document.body.classList.add("export");
+  if (v.startsWith("listing-")) root.innerHTML = stage(LISTINGS[+v.slice(8) - 1].draw(2000, 1333), "listing", SIZE.listing[2] / SIZE.listing[0]);
+  else if (v.startsWith("header")) root.innerHTML = stage(header(v === "header-night"), "header", SIZE.header[2] / SIZE.header[0]);
+  else { const d = q.get("d") || "phone"; root.innerHTML = stage(slide(v, +q.get("s") || 1, d), d, SIZE[d][2] / SIZE[d][0]); }
+} else {
+  const names = { cream: "A · Cream", landscape: "B · Golden hour", night: "C · Night glow" };
+  root.innerHTML = `<div class="gallery">
+    <h2>Listing</h2><p>3840×2560 · the search-results creative</p>
+    <div class="row">${LISTINGS.map((l, i) => `<div class="cell">${stage(l.draw(2000, 1333), "listing", .32)}<p style="padding:8px 12px;margin:0">${i + 1}. ${l.name}</p></div>`).join("")}</div>
+    <h2>Header</h2><p>3840×1646 · a tilted grid of the app's scenes with the name in the middle</p>
+    <div class="row">${["header-cream", "header-night"].map(h => `<div class="cell">${stage(header(h === "header-night"), "header", .42)}</div>`).join("")}</div>
+    ${Object.keys(STYLES).map(st => `
+      <h2>${names[st]}</h2><p>iPhone 6.3" · 1206×2622</p>
+      <div class="row">${[1, 2, 3, 4, 5].map(n => `<div class="cell">${stage(slide(st, n, "phone"), "phone", .42)}</div>`).join("")}</div>
+      <p style="margin-top:18px">iPad 13" · 2064×2752</p>
+      <div class="row">${[1, 2, 3, 4, 5].map(n => `<div class="cell">${stage(slide(st, n, "ipad"), "ipad", .3)}</div>`).join("")}</div>`).join("")}
+  </div>`;
+}
+document.fonts.ready.then(() => { document.title = "ready"; });
+</script>
+</body>
+</html>
