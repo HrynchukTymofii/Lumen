@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import type { PurchasesPackage } from "react-native-purchases";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
@@ -9,6 +9,7 @@ import { CheckIcon, CloseIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { errorMessage } from "@/lib/api/client";
+import { SITE_URL } from "@/lib/config";
 import { reportError } from "@/lib/errorReporting";
 import { buy, getPackages, purchasesEnabled, restore } from "@/lib/purchases";
 
@@ -26,10 +27,30 @@ const PREMIUM_FEATURES = [
 
 const close = () => (router.canGoBack() ? router.back() : router.replace("/today"));
 
+const DAYS_PER_UNIT: Record<string, number> = { DAY: 1, WEEK: 7, MONTH: 30, YEAR: 365 };
+
+// Free trial length in days, 0 = none. iOS reports it as the intro price, Android as the free phase of the
+// default offer; a "1 week" trial in App Store Connect is 7 days.
+function trialDaysOf(pkg: PurchasesPackage | undefined) {
+  if (!pkg) return 0;
+  const free = pkg.product.defaultOption?.freePhase?.billingPeriod;
+  if (free) return free.value * (DAYS_PER_UNIT[free.unit] ?? 0);
+  const intro = pkg.product.introPrice;
+  if (intro?.price === 0) return intro.periodNumberOfUnits * (DAYS_PER_UNIT[intro.periodUnit] ?? 0);
+  return 0;
+}
+
+const PLAN_NAME: Record<string, string> = { ANNUAL: "Yearly", MONTHLY: "Monthly", WEEKLY: "Weekly" };
+const PERIOD: Record<string, string> = { ANNUAL: "year", MONTHLY: "month", WEEKLY: "week" };
+
+const CANCEL_WHERE = Platform.OS === "android" ? "in Google Play → Subscriptions" : "in Settings → your name → Subscriptions";
+
 export default function Paywall() {
   const { refresh, premium } = useAuth();
   const insets = useSafeAreaInsets();
   const c = useColors();
+  // An iOS modal is a sheet that already starts below the status bar; on Android it is full screen
+  const top = Platform.OS === "ios" ? 0 : insets.top;
   const [packages, setPackages] = useState<PurchasesPackage[] | null>(purchasesEnabled ? null : []);
   const [selected, setSelected] = useState(0);
   const [busy, setBusy] = useState<"buy" | "restore" | null>(null);
@@ -50,7 +71,8 @@ export default function Paywall() {
   }, [premium.active]);
 
   const pkg = packages?.[selected];
-  const trialDays = pkg?.product.introPrice?.price === 0 ? pkg.product.introPrice.periodNumberOfUnits : 0;
+  const trialDays = trialDaysOf(pkg);
+  const period = pkg ? PERIOD[pkg.packageType] : "";
 
   const purchase = async () => {
     if (!pkg) return;
@@ -82,7 +104,7 @@ export default function Paywall() {
 
   return (
     <View className="flex-1 bg-bg">
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: 20 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: top + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: 20 }}>
         <View className="items-center">
           <Light size={90} />
           <Text className="mt-4 text-center font-display text-[30px] leading-9 text-ink">Pray with more of Lumen</Text>
@@ -123,9 +145,9 @@ export default function Paywall() {
                   >
                     <View className={`h-5 w-5 rounded-full border-2 ${on ? "border-ink bg-ink" : "border-line2"}`} />
                     <View className="flex-1">
-                      <Text className="font-sans-bold text-base text-ink">{yearly ? "Yearly" : "Monthly"}</Text>
+                      <Text className="font-sans-bold text-base text-ink">{PLAN_NAME[p.packageType]}</Text>
                       <Text className="font-sans text-sm text-muted">
-                        {yearly && p.product.pricePerMonthString ? `${p.product.pricePerMonthString} a month` : "Cancel anytime"}
+                        {yearly && p.product.pricePerMonthString ? `${p.product.pricePerMonthString} a month` : `Billed ${PERIOD[p.packageType]}ly`}
                       </Text>
                     </View>
                     <Text className="font-sans-bold text-base text-ink">{p.product.priceString}</Text>
@@ -135,14 +157,14 @@ export default function Paywall() {
             </View>
 
             <View className="mt-6">
-              <InkButton label={trialDays ? `Start ${trialDays}-day free trial` : "Continue"} onPress={purchase} loading={busy === "buy"} disabled={busy !== null} />
+              <InkButton label={trialDays ? `Start your ${trialDays}-day free trial` : "Start subscription"} onPress={purchase} loading={busy === "buy"} disabled={busy !== null} />
             </View>
             {pkg && (
               <Text className="mt-3 text-center font-sans text-xs leading-5 text-muted">
                 {trialDays
-                  ? `Free for ${trialDays} days, then ${pkg.product.priceString} per ${pkg.packageType === "ANNUAL" ? "year" : "month"}. `
-                  : `${pkg.product.priceString} per ${pkg.packageType === "ANNUAL" ? "year" : "month"}, renews automatically. `}
-                Cancel anytime in your phone’s settings.
+                  ? `Free for ${trialDays} days, then ${pkg.product.priceString} per ${period}. `
+                  : `${pkg.product.priceString} per ${period}, renews automatically. `}
+                Cancel anytime {CANCEL_WHERE}.
               </Text>
             )}
           </>
@@ -151,15 +173,22 @@ export default function Paywall() {
         {error && <Text className="mt-4 text-center font-sans text-sm text-danger">{error}</Text>}
 
         <View className="mt-6 flex-row justify-center gap-6">
-          <Pressable onPress={close} accessibilityRole="button" hitSlop={8}>
-            <Text className="font-sans-bold text-sm text-muted">Not now</Text>
-          </Pressable>
           {purchasesEnabled && (
             <Pressable onPress={restorePurchases} disabled={busy !== null} accessibilityRole="button" hitSlop={8}>
               <Text className="font-sans-bold text-sm text-muted">{busy === "restore" ? "Restoring…" : "Restore purchases"}</Text>
             </Pressable>
           )}
         </View>
+
+        <Text className="mt-5 text-center font-sans text-xs text-muted">
+          <Text className="underline" onPress={() => Linking.openURL(`${SITE_URL}/terms`)}>
+            Terms of Service
+          </Text>
+          {"  ·  "}
+          <Text className="underline" onPress={() => Linking.openURL(`${SITE_URL}/privacy`)}>
+            Privacy Policy
+          </Text>
+        </Text>
       </ScrollView>
 
       <Pressable
@@ -168,7 +197,7 @@ export default function Paywall() {
         accessibilityLabel="Close"
         hitSlop={10}
         className="absolute h-10 w-10 items-center justify-center rounded-full bg-card"
-        style={{ top: insets.top + 10, right: 16 }}
+        style={{ top: top + 14, right: 14 }}
       >
         <CloseIcon color={c.ink} />
       </Pressable>
