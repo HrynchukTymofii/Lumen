@@ -43,6 +43,14 @@ const config: ExpoConfig = {
     ["expo-audio", { enableBackgroundPlayback: true }],
     // Daily reminders are scheduled on the phone (lib/notifications.ts)
     ["expo-notifications", { color: "#5F7334" }],
+    // Speaking a message in the companion chat (hooks/useVoiceInput.ts)
+    [
+      "expo-speech-recognition",
+      {
+        microphonePermission: "Lumen uses the microphone so you can speak your messages instead of typing.",
+        speechRecognitionPermission: "Lumen turns what you say into text for your message and doesn’t keep the audio.",
+      },
+    ],
     ...(googleIosClientId
       ? [["@react-native-google-signin/google-signin", { iosUrlScheme: `com.googleusercontent.apps.${googleIosClientId}` }] as [string, object]]
       : []),
