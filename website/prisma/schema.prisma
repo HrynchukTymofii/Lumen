@@ -92,6 +92,11 @@ model User {
   conversations Conversation[]
   aiUsage       AiUsage[]
   completions   PrayerCompletion[]
+  favorites     FavoriteTrack[]
+  plays         TrackPlay[]
+  journal       JournalEntry[]
+  bibleMarks    BibleMark[]
+  bookmarks     BibleBookmark[]
 }
 
 enum LoginTokenPurpose {
@@ -189,6 +194,7 @@ model AudioTrack {
   category      String // morning, evening, peace, psalms, grief, family, sleep
   tags          String[]
   scene         String          @default("dawn") // key of a scene built into the app; unknown → "dawn"
+  imageUrl      String? // cover picture on R2; shown instead of the scene when set
   scriptureRefs String[] // "Phil.4.6-7"
   variants      Json            @default("[]") // [{ minutes: 1|3|5, url, durationSec, lines: [{ t, text }] }]
   isPremium     Boolean         @default(true)
@@ -400,4 +406,76 @@ model AiUsage {
 
   @@index([createdAt])
   @@index([userId])
+}
+
+// ───────── The user's own library, synced from the app (POST /api/me/sync) ─────────
+// Track ids point at AudioTrack.id but aren't foreign keys: a track removed from the catalog just drops out of
+// the app's lists.
+
+model FavoriteTrack {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId   String
+  createdAt DateTime @default(now())
+
+  @@id([userId, trackId])
+}
+
+// "Recently prayed": one row per track, the last time it was played
+model TrackPlay {
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId  String
+  playedAt DateTime
+
+  @@id([userId, trackId])
+  @@index([userId, playedAt])
+}
+
+enum JournalKind {
+  intention
+  reflection
+}
+
+// Intentions and reflections. The id is made by the app, so an entry written offline keeps it.
+model JournalEntry {
+  id        String      @id
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      JournalKind
+  title     String
+  body      String
+  createdAt DateTime
+  updatedAt DateTime
+
+  @@index([userId])
+}
+
+// A highlight and/or note on one verse; kept with the verse text it was made on, for the notes list
+model BibleMark {
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  osis        String
+  chapter     Int
+  verse       Int
+  book        String // display name
+  text        String
+  translation String
+  highlight   Boolean  @default(false)
+  color       String? // yellow | green | blue | pink
+  note        String   @default("")
+  updatedAt   DateTime
+
+  @@id([userId, osis, chapter, verse])
+}
+
+model BibleBookmark {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  osis      String
+  chapter   Int
+  book      String
+  createdAt DateTime
+
+  @@id([userId, osis, chapter])
 }

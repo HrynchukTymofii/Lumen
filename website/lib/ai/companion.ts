@@ -21,6 +21,8 @@ export type CitationOut = Passage;
 
 export type ChatEvent =
   | { event: "meta"; data: { category: Category; quota: Quota } }
+  // Progress for the "what I'm doing" line while there's no text yet: searching → reading (with refs) → writing
+  | { event: "status"; data: { step: "searching" | "reading" | "writing"; refs?: string[] } }
   | { event: "delta"; data: { text: string } }
   | { event: "done"; data: { messageId: string; citations: CitationOut[]; refused?: boolean } }
   | {
@@ -114,6 +116,7 @@ export async function* reply(input: {
     return;
   }
 
+  yield { event: "status", data: { step: "searching" } };
   const history = await historyFor(conversationId);
   const lastUser = [...history].reverse().find((m) => m.role === "user");
   const { refs, embedTokens } = await retrieve({
@@ -123,11 +126,13 @@ export async function* reply(input: {
   });
   if (embedTokens) await recordUsage({ userId: user.id, kind: "embed", model: EMBED_MODEL, usage: { input_tokens: embedTokens, output_tokens: 0 } });
   const passages = await getPassages(refs, user.translation);
+  if (passages.length) yield { event: "status", data: { step: "reading", refs: passages.slice(0, 3).map((p) => p.ref) } };
 
   const started = Date.now();
   const stripper = new MarkerStripper();
   let shown = "";
   let final: Anthropic.Beta.BetaMessage;
+  yield { event: "status", data: { step: "writing" } };
   try {
     const stream = anthropic().beta.messages.stream(
       {

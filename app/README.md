@@ -44,14 +44,28 @@ Add packages with `npx expo install <package>` so versions match the Expo SDK.
 
 ## Main app
 
-- Tabs (`app/(tabs)`): **Today · Prayers · Companion · Journey**. Settings opens from Journey (`app/settings.tsx`).
-  `/` redirects to `/today`. Stacked over the tabs: `prayer/[slug]`, `player/[slug]`, `companion/[id]`, `bible`,
-  `bible/[book]/[chapter]`, `paywall` (modal).
+- Tabs (`app/(tabs)`): **Today · Bible · Discover · Companion · Me** (layouts follow the Hallow screens in `/assets`).
+  `/` redirects to `/today`. Settings opens from Me (`app/settings.tsx`, sub-pages in
+  `app/settings/`). Stacked over the tabs: `prayer/[slug]`, `player/[slug]`, `companion/[id]`,
+  `bible/[book]/[chapter]`, `bible/notes`, `search`, `notifications`, `list/[key]`, `journal/[kind]`, `streak`,
+  `paywall` (modal).
+- Bible: one continuous reader (`components/bible/Reader.tsx`) that loads the next / previous chapter as you scroll,
+  with a pinned "Book N ⌄" header (book picker) and a chapter bookmark. Highlights (4 colors), notes and bookmarks
+  live on the device (`lib/bibleMarks.ts`).
+- The person's library is synced to their account: favorites and recently played (`lib/userLibrary.ts`), intentions
+  and reflections (`lib/journal.ts`), Bible highlights / notes / bookmarks (`lib/bibleMarks.ts`). The phone works
+  from a local copy (AsyncStorage, `lib/localStore.ts`); changes queue in an outbox (`lib/syncQueue.ts`) sent to
+  `POST /api/me/sync`, and `lib/sync.ts` pulls the account's copy on sign-in and when the app comes to the
+  foreground. Sign-out clears it from the phone. Per phone only: downloads (audio files, `expo-file-system`) and the
+  theme choice (`lib/themePref.ts`).
+- Today's Trending shelf: `GET /api/library/trending` (most-prayed tracks, last 30 days); hidden under 3 tracks.
+  The Streak screen's calendar uses `days` from `GET /api/journey`.
 - Streak: `GET /api/today` returns the week; "Mark as prayed" and finishing a prayer in the player call
   `POST /api/today/prayed`. Missed days never reset anything; one grace day a week (`POST /api/today/grace`).
 - Player: `expo-audio`, keeps playing with the screen locked.
 - Reminders: scheduled on the phone with `expo-notifications` (`lib/notifications.ts`), not pushed from the server.
-  The next 7 days are scheduled at the time in Settings and today is skipped once prayed; Today re-schedules on load.
+  The next 7 days are scheduled at the time in Settings (or behind the bell on Today) and today is skipped once prayed; Today
+  re-schedules on load.
 - Purchases: RevenueCat (`lib/purchases.ts`). Set `EXPO_PUBLIC_REVENUECAT_IOS_KEY` / `_ANDROID_KEY`. The RevenueCat
   user id is our user id; after a purchase the app calls `POST /api/me/sync-purchases`, and the website's
   `/api/webhooks/revenuecat` keeps it in step. Premium always comes from `GET /api/me`.

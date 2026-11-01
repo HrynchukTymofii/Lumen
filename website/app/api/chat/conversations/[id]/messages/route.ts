@@ -15,7 +15,7 @@ const body = z.object({
 });
 
 // POST /api/chat/conversations/:id/messages → SSE (SPEC §6.6):
-//   meta { category, quota } → delta { text }… → done { messageId, citations }
+//   meta { category, quota } → status { step, refs? }… → delta { text }… → done { messageId, citations }
 //   or blocked { category, text, resources? } for off-topic, jailbreak, abuse and crisis messages
 // Errors before the stream: 403 ai_disabled, 402 quota, 429 too fast.
 export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/chat/conversations/[id]/messages">) => {

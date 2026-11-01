@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconButton } from "@/components/ui/Button";
 import { BackIcon } from "@/components/ui/icons";
@@ -52,7 +52,7 @@ export default function EmailCode() {
 
   return (
     <SafeAreaView className="flex-1 bg-bg">
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 px-6">
+      <KeyboardAvoidingView behavior="padding" className="flex-1 px-6">
         <View className="pt-2">
           <IconButton onPress={() => router.back()} label="Back">
             <BackIcon size={18} color={c.ink} />

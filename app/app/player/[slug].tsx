@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
-import { Scene } from "@/components/Scene";
+import { TrackArt } from "@/components/TrackArt";
 import { IconButton } from "@/components/ui/Button";
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, SkipIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { cachedLibrary } from "@/lib/api/library";
 import { markPrayed } from "@/lib/api/today";
 import { reportError } from "@/lib/errorReporting";
+import { localAudio, recordPlayed } from "@/lib/userLibrary";
 
 // Guided player (SPEC §10.2): full-bleed scene, the Light speaking, the current line on a panel, progress,
 // back / play-pause / forward 15 s. Keeps playing with the screen locked. Finishing counts as "prayed" for the week.
@@ -30,7 +31,9 @@ export default function PlayerScreen() {
   const track = cachedLibrary()?.tracks.find((t) => t.slug === slug);
   const variant = track?.variants.find((v) => v.minutes === Number(minutes)) ?? track?.variants.find((v) => v.url);
 
-  const player = useAudioPlayer(variant?.url ?? null, { updateInterval: 250 });
+  // A downloaded copy plays without a connection
+  const source = variant?.url ? (localAudio(track!.id, variant.minutes) ?? variant.url) : null;
+  const player = useAudioPlayer(source, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
   const [finished, setFinished] = useState(false);
   const counted = useRef(false);
@@ -40,6 +43,7 @@ export default function PlayerScreen() {
     setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: "doNotMix" }).catch(reportError);
     if (track) player.setActiveForLockScreen(true, { title: track.title, artist: "Lumen" });
     player.play();
+    if (track) recordPlayed(track.id);
     return () => player.setActiveForLockScreen(false);
   }, [player, track]);
 
@@ -50,7 +54,7 @@ export default function PlayerScreen() {
     markPrayed(track?.id).catch(reportError);
   }, [status.didJustFinish, track?.id]);
 
-  const close = () => (router.canGoBack() ? router.back() : router.replace("/prayers"));
+  const close = () => (router.canGoBack() ? router.back() : router.replace("/discover"));
 
   if (!track || !variant?.url) {
     // Opened directly without the catalog in memory, or a locked track: back to the prayer screen
@@ -74,7 +78,7 @@ export default function PlayerScreen() {
   return (
     <View className="flex-1 bg-ink">
       <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
-        <Scene name={track.scene} />
+        <TrackArt imageUrl={track.imageUrl} scene={track.scene} />
       </View>
 
       <View className="flex-row items-center justify-between px-4" style={{ paddingTop: insets.top + 8 }}>

@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { type ComponentRef, useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
+import { KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light, type LightState } from "@/components/Light";
 import { IconButton } from "@/components/ui/Button";
@@ -14,11 +15,13 @@ import { reportError } from "@/lib/errorReporting";
 
 // Chat (SPEC §10.2 Companion): the reply streams in as it's written; verses it cites show under it as cards.
 // Crisis replies carry call / text buttons. Errors before the stream (daily limit, too fast) show above the input.
+// Until the first words arrive, the reply shows what the companion is doing (reading, searching, writing).
 
 const MAX_LENGTH = 1000;
 
 export default function ChatScreen() {
-  const { id, prompt } = useLocalSearchParams<{ id: string; prompt?: string }>();
+  // prompt: put in the input box; send=1 also sends it (a question asked on Home or about a verse)
+  const { id, prompt, send: autoSend } = useLocalSearchParams<{ id: string; prompt?: string; send?: string }>();
   const { token } = useAuth();
   const insets = useSafeAreaInsets();
   const c = useColors();
@@ -31,6 +34,7 @@ export default function ChatScreen() {
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [quotaHit, setQuotaHit] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
     getConversation(id).then(
@@ -59,6 +63,7 @@ export default function ChatScreen() {
     setInput("");
     setNotice(null);
     setSending(true);
+    setStatus("Reading your message");
     if (!title) setTitle(text.slice(0, 60));
 
     const now = new Date().toISOString();
@@ -70,22 +75,31 @@ export default function ChatScreen() {
 
     const controller = new AbortController();
     abort.current = controller;
+    let got = false; // any reply text or a finished/blocked reply
     try {
       await sendMessage(
         id,
         text,
         token,
         (e) => {
-          if (e.event === "delta") updateReply((m) => ({ ...m, text: m.text + e.data.text }));
-          else if (e.event === "done") updateReply((m) => ({ ...m, id: e.data.messageId, citations: e.data.citations }));
-          else if (e.event === "blocked")
+          if (e.event === "meta" && e.data.category === "on_topic") setStatus("Thinking about what you shared");
+          else if (e.event === "status") setStatus(statusLine(e.data));
+          else if (e.event === "delta") {
+            got = true;
+            updateReply((m) => ({ ...m, text: m.text + e.data.text }));
+          } else if (e.event === "done") updateReply((m) => ({ ...m, id: e.data.messageId, citations: e.data.citations }));
+          else if (e.event === "blocked") {
+            got = true;
             updateReply((m) => ({ ...m, id: e.data.messageId, text: e.data.text, category: e.data.category, resources: e.data.resources }));
-          else if (e.event === "error") {
+          } else if (e.event === "error") {
+            got = true;
             updateReply((m) => ({ ...m, text: m.text || e.data.message }));
           }
         },
         controller.signal,
       );
+      // The connection closed without a word (e.g. the server timed out): same as an error before the stream
+      if (!got && !controller.signal.aborted) throw new ChatError("The reply didn’t come through. Please try again.", 0);
     } catch (err) {
       if (controller.signal.aborted) return;
       // Nothing was written: take back both bubbles and give the text back to edit or resend
@@ -102,14 +116,24 @@ export default function ChatScreen() {
       );
     } finally {
       setSending(false);
+      setStatus(null);
     }
   };
+
+  // Sends the handed-over question once the (empty) conversation has loaded
+  const autoSent = useRef(false);
+  useEffect(() => {
+    if (autoSend !== "1" || autoSent.current || !messages || messages.length || !input.trim()) return;
+    autoSent.current = true;
+    send();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, autoSend]);
 
   const last = messages?.[messages.length - 1];
   const lightState: LightState = sending ? (last?.text ? "speaking" : "thinking") : input ? "listening" : "idle";
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-bg" behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView className="flex-1 bg-bg" behavior="padding">
       <View className="flex-row items-center gap-3 border-b border-line px-4 pb-3" style={{ paddingTop: insets.top + 8 }}>
         <IconButton label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/companion"))}>
           <BackIcon color={c.ink} />
@@ -136,7 +160,7 @@ export default function ChatScreen() {
             </Text>
           </View>
         )}
-        {messages?.map((m) => (m.role === "user" ? <UserBubble key={m.id} text={m.text} /> : <Reply key={m.id} message={m} />))}
+        {messages?.map((m) => (m.role === "user" ? <UserBubble key={m.id} text={m.text} /> : <Reply key={m.id} message={m} status={m === last ? status : null} />))}
       </ScrollView>
 
       {notice && <Text className="px-5 pb-2 font-sans text-sm text-danger">{notice}</Text>}
@@ -155,7 +179,7 @@ export default function ChatScreen() {
           multiline
           maxLength={MAX_LENGTH}
           className="max-h-32 min-h-11 flex-1 rounded-3xl bg-bg px-4 py-2.5 font-sans text-base text-ink"
-          autoFocus={Boolean(prompt)}
+          autoFocus={Boolean(prompt) && autoSend !== "1"}
         />
         <Pressable
           onPress={send}
@@ -179,7 +203,13 @@ function UserBubble({ text }: { text: string }) {
   );
 }
 
-function Reply({ message }: { message: ChatMessage }) {
+function statusLine(s: { step: string; refs?: string[] }) {
+  if (s.step === "searching") return "Searching the Scriptures";
+  if (s.step === "reading") return s.refs?.length ? `Reading ${s.refs.join(", ")}` : "Reading the passages";
+  return "Writing a reply";
+}
+
+function Reply({ message, status }: { message: ChatMessage; status: string | null }) {
   const c = useColors();
   return (
     <View className="max-w-[92%] gap-2 self-start">
@@ -187,7 +217,15 @@ function Reply({ message }: { message: ChatMessage }) {
         {message.text ? (
           <Text className="font-sans text-base leading-6 text-ink">{message.text}</Text>
         ) : (
-          <Text className="font-sans text-base text-dim">…</Text>
+          // Each new step slides in; the key makes Reanimated treat it as a new element
+          <Animated.Text
+            key={status ?? "wait"}
+            entering={FadeInDown.duration(260)}
+            exiting={FadeOut.duration(120)}
+            className="font-sans text-[15px] italic text-muted"
+          >
+            {status ? `${status}…` : "…"}
+          </Animated.Text>
         )}
       </View>
       {message.citations.map((v) => (

@@ -1,18 +1,20 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
-import { Scene } from "@/components/Scene";
+import { TrackArt } from "@/components/TrackArt";
 import { IconButton, OliveButton } from "@/components/ui/Button";
-import { BackIcon, BookIcon, LockIcon } from "@/components/ui/icons";
+import { BackIcon, BookIcon, CheckIcon, DownloadIcon, HeartIcon, LockIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { errorMessage } from "@/lib/api/client";
 import { cachedLibrary, getLibrary } from "@/lib/api/library";
 import type { Track } from "@/lib/api/types";
+import { reportError } from "@/lib/errorReporting";
+import { downloadKey, downloadsSupported, downloadTrack, removeDownload, toggleFavorite, useDownloads, useFavorites } from "@/lib/userLibrary";
 
 // Prayer detail (SPEC §10.2): scene, title, length switch (1 / 3 / 5 min), "Pray" (the guided player, when the
-// length has audio) and the text. Locked prayers show their first lines (the server sends no more) and the paywall.
+// length has audio), favorite and download (offline audio) for that length, and the text. Locked prayers show their first lines (the server sends no more) and the paywall.
 
 export default function PrayerScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -21,6 +23,9 @@ export default function PrayerScreen() {
   const [track, setTrack] = useState<Track | null | undefined>(() => cachedLibrary()?.tracks.find((t) => t.slug === slug));
   const [error, setError] = useState<string | null>(null);
   const [minutes, setMinutes] = useState<number | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const favorites = useFavorites();
+  const downloads = useDownloads();
 
   // Opened without the catalog in memory (e.g. from a link): load it
   useEffect(() => {
@@ -38,7 +43,7 @@ export default function PrayerScreen() {
     <View className="flex-1 bg-bg">
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
         <View style={{ height: 300 }}>
-          <Scene name={track?.scene ?? "dawn"} />
+          <TrackArt imageUrl={track?.imageUrl} scene={track?.scene ?? "dawn"} />
         </View>
 
         <View className="mx-4 -mt-[60px] rounded-[28px] bg-card px-6 pb-6 pt-6">
@@ -67,14 +72,46 @@ export default function PrayerScreen() {
                 </View>
               )}
 
-              {variant?.url && (
-                <View className="mt-5 items-start">
+              <View className="mt-5 flex-row items-center gap-3">
+                {variant?.url && (
                   <OliveButton
                     label="Pray"
                     onPress={() => router.push({ pathname: "/player/[slug]", params: { slug: track.slug, minutes: String(variant.minutes) } })}
                   />
-                </View>
-              )}
+                )}
+                <RoundAction
+                  label={favorites.includes(track.id) ? "Remove from favorites" : "Add to favorites"}
+                  onPress={() => toggleFavorite(track.id)}
+                >
+                  <HeartIcon size={22} color={favorites.includes(track.id) ? c.oliveDeep : c.ink} filled={favorites.includes(track.id)} />
+                </RoundAction>
+                {downloadsSupported && variant?.url && !track.locked && (
+                  <RoundAction
+                    label={downloads[downloadKey(track.id, variant.minutes)] ? "Remove download" : `Download ${variant.minutes} min for offline`}
+                    onPress={async () => {
+                      if (downloads[downloadKey(track.id, variant.minutes)]) return removeDownload(track.id, variant.minutes);
+                      setDownloading(true);
+                      try {
+                        await downloadTrack(track, variant);
+                      } catch (err) {
+                        reportError(err);
+                        setError(errorMessage(err));
+                      } finally {
+                        setDownloading(false);
+                      }
+                    }}
+                  >
+                    {downloading ? (
+                      <ActivityIndicator color={c.ink} />
+                    ) : downloads[downloadKey(track.id, variant.minutes)] ? (
+                      <CheckIcon size={20} color={c.oliveDeep} />
+                    ) : (
+                      <DownloadIcon size={22} color={c.ink} />
+                    )}
+                  </RoundAction>
+                )}
+              </View>
+              {error && track && <Text className="mt-3 font-sans text-sm text-danger">{error}</Text>}
 
               {variant ? (
                 <View className="mt-5 gap-4">
@@ -125,10 +162,24 @@ export default function PrayerScreen() {
       </ScrollView>
 
       <View style={{ position: "absolute", top: insets.top + 8, left: 16 }}>
-        <IconButton label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/prayers"))}>
+        <IconButton label="Back" onPress={() => (router.canGoBack() ? router.back() : router.replace("/discover"))}>
           <BackIcon color={c.ink} />
         </IconButton>
       </View>
     </View>
+  );
+}
+
+function RoundAction({ label, onPress, children }: { label: string; onPress: () => void; children: React.ReactNode }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={4}
+      className="h-[52px] w-[52px] items-center justify-center rounded-full border-[1.5px] border-line2 active:opacity-70"
+    >
+      {children}
+    </Pressable>
   );
 }

@@ -1,5 +1,6 @@
 import { isAxiosError } from "axios";
 import { getCalendars } from "expo-localization";
+import { AppState } from "react-native";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { identifyUser, resetUser } from "@/lib/analytics";
 import { setApiToken, setAuthHandlers } from "@/lib/api/client";
@@ -10,6 +11,7 @@ import { reportError } from "@/lib/errorReporting";
 import { cancelReminders } from "@/lib/notifications";
 import { clearPendingOnboarding, getPendingOnboarding } from "@/lib/onboarding";
 import { identifyPurchases, resetPurchases } from "@/lib/purchases";
+import { clearLocalLibrary, flushLibrary, syncLibrary } from "@/lib/sync";
 import { deleteSecure, getSecure, setSecure } from "@/lib/storage";
 
 // Adapted from PDR_pl context/AuthContext.tsx: the token and the last known account live in SecureStore,
@@ -64,7 +66,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = useCallback(async () => {
+    // Changes still waiting to go up are sent while the token works, then this library leaves the phone
+    await flushLibrary();
     await saveToken(null);
+    clearLocalLibrary().catch(reportError);
     await saveAccount(null);
     await clearPendingOnboarding();
     resetUser();
@@ -132,8 +137,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!userId) return;
     identifyPurchases(userId).catch(reportError);
+    syncLibrary(userId);
     const timezone = getCalendars()[0]?.timeZone;
     if (timezone) updateMe({ timezone }).catch(() => {});
+  }, [userId]);
+
+  // Coming back to the app picks up library changes made on another phone or the web
+  useEffect(() => {
+    if (!userId) return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") syncLibrary(userId);
+    });
+    return () => sub.remove();
   }, [userId]);
 
   // The API client reports refreshed and rejected tokens here

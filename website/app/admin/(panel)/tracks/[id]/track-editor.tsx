@@ -136,6 +136,22 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
     );
   }
 
+  async function uploadImage(file: File) {
+    await run(
+      "image",
+      async () => {
+        const presigned = await api<{ uploadUrl: string; publicUrl: string; headers: Record<string, string> }>(
+          "/api/admin/uploads",
+          { method: "POST", body: { trackId: id, kind: "image", contentType: file.type } },
+        );
+        const put = await fetch(presigned.uploadUrl, { method: "PUT", headers: presigned.headers, body: file });
+        if (!put.ok) throw new ApiError(`Upload to R2 failed (${put.status}). Check the bucket's CORS rules.`, put.status);
+        return api(`/api/admin/tracks/${id}`, { method: "PATCH", body: { imageUrl: presigned.publicUrl } });
+      },
+      "Picture uploaded.",
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -217,6 +233,33 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
                   ))}
                 </select>
               </Field>
+              <div className="sm:col-span-2">
+                <Field label="Picture" hint="Optional cover for the app (JPG, PNG or WebP, about 1200×1500). Without one the scene is shown.">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {track.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={track.imageUrl} alt="" className="h-24 w-20 rounded-xl object-cover" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={!me?.services.r2 || dirty || busy !== null}
+                      title={dirty ? "Save first" : undefined}
+                      onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0])}
+                      className="text-sm"
+                    />
+                    {track.imageUrl && (
+                      <Button
+                        variant="line"
+                        disabled={dirty || busy !== null}
+                        onClick={() => run("image", () => api(`/api/admin/tracks/${id}`, { method: "PATCH", body: { imageUrl: null } }), "Picture removed.")}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                </Field>
+              </div>
               <Field label="Tags" hint="Comma separated">
                 <input value={form.tags} onChange={(e) => set("tags", e.target.value)} className={inputClass} />
               </Field>

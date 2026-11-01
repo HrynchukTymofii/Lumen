@@ -40,6 +40,7 @@ export type Track = {
   category: string;
   tags: string[];
   scene: string;
+  imageUrl: string | null;
   scriptureRefs: string[];
   variants: Variant[];
   isPremium: boolean;

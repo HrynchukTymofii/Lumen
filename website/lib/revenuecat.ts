@@ -37,7 +37,7 @@ async function fetchSubscriber(userId: string): Promise<RcSubscriber> {
 }
 
 // Store product ids → our plan ids (SPEC §9.1). Google Play ids can carry a base plan: "pc_annual_5999:annual".
-const planFor = (productId: string) => (productId.includes("annual") ? "annual_59_99" : "monthly_9_99");
+const planFor = (productId: string) => (/annual|year/i.test(productId) ? "annual_59_99" : "monthly_9_99");
 const sourceFor = (store: string): EntitlementSource => (store === "play_store" ? "play" : "app_store");
 
 function statusFor(sub: RcSubscription | undefined, expires: Date): EntitlementStatus {

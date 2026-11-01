@@ -34,6 +34,14 @@ export function audioKey(slug: string, minutes: number, seed: string | Buffer) {
   return `audio/${slug}/${minutes}-${hash}.mp3`;
 }
 
+const IMAGE_EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
+export type ImageType = keyof typeof IMAGE_EXT;
+
+export function imageKey(slug: string, contentType: ImageType) {
+  const hash = createHash("sha256").update(slug).update(String(Date.now())).digest("hex").slice(0, 10);
+  return `images/${slug}/${hash}.${IMAGE_EXT[contentType]}`;
+}
+
 export const publicUrl = (key: string) => `${process.env.R2_PUBLIC_URL!.replace(/\/$/, "")}/${key}`;
 
 const IMMUTABLE = "public, max-age=31536000, immutable";
@@ -51,8 +59,8 @@ export async function putAudio(key: string, body: Buffer) {
   return publicUrl(key);
 }
 
-// Browser uploads straight to R2 (bucket CORS must allow PUT from the website origin).
-export async function presignAudioUpload(key: string, contentType: string) {
+// Browser uploads (audio or images) straight to R2 (bucket CORS must allow PUT from the website origin).
+export async function presignUpload(key: string, contentType: string) {
   const url = await getSignedUrl(
     r2(),
     new PutObjectCommand({
