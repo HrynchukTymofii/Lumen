@@ -3,7 +3,6 @@ import { type ComponentRef, useEffect, useRef, useState } from "react";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
 import { KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AiConsentSheet } from "@/components/AiConsentSheet";
 import { Light, type LightState } from "@/components/Light";
 import { IconButton } from "@/components/ui/Button";
 import { BackIcon, BookIcon, MicIcon, SendIcon } from "@/components/ui/icons";
@@ -11,7 +10,6 @@ import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useKeyboardShown } from "@/hooks/useKeyboardShown";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
-import { giveAiConsent, hasAiConsent } from "@/lib/aiConsent";
 import { ChatError, getConversation, sendMessage } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
 import type { ChatMessage, CrisisResource } from "@/lib/api/types";
@@ -41,8 +39,6 @@ export default function ChatScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [quotaHit, setQuotaHit] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-  // The AI data-sharing question, shown instead of sending until the person agrees (lib/aiConsent.ts)
-  const [askConsent, setAskConsent] = useState(false);
   const keyboardShown = useKeyboardShown();
 
   // A multiline input grows with long (e.g. dictated) text but doesn't shrink back when cleared from code (iOS),
@@ -100,12 +96,6 @@ export default function ChatScreen() {
   const send = async () => {
     const text = input.trim();
     if (!text || sending) return;
-    if (!(await hasAiConsent())) {
-      // Nothing leaves the phone until they agree; the message stays in the box
-      if (voice.listening) voice.stop();
-      setAskConsent(true);
-      return;
-    }
     if (voice.listening) voice.cancel();
     resetInput("");
     setNotice(null);
@@ -227,17 +217,6 @@ export default function ChatScreen() {
             <Text className="text-center font-sans-bold text-sm text-bg">Keep talking with Premium</Text>
           </Pressable>
         </View>
-      )}
-
-      {askConsent && (
-        <AiConsentSheet
-          onClose={() => setAskConsent(false)}
-          onAgree={() => {
-            giveAiConsent();
-            setAskConsent(false);
-            send();
-          }}
-        />
       )}
 
       {/* The keyboard covers the home-indicator area, so its inset only applies while the keyboard is down */}
