@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +7,7 @@ import { InkButton } from "@/components/ui/Button";
 import { CheckIcon, CloseIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
+import { track, type Placement } from "@/lib/analytics";
 import { errorMessage } from "@/lib/api/client";
 import { SITE_URL } from "@/lib/config";
 import { reportError } from "@/lib/errorReporting";
@@ -53,6 +54,13 @@ export default function Paywall() {
   const [selected, setSelected] = useState(0);
   const [busy, setBusy] = useState<"buy" | "restore" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const placement = (useLocalSearchParams<{ placement?: Placement }>().placement ?? "settings") as Placement;
+
+  useEffect(() => {
+    track("paywall_viewed", { variant: "app", placement });
+    // Once per opening
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!purchasesEnabled) return;
@@ -77,9 +85,14 @@ export default function Paywall() {
     if (!pkg) return;
     setBusy("buy");
     setError(null);
+    const product_id = pkg.product.identifier;
+    track("checkout_started", { product_id, placement });
     try {
+      // Bought: the server reports the trial or subscription (RevenueCat webhook)
       if (await buy(pkg)) await refresh();
+      else track("purchase_cancelled", { product_id, placement });
     } catch (err) {
+      track("purchase_failed", { product_id, placement });
       reportError(err);
       setError(errorMessage(err));
     } finally {
@@ -91,7 +104,9 @@ export default function Paywall() {
     setBusy("restore");
     setError(null);
     try {
-      if (await restore()) await refresh();
+      const found = await restore();
+      track("purchases_restored", { found });
+      if (found) await refresh();
       else setError("We didn’t find a subscription for this Apple or Google account.");
     } catch (err) {
       reportError(err);
@@ -137,7 +152,10 @@ export default function Paywall() {
                 return (
                   <Pressable
                     key={p.identifier}
-                    onPress={() => setSelected(i)}
+                    onPress={() => {
+                      setSelected(i);
+                      track("plan_selected", { product_id: p.product.identifier });
+                    }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: on }}
                     className={`flex-row items-center gap-3 rounded-[22px] border-2 px-5 py-4 ${on ? "border-ink bg-card" : "border-line2"}`}

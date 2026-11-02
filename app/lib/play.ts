@@ -28,7 +28,7 @@ export function openTrack(track: Track) {
 
 /** Straight into the player (the "tap play and it goes" hero). Locked → paywall; no audio yet → the prayer's page. */
 export function playTrack(track: Track) {
-  if (track.locked) return openPaywall();
+  if (track.locked) return openPaywall("library");
   const variant = track.variants.find((v) => v.minutes === 3 && v.url) ?? track.variants.find((v) => v.url);
   if (!variant) return openTrack(track);
   router.push({ pathname: "/player/[slug]", params: { slug: track.slug, minutes: String(variant.minutes) } });

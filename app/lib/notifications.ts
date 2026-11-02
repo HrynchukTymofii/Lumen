@@ -1,5 +1,6 @@
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import { track } from "./analytics";
 
 // Daily reminder (SPEC §10.3), scheduled on the phone rather than pushed from a server cron: it works offline and
 // needs no per-minute server job. The next 7 days are scheduled at the chosen time; today is skipped once the
@@ -32,7 +33,9 @@ export async function requestPermission() {
   await ensureChannel();
   if (await hasPermission()) return true;
   const p = await Notifications.requestPermissionsAsync();
-  return p.granted || p.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+  const granted = p.granted || p.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+  track("push_permission_result", { granted }); // only when the system was actually asked
+  return granted;
 }
 
 // The copy rotates by day (SPEC §10.3)

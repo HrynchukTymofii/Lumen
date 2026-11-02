@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import type { Placement } from "./analytics";
 import { hasApiToken } from "./api/client";
 
 // Lumen can be tried without an account: reading the Bible, praying, Discover, favorites. Everything personal
@@ -20,7 +21,7 @@ export function withAccount(reason: AccountReason, action: () => void) {
 }
 
 /** The paywall, or sign-in first: a subscription belongs to the account, so it works on every device */
-export function openPaywall() {
-  if (hasAccount()) router.push("/paywall");
+export function openPaywall(placement: Placement) {
+  if (hasAccount()) router.push({ pathname: "/paywall", params: { placement } });
   else askToSignIn("premium");
 }

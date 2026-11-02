@@ -62,7 +62,7 @@ export default function SubscriptionSettings() {
                 Bible, verse of the day and a daily prayer, forever. Premium unlocks every guided prayer and unlimited companion conversations.
               </Text>
               <View className="mt-5">
-                <InkButton label="See Premium plans" onPress={openPaywall} />
+                <InkButton label="See Premium plans" onPress={() => openPaywall("settings")} />
               </View>
             </>
           )}

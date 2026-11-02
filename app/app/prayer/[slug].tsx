@@ -10,6 +10,7 @@ import { useColors } from "@/components/ui/theme";
 import { errorMessage } from "@/lib/api/client";
 import { cachedLibrary, getLibrary } from "@/lib/api/library";
 import type { Track } from "@/lib/api/types";
+import { track as trackEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/errorReporting";
 import { downloadKey, downloadsSupported, downloadTrack, removeDownload, toggleFavorite, useDownloads, useFavorites } from "@/lib/userLibrary";
 import { askToSignIn, hasAccount, openPaywall } from "@/lib/account";
@@ -36,6 +37,13 @@ export default function PrayerScreen() {
       (err) => setError(errorMessage(err)),
     );
   }, [slug, track]);
+
+  // Once per prayer opened, as soon as it's known
+  const viewed = track ? track.slug : null;
+  useEffect(() => {
+    if (track) trackEvent("prayer_viewed", { prayer_slug: track.slug, locked: track.locked });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewed]);
 
   // The middle length reads best, like on the web
   const variant = track ? (track.variants.find((v) => v.minutes === (minutes ?? 3)) ?? track.variants[0]) : undefined;
@@ -129,7 +137,7 @@ export default function PrayerScreen() {
 
               {track.locked && (
                 <Pressable
-                  onPress={openPaywall}
+                  onPress={() => openPaywall("prayer")}
                   accessibilityRole="button"
                   className="mt-6 flex-row items-center gap-3 rounded-2xl bg-butter px-4 py-4 active:opacity-80"
                 >
