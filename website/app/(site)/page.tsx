@@ -28,7 +28,7 @@ const LIBRARY = [
 const FAQ = [
   [
     "Is it really free?",
-    "Yes. The Bible, verse of the day, one daily prayer, 5 companion messages a day and your weekly goal are free forever. Premium adds unlimited chat, personal prayers with audio, the full library, the journal and prayer paths.",
+    "Yes. The Bible, verse of the day, one daily prayer, 3 companion messages a day and your weekly goal are free forever. Premium adds unlimited chat, personal prayers with audio, the full library, the journal and prayer paths.",
   ],
   [
     "Is it Catholic or Protestant?",
@@ -234,7 +234,7 @@ export default function LandingPage() {
             <div className="amt">$0</div>
             <p className="note">No card needed.</p>
             <ul>
-              {["Full Bible: WEB, KJV, Douay-Rheims", "Verse of the day", "One daily prayer", "Companion: 5 messages a day", "Weekly goal that forgives missed days"].map((t) => (
+              {["Full Bible: WEB, KJV, Douay-Rheims", "Verse of the day", "One daily prayer", "Companion: 3 messages a day", "Weekly goal that forgives missed days"].map((t) => (
                 <li key={t}>
                   <i>
                     <CheckIcon size={13} />

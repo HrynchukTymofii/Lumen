@@ -14,8 +14,9 @@ import { historyFor } from "@/lib/chat";
 // One companion message (SPEC §7.2): classify → quota → retrieve verses → stream the answer → validate
 // citations → save both messages encrypted. The route turns the events into SSE.
 
-export const FREE_DAILY = 5;
-export const PREMIUM_DAILY = 100; // soft cap against runaway cost
+export const FREE_DAILY = 3;
+export const FREE_FIRST_DAY = 5; // a bigger first taste: the first day the user chats at all
+export const PREMIUM_DAILY = 50; // soft cap against runaway cost
 
 export type CitationOut = Passage;
 
@@ -44,8 +45,13 @@ export function localDate(timezone: string) {
 
 export async function getQuota(user: Pick<User, "id" | "timezone">, premium: boolean): Promise<Quota> {
   const date = localDate(user.timezone);
-  const row = await prisma.chatQuota.findUnique({ where: { userId_date: { userId: user.id, date } } });
-  return { used: row?.count ?? 0, limit: premium ? PREMIUM_DAILY : FREE_DAILY, date };
+  const [row, earlier] = await Promise.all([
+    prisma.chatQuota.findUnique({ where: { userId_date: { userId: user.id, date } } }),
+    // Dates are YYYY-MM-DD strings, so "lt" compares them correctly
+    premium ? null : prisma.chatQuota.findFirst({ where: { userId: user.id, date: { lt: date } }, select: { date: true } }),
+  ]);
+  const limit = premium ? PREMIUM_DAILY : earlier ? FREE_DAILY : FREE_FIRST_DAY;
+  return { used: row?.count ?? 0, limit, date };
 }
 
 // Claims that must never appear in an answer (SPEC §7.2 step 8). Can't be unsent mid-stream, so they flag
