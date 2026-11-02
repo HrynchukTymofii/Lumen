@@ -13,8 +13,6 @@
   --peach: #c5d19e; /* accent (olive light); kept the prototype's name */
   --peach-2: #5f7334;
   --dot: #e3c771;
-  --orbit: #a9b98a;
-  --rays: #c9a33a;
   --butter: #f2e4b4;
   --sage: #d8e3c4;
   --sky: #d6e3e0;
@@ -46,7 +44,6 @@
     --line: #262f1f;
     --line2: #35412c;
     --peach-2: #c3d38d;
-    --rays: #e3c771;
     --butter: #e8dbac;
     --sage: #cfdbbb;
     --sky: #cedcd9;
@@ -121,16 +118,23 @@
   /* the Light */
   .light { display: inline-block; flex: none; width: var(--s, 96px); height: var(--s, 96px); }
   .light svg { width: 100%; height: 100%; overflow: visible; }
-  .light .orbit, .light .core, .light .halo, .light .rays, .light .ripple { transform-box: view-box; transform-origin: 50px 50px; }
-  .light .halo, .light .core { animation: lumen-breathe 4.4s ease-in-out infinite; }
-  .light .orbit { animation: lumen-turn 40s linear infinite; }
-  .light .rays, .light .ripple { opacity: 0; }
-  .light[data-state="listening"] .core, .light[data-state="listening"] .halo { animation: lumen-pulse 1.3s ease-in-out infinite; }
-  .light[data-state="speaking"] .ripple { animation: lumen-ripple 2.1s ease-out infinite; }
-  .light[data-state="speaking"] .ripple.r2 { animation-delay: 0.7s; }
-  .light[data-state="speaking"] .ripple.r3 { animation-delay: 1.4s; }
-  .light[data-state="thinking"] .orbit { animation-duration: 2.6s; }
-  .light[data-state="celebrating"] .rays { animation: lumen-rays 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) infinite; }
+  .light .aura, .light .sphere, .light .ripple { transform-box: view-box; transform-origin: 50px 60px; }
+  .light .halo { transform-box: view-box; transform-origin: 50px 21px; }
+  .light .aura, .light .sphere { animation: lumen-breathe 4.4s ease-in-out infinite; }
+  .light .halo-float { animation: lumen-float 3.6s ease-in-out infinite; }
+  .light .halo-glow { opacity: 0.22; transition: opacity 0.4s; }
+  .light .ripple { opacity: 0; }
+  .light[data-state="listening"] .aura, .light[data-state="listening"] .sphere,
+  .light[data-state="celebrating"] .aura, .light[data-state="celebrating"] .sphere { animation: lumen-pulse 1.3s ease-in-out infinite; }
+  .light[data-state="listening"] .halo-float { animation-duration: 2.4s; }
+  .light[data-state="listening"] .halo-glow, .light[data-state="celebrating"] .halo-glow { opacity: 0.4; }
+  .light[data-state="thinking"] .aura, .light[data-state="thinking"] .sphere,
+  .light[data-state="speaking"] .aura, .light[data-state="speaking"] .sphere { animation-duration: 2.2s; }
+  .light[data-state="thinking"] .halo-float, .light[data-state="speaking"] .halo-float { animation-duration: 3s; }
+  .light[data-state="thinking"] .halo { animation: lumen-turn 1.4s ease-in-out infinite; }
+  .light[data-state="speaking"] .ripple, .light[data-state="celebrating"] .ripple { animation: lumen-ripple 2.1s ease-out infinite; }
+  .light[data-state="speaking"] .ripple.r2, .light[data-state="celebrating"] .ripple.r2 { animation-delay: 0.7s; }
+  .light[data-state="speaking"] .ripple.r3, .light[data-state="celebrating"] .ripple.r3 { animation-delay: 1.4s; }
   @media (prefers-reduced-motion: reduce) { .light * { animation: none !important; } }
 
   /* layout */
@@ -335,8 +339,8 @@
   }
 }
 
-@keyframes lumen-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
-@keyframes lumen-turn { to { transform: rotate(360deg); } }
-@keyframes lumen-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.13); } }
-@keyframes lumen-ripple { 0% { transform: scale(0.7); opacity: 0.6; } 100% { transform: scale(1.35); opacity: 0; } }
-@keyframes lumen-rays { 0% { transform: scale(0.7) rotate(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(1.15) rotate(25deg); opacity: 0; } }
+@keyframes lumen-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+@keyframes lumen-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes lumen-float { 0%, 100% { transform: translateY(-2.5px); } 50% { transform: translateY(2.5px); } }
+@keyframes lumen-turn { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(0.35); } }
+@keyframes lumen-ripple { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.7); opacity: 0; } }

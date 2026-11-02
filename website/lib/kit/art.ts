@@ -214,17 +214,26 @@ export function sceneSvg(name: string, opts: SceneOptions = {}) {
 
 export type LightState = "idle" | "listening" | "speaking" | "thinking" | "celebrating";
 
-// The Light: a flat sun with a dashed orbit. Animations live in the CSS (.light …).
+// The Light, drawn the same way as the app's Light (app/components/Light.tsx): a glowing sphere of warm
+// light with a thin halo floating above it. Animations live in the CSS (.light …):
+//   idle: breathes, halo floats · listening: quick pulse, halo brightens · thinking: halo turns
+//   speaking: rings ripple out of the sphere · celebrating (web only): pulse + ripples
+// Sphere centre (50, 60), radius 27 in the 100×100 drawing; the halo sits at (50, 21).
 export function lightSvg() {
   const id = `lg${++uid}`;
-  let rays = "";
-  for (let i = 0; i < 12; i++) {
-    const a = (i * 30 * Math.PI) / 180;
-    rays += `<line x1="${f(50 + Math.cos(a) * 40)}" y1="${f(50 + Math.sin(a) * 40)}" x2="${f(50 + Math.cos(a) * 48)}" y2="${f(50 + Math.sin(a) * 48)}"/>`;
-  }
   const ripple = (cls: string) =>
-    `<circle class="ripple ${cls}" cx="50" cy="50" r="36" fill="none" stroke="#F5AE6C" stroke-width="1.6"/>`;
-  return `<svg viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx=".4" cy=".36" r=".72"><stop offset="0" stop-color="#FFE9B0"/><stop offset=".7" stop-color="#FFD58A"/><stop offset="1" stop-color="#F8BC74"/></radialGradient></defs><circle class="halo" cx="50" cy="50" r="47" fill="#FFD98C" opacity=".22"/>${ripple("")}${ripple("r2")}${ripple("r3")}<g class="rays" style="stroke:var(--rays)" stroke-width="3.2" stroke-linecap="round">${rays}</g><circle class="orbit" cx="50" cy="50" r="39.5" fill="none" style="stroke:var(--orbit)" stroke-width="2.2" stroke-dasharray="15 9" stroke-linecap="round"/><circle class="core" cx="50" cy="50" r="29" fill="url(#${id})"/><circle cx="50" cy="50" r="19" fill="#FFF1C9" opacity=".55"/></svg>`;
+    `<circle class="ripple ${cls}" cx="50" cy="60" r="28" fill="none" stroke="#F5C77E" stroke-width="1.2"/>`;
+  return `<svg viewBox="0 0 100 100"><defs>` +
+    `<radialGradient id="${id}a" gradientUnits="userSpaceOnUse" cx="50" cy="60" r="40"><stop offset=".5" stop-color="#FFD98C" stop-opacity=".45"/><stop offset="1" stop-color="#FFD98C" stop-opacity="0"/></radialGradient>` +
+    `<radialGradient id="${id}b" gradientUnits="userSpaceOnUse" cx="50" cy="60" r="29" fx="42" fy="49"><stop offset="0" stop-color="#FFFBEC"/><stop offset=".35" stop-color="#FFE4A3"/><stop offset=".75" stop-color="#FBC676"/><stop offset=".92" stop-color="#F5AE6C" stop-opacity=".75"/><stop offset="1" stop-color="#F5AE6C" stop-opacity="0"/></radialGradient>` +
+    `<linearGradient id="${id}u" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#E8935A" stop-opacity="0"/><stop offset="1" stop-color="#E8935A" stop-opacity=".3"/></linearGradient>` +
+    `<linearGradient id="${id}h" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F5AE6C"/><stop offset=".5" stop-color="#FFF1C9"/><stop offset="1" stop-color="#F5AE6C"/></linearGradient>` +
+    `</defs>` +
+    `<circle class="aura" cx="50" cy="60" r="40" fill="url(#${id}a)"/>` +
+    `${ripple("")}${ripple("r2")}${ripple("r3")}` +
+    `<g class="sphere"><circle cx="50" cy="60" r="29" fill="url(#${id}b)"/><circle cx="50" cy="60" r="26" fill="url(#${id}u)"/><ellipse cx="41" cy="49" rx="8" ry="5" fill="#FFFFFF" opacity=".35" transform="rotate(-30 41 49)"/></g>` +
+    `<g class="halo-float"><g class="halo"><ellipse class="halo-glow" cx="50" cy="21" rx="17" ry="4.6" fill="none" stroke="#FFD98C" stroke-width="6"/><ellipse cx="50" cy="21" rx="17" ry="4.6" fill="none" stroke="url(#${id}h)" stroke-width="2.4"/></g></g>` +
+    `</svg>`;
 }
 
 const ink = 'fill="none" stroke="#26301F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"';
