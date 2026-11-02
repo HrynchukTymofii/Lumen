@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { hashCode, newCode } from "@/lib/admin-auth";
 import { handle, readJson } from "@/lib/api";
+import { isReviewEmail } from "@/lib/auth/review";
 import { CODE_TTL_MS, hashToken, newLinkToken, normalizeEmail } from "@/lib/auth/users";
 import { sendLoginEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +15,8 @@ const MAX_PER_HOUR = 5;
 export const POST = handle(async (req: NextRequest) => {
   const input = body.parse(await readJson(req));
   const email = normalizeEmail(input.email);
+  // The store reviewers' account signs in with its fixed code (lib/auth/review.ts)
+  if (isReviewEmail(email)) return Response.json({ ok: true });
 
   const recent = await prisma.loginToken.count({
     where: { email, purpose: "email_code", createdAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } },
