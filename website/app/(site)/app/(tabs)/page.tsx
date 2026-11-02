@@ -72,11 +72,18 @@ async function Today() {
       </section>
 
       <section className="wa-sec">
-        <div className="wa-card bg-lav motif">
-          <span className="eyebrow">Companion</span>
-          <h2 style={{ fontSize: 22, marginTop: 6 }}>Talk it through, with real verses</h2>
-          <p style={{ marginTop: 6, lineHeight: 1.5, fontWeight: 600 }}>Ask about a passage or ask for a prayer. Opening on the web very soon.</p>
-        </div>
+        {user.aiEnabled && (
+          <Link href="/app/companion" className="wa-card bg-lav motif wa-link-card">
+            <div className="wa-row" style={{ flexWrap: "nowrap" }}>
+              <div>
+                <span className="eyebrow">Companion</span>
+                <h2 style={{ fontSize: 22, marginTop: 6 }}>Talk it through, with real verses</h2>
+                <p style={{ marginTop: 6, lineHeight: 1.5, fontWeight: 600 }}>Ask about a passage or ask for a prayer.</p>
+              </div>
+              <Light size={56} />
+            </div>
+          </Link>
+        )}
         {!premium && (
           <div className="wa-card">
             <div className="wa-row">
