@@ -13,7 +13,7 @@ export const SITE = {
   minAge: 13,
   // US App Store prices, and the fallback everywhere the synced local prices (lib/prices.ts) are missing or broken.
   // Purchases only happen in the stores (no web checkout). A weekly plan exists in the app but isn't shown here.
-  prices: { yearly: "$69.99", yearlyIntro: "$2.99", monthly: "$9.99" },
+  prices: { yearly: "$59.99", yearlyIntro: "$2.99", monthly: "$8.99" },
   stores: {
     // The link works once the app is live on the App Store
     appStore: process.env.NEXT_PUBLIC_APP_STORE_URL ?? "https://apps.apple.com/app/id6829436290",
