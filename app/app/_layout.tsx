@@ -1,14 +1,23 @@
 import { Literata_400Regular } from "@expo-google-fonts/literata";
-import { Manrope_500Medium, Manrope_600SemiBold, Manrope_800ExtraBold } from "@expo-google-fonts/manrope";
+import {
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_800ExtraBold,
+} from "@expo-google-fonts/manrope";
 import { Outfit_600SemiBold } from "@expo-google-fonts/outfit";
 import { useFonts } from "expo-font";
 import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { RatingPrompt } from "@/components/RatingPrompt";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { trackScreen } from "@/lib/analytics";
-import { flushPendingErrors, initErrorReporting, setCurrentPage } from "@/lib/errorReporting";
+import {
+  flushPendingErrors,
+  initErrorReporting,
+  setCurrentPage,
+} from "@/lib/errorReporting";
 import { useApplyTheme } from "@/lib/themePref";
 import "../global.css";
 
@@ -17,7 +26,7 @@ initErrorReporting();
 flushPendingErrors();
 
 function RootNavigator() {
-  const { status, onboarded } = useAuth();
+  const { status, onboarded, guest } = useAuth();
   const pathname = usePathname();
   useApplyTheme();
   // Outfit (titles), Manrope (UI), Literata (Scripture and prayers), SPEC §3
@@ -42,38 +51,50 @@ function RootNavigator() {
   // Guards are only evaluated once we know whether there is a saved login
   if (!ready) return null;
   const signedIn = status === "signedIn";
+  // The app: signed in and onboarded, or trying it without an account (lib/account.ts)
+  const inApp = signedIn ? onboarded : guest;
   // Where each guard sends someone who isn't allowed in
-  const home = !signedIn ? "/welcome" : onboarded ? "/" : "/sample-prayer";
+  const home = inApp ? "/" : signedIn ? "/sample-prayer" : "/welcome";
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={signedIn && onboarded} redirectTo={home}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="prayer/[slug]" />
-        <Stack.Screen name="player/[slug]" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
-        <Stack.Screen name="companion/[id]" />
-        <Stack.Screen name="bible/[book]/[chapter]" />
-        <Stack.Screen name="bible/notes" />
-        <Stack.Screen name="search" options={{ animation: "fade" }} />
-        <Stack.Screen name="notifications" />
-        <Stack.Screen name="list/[key]" />
-        <Stack.Screen name="journal/[kind]" />
-        <Stack.Screen name="streak" />
-        <Stack.Screen name="settings" />
-        <Stack.Screen name="settings/profile" />
-        <Stack.Screen name="settings/general" />
-        <Stack.Screen name="settings/subscription" />
-        <Stack.Screen name="settings/legal" />
-        <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
-      </Stack.Protected>
-      <Stack.Protected guard={signedIn && !onboarded} redirectTo={home}>
-        <Stack.Screen name="sample-prayer" />
-      </Stack.Protected>
-      <Stack.Protected guard={!signedIn} redirectTo={home}>
-        <Stack.Screen name="(onboarding)" />
-      </Stack.Protected>
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Protected guard={inApp} redirectTo={home}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="prayer/[slug]" />
+          <Stack.Screen
+            name="player/[slug]"
+            options={{
+              presentation: "fullScreenModal",
+              animation: "slide_from_bottom",
+            }}
+          />
+          <Stack.Screen name="companion/[id]" />
+          <Stack.Screen name="bible/[book]/[chapter]" />
+          <Stack.Screen name="bible/notes" />
+          <Stack.Screen name="search" options={{ animation: "fade" }} />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="list/[key]" />
+          <Stack.Screen name="journal/[kind]" />
+          <Stack.Screen name="streak" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="settings/profile" />
+          <Stack.Screen name="settings/general" />
+          <Stack.Screen name="settings/subscription" />
+          <Stack.Screen name="settings/legal" />
+          <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !onboarded} redirectTo={home}>
+          <Stack.Screen name="sample-prayer" />
+        </Stack.Protected>
+        {/* Also open to someone trying the app, to sign in from inside it */}
+        <Stack.Protected guard={!signedIn} redirectTo={home}>
+          <Stack.Screen name="(onboarding)" />
+        </Stack.Protected>
+      </Stack>
+      {signedIn && onboarded && <RatingPrompt />}
+    </>
   );
 }
 

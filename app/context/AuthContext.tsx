@@ -1,10 +1,11 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { isAxiosError } from "axios";
 import { getCalendars } from "expo-localization";
 import { AppState } from "react-native";
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { identifyUser, resetUser } from "@/lib/analytics";
 import { setApiToken, setAuthHandlers } from "@/lib/api/client";
-import { deleteMe, getMe, updateMe } from "@/lib/api/me";
+import { deleteMe, getMe, reportSeen, updateMe } from "@/lib/api/me";
 import { submitOnboarding } from "@/lib/api/onboarding";
 import type { LoginResponse, MeResponse, Premium, ProfilePatch, User } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
@@ -19,6 +20,8 @@ import { deleteSecure, getSecure, setSecure } from "@/lib/storage";
 
 const TOKEN_KEY = "token";
 const ACCOUNT_KEY = "account"; // { user, premium } from the last GET /api/me
+// Set when someone closes the welcome screen to try the app without an account, so it reopens in the app
+const GUEST_KEY = "browsingAsGuest";
 
 type Status = "loading" | "signedOut" | "signedIn";
 
@@ -29,6 +32,9 @@ interface AuthContextType {
   premium: Premium;
   // False while quiz answers from before the sign-in wait to be sent (the sample prayer screen is next)
   onboarded: boolean;
+  // Signed out, but trying the app without an account (lib/account.ts)
+  guest: boolean;
+  continueAsGuest: () => Promise<void>;
   signIn: (res: LoginResponse) => Promise<void>;
   signOut: () => Promise<void>;
   // Re-reads the account and premium status (after a purchase, on returning to the app)
@@ -48,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setTokenState] = useState<string | null>(null);
   const [account, setAccount] = useState<MeResponse | null>(null);
   const [onboarded, setOnboarded] = useState(true);
+  const [guest, setGuest] = useState(false);
   // The token a running request belongs to, so a slow answer can't bring back a signed-out account
   const tokenRef = useRef<string | null>(null);
 
@@ -65,6 +72,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     else await deleteSecure(ACCOUNT_KEY);
   }, []);
 
+  const saveGuest = useCallback(async (value: boolean) => {
+    setGuest(value);
+    if (value) await AsyncStorage.setItem(GUEST_KEY, "1").catch(reportError);
+    else await AsyncStorage.removeItem(GUEST_KEY).catch(reportError);
+  }, []);
+
+  const continueAsGuest = useCallback(() => saveGuest(true), [saveGuest]);
+
+  // Signing out goes back to the welcome screen, not to trying the app
   const signOut = useCallback(async () => {
     // Changes still waiting to go up are sent while the token works, then this library leaves the phone
     await flushLibrary();
@@ -76,8 +92,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resetPurchases().catch(reportError);
     // The next person on this phone shouldn't get this person's reminders
     cancelReminders().catch(reportError);
+    await saveGuest(false);
     setStatus("signedOut");
-  }, [saveToken, saveAccount]);
+  }, [saveToken, saveAccount, saveGuest]);
 
   const refresh = useCallback(async () => {
     const sentWith = tokenRef.current;
@@ -98,13 +115,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (res: LoginResponse) => {
       await saveToken(res.token);
       await saveAccount({ user: res.user, premium: FREE });
+      await saveGuest(false);
       identifyUser(res.user, false);
       setOnboarded(!(await getPendingOnboarding()));
       setStatus("signedIn");
       // Premium status isn't part of the login answer
       refresh();
     },
-    [saveToken, saveAccount, refresh],
+    [saveToken, saveAccount, saveGuest, refresh],
   );
 
   const updateProfile = useCallback(
@@ -140,13 +158,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     syncLibrary(userId);
     const timezone = getCalendars()[0]?.timeZone;
     if (timezone) updateMe({ timezone }).catch(() => {});
+    reportSeen(true);
   }, [userId]);
 
-  // Coming back to the app picks up library changes made on another phone or the web
+  // Coming back to the app picks up library changes made on another phone or the web (and reports the
+  // app version, at most every few hours)
   useEffect(() => {
     if (!userId) return;
     const sub = AppState.addEventListener("change", (state) => {
-      if (state === "active") syncLibrary(userId);
+      if (state !== "active") return;
+      syncLibrary(userId);
+      reportSeen();
     });
     return () => sub.remove();
   }, [userId]);
@@ -170,6 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!storedToken) {
         if (storedAccount) await deleteSecure(ACCOUNT_KEY);
+        setGuest((await AsyncStorage.getItem(GUEST_KEY).catch(() => null)) === "1");
         setStatus("signedOut");
         return;
       }
@@ -212,6 +235,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: account?.user ?? null,
         premium: account?.premium ?? FREE,
         onboarded,
+        guest,
+        continueAsGuest,
         signIn,
         signOut,
         refresh,

@@ -3,7 +3,9 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RichText } from "@/components/RichText";
+import { AccountGate } from "@/components/AccountGate";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { useAuth } from "@/context/AuthContext";
 import { BookmarkIcon, HighlightIcon, NoteIcon } from "@/components/ui/icons";
 import { highlightColor, useColors } from "@/components/ui/theme";
 import { toggleBookmark, useBookmarks, useMarks } from "@/lib/bibleMarks";
@@ -19,7 +21,23 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "bookmarks", label: "Bookmarks" },
 ];
 
+// Notes are kept on the account
 export default function NotesScreen() {
+  const { user } = useAuth();
+  if (!user) {
+    return (
+      <AccountGate
+        title="Notes & highlights"
+        text="Highlight verses, write notes and bookmark chapters. Create a free account to keep them on any device."
+        reason="notes"
+        fallback="/bible"
+      />
+    );
+  }
+  return <Notes />;
+}
+
+function Notes() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const marks = useMarks();

@@ -7,6 +7,7 @@ import { InkButton, LineButton } from "@/components/ui/Button";
 import { ArrowIcon, PlusIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
+import { askToSignIn } from "@/lib/account";
 import { createConversation, getQuota, listConversations } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
 import type { ConversationSummary, Quota } from "@/lib/api/types";
@@ -25,6 +26,37 @@ function when(iso: string) {
 }
 
 export default function CompanionScreen() {
+  const { user } = useAuth();
+  // Conversations are kept on the account
+  if (!user) return <CompanionIntro />;
+  return <Companion />;
+}
+
+// Without an account: what the companion is, and the way to start
+function CompanionIntro() {
+  const insets = useSafeAreaInsets();
+  return (
+    <ScrollView className="flex-1 bg-bg" contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + 16, paddingBottom: 32, paddingHorizontal: 24 }}>
+      <Text className="font-display text-[30px] leading-9 text-ink">Companion</Text>
+      <View className="flex-1 items-center justify-center py-10">
+        <Light size={110} />
+        <Text className="mt-6 text-center font-display text-2xl leading-8 text-ink">Ask anything about the Bible</Text>
+        <Text className="mt-2 text-center font-sans text-base leading-6 text-muted">
+          Questions on faith, a prayer for what you’re carrying, or just someone to talk things through with. Every
+          answer quotes real verses.
+        </Text>
+        <View className="mt-7 w-full">
+          <InkButton label="Create a free account" onPress={() => askToSignIn("companion")} />
+        </View>
+      </View>
+      <Text className="text-center font-sans text-xs leading-5 text-dim">
+        The companion is an AI. It can make mistakes and isn’t a pastor, counselor or doctor.
+      </Text>
+    </ScrollView>
+  );
+}
+
+function Companion() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const c = useColors();

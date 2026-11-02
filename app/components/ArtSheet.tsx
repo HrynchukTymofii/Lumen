@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light, type LightState } from "./Light";
 import { Scene } from "./Scene";
 import { IconButton } from "./ui/Button";
-import { BackIcon } from "./ui/icons";
+import { BackIcon, CloseIcon } from "./ui/icons";
 import { useColors } from "./ui/theme";
 import type { SceneOptions } from "@website/lib/kit/art";
 
@@ -17,6 +17,8 @@ export function ArtSheet({
   light,
   lightSize = 150,
   onBack,
+  onClose,
+  closeLabel = "Close",
   children,
 }: {
   scene: string;
@@ -25,6 +27,9 @@ export function ArtSheet({
   light?: LightState;
   lightSize?: number;
   onBack?: () => void;
+  // A small cross at the top right (the welcome screen: try the app without an account)
+  onClose?: () => void;
+  closeLabel?: string;
   children: ReactNode;
 }) {
   const insets = useSafeAreaInsets();
@@ -44,6 +49,13 @@ export function ArtSheet({
             <View style={{ position: "absolute", top: insets.top + 8, left: 18 }}>
               <IconButton onPress={onBack} label="Back">
                 <BackIcon size={18} color={c.ink} />
+              </IconButton>
+            </View>
+          )}
+          {onClose && (
+            <View style={{ position: "absolute", top: insets.top + 8, right: 18 }}>
+              <IconButton onPress={onClose} label={closeLabel}>
+                <CloseIcon size={16} color={c.ink} />
               </IconButton>
             </View>
           )}

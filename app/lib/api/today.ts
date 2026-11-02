@@ -1,10 +1,12 @@
+import { getCalendars } from "expo-localization";
 import api from "./client";
 import type { Journey, Streak, Today } from "./types";
 
 // Today tab and the soft streak (website/app/api/today/*, website/app/api/journey)
 
+// Without an account the server doesn't know the timezone, so the verse of the day follows the phone's
 export async function getToday() {
-  const { data } = await api.get<Today>("/today");
+  const { data } = await api.get<Today>("/today", { params: { tz: getCalendars()[0]?.timeZone ?? undefined } });
   return data;
 }
 

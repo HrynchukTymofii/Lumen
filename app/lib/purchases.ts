@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import Purchases, { LOG_LEVEL, PURCHASES_ERROR_CODE, type PurchasesPackage } from "react-native-purchases";
+import Purchases, { INTRO_ELIGIBILITY_STATUS, LOG_LEVEL, PURCHASES_ERROR_CODE, type PurchasesPackage } from "react-native-purchases";
 import api from "@/lib/api/client";
 
 // In-app subscriptions through RevenueCat (SPEC §9). The RevenueCat user id is our user id (Purchases.logIn), so
@@ -37,14 +37,55 @@ export async function resetPurchases() {
 // The paywall sells yearly and monthly only. The weekly product stays in the store and the offering, but isn't shown.
 const SHOWN = ["ANNUAL", "MONTHLY"];
 
-/** The yearly and monthly packages of the current offering ($rc_annual, $rc_monthly), yearly first. */
-export async function getPackages(): Promise<PurchasesPackage[]> {
+export type PeriodUnit = "DAY" | "WEEK" | "MONTH" | "YEAR";
+
+/** An introductory offer this person can get: a free trial, or a lower first price (e.g. $2.99 for the first month). */
+export interface Intro {
+  free: boolean;
+  price: string; // formatted, "$2.99"
+  unit: PeriodUnit;
+  count: number; // how many units in all, e.g. 1 MONTH, 7 DAY
+}
+
+export interface Plan {
+  pkg: PurchasesPackage;
+  intro: Intro | null;
+}
+
+// Google only lists offers the person is eligible for. Apple lists the intro price to everyone, so it's shown only
+// when RevenueCat confirms eligibility (unknown counts as no: never promise a price someone won't get).
+function introOf(pkg: PurchasesPackage, eligible: Set<string>): Intro | null {
+  const product = pkg.product;
+  if (Platform.OS === "android") {
+    const phase = product.defaultOption?.freePhase ?? product.defaultOption?.introPhase;
+    if (!phase) return null;
+    return {
+      free: phase.price.amountMicros === 0,
+      price: phase.price.formatted,
+      unit: phase.billingPeriod.unit as PeriodUnit,
+      count: phase.billingPeriod.value * (phase.billingCycleCount ?? 1),
+    };
+  }
+  const intro = product.introPrice;
+  if (!intro || !eligible.has(product.identifier)) return null;
+  return { free: intro.price === 0, price: intro.priceString, unit: intro.periodUnit as PeriodUnit, count: intro.periodNumberOfUnits * Math.max(1, intro.cycles) };
+}
+
+/** The yearly and monthly plans of the current offering ($rc_annual, $rc_monthly), yearly first, with their intro offers. */
+export async function getPlans(): Promise<Plan[]> {
   if (!configured) return [];
   const offerings = await Purchases.getOfferings();
-  const packages = offerings.current?.availablePackages ?? [];
-  return packages
+  const packages = (offerings.current?.availablePackages ?? [])
     .filter((p) => SHOWN.includes(p.packageType))
     .sort((a, b) => SHOWN.indexOf(a.packageType) - SHOWN.indexOf(b.packageType));
+
+  const eligible = new Set<string>();
+  const withIntro = packages.filter((p) => p.product.introPrice).map((p) => p.product.identifier);
+  if (Platform.OS === "ios" && withIntro.length) {
+    const result = await Purchases.checkTrialOrIntroductoryPriceEligibility(withIntro).catch(() => ({}) as Record<string, { status: INTRO_ELIGIBILITY_STATUS }>);
+    for (const [id, e] of Object.entries(result)) if (e.status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_ELIGIBLE) eligible.add(id);
+  }
+  return packages.map((pkg) => ({ pkg, intro: introOf(pkg, eligible) }));
 }
 
 // Tells the server right away, so Premium doesn't wait for the webhook

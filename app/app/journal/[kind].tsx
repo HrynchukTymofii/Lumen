@@ -5,7 +5,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
 import { NoteDrawer } from "@/components/NoteDrawer";
 import { RichText } from "@/components/RichText";
+import { AccountGate } from "@/components/AccountGate";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { useAuth } from "@/context/AuthContext";
 import { PlusIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { deleteEntry, JOURNAL_LABELS, saveEntry, useJournal, type JournalEntry, type JournalKind } from "@/lib/journal";
@@ -13,6 +15,23 @@ import { deleteEntry, JOURNAL_LABELS, saveEntry, useJournal, type JournalEntry, 
 // Intentions or Reflections: every entry, newest edit first, each opening in the note drawer.
 // ?new=1 opens a blank one straight away; ?edit=<id> opens that entry.
 export default function JournalScreen() {
+  const { user } = useAuth();
+  const { kind } = useLocalSearchParams<{ kind: string }>();
+  // The journal is kept on the account
+  if (!user) {
+    return (
+      <AccountGate
+        title={JOURNAL_LABELS[kind === "reflection" ? "reflection" : "intention"].plural}
+        text="Write down what you’re praying for and what God is showing you. Create a free account to keep your journal on any device."
+        reason="journal"
+        fallback="/me"
+      />
+    );
+  }
+  return <Journal />;
+}
+
+function Journal() {
   const params = useLocalSearchParams<{ kind: string; new?: string; edit?: string }>();
   const kind: JournalKind = params.kind === "reflection" ? "reflection" : "intention";
   const labels = JOURNAL_LABELS[kind];

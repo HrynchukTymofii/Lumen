@@ -12,6 +12,7 @@ import { LineButton, OliveButton } from "@/components/ui/Button";
 import { BellIcon, CheckIcon, ChevronIcon, PlayIcon, SearchIcon, ShareIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
+import { askToSignIn, hasAccount } from "@/lib/account";
 import { createConversation } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
 import { cachedLibrary, getLibrary, getTrending } from "@/lib/api/library";
@@ -92,7 +93,7 @@ export default function HomeScreen() {
   );
 
   // Keeps the next week of reminders scheduled, without today's once it's prayed
-  const prayedToday = today?.streak.prayedToday;
+  const prayedToday = today?.streak?.prayedToday;
   useEffect(() => {
     if (!user || prayedToday === undefined) return;
     scheduleReminders({ time: user.reminderTime, enabled: user.remindersEnabled, prayedToday, name: user.firstName }).catch(reportError);
@@ -100,7 +101,9 @@ export default function HomeScreen() {
 
   const setStreak = (streak: Streak) => setToday((t) => (t ? { ...t, streak } : t));
 
+  // The prayer week lives on the account
   const pray = async () => {
+    if (!hasAccount()) return askToSignIn("streak");
     setMarking(true);
     try {
       setStreak(await markPrayed());
@@ -233,7 +236,7 @@ export default function HomeScreen() {
       </View>
 
       {/* The companion, one tap away */}
-      {user?.aiEnabled && <AskCard />}
+      {(!user || user.aiEnabled) && <AskCard />}
 
       {error && <Text className="mx-5 mt-4 font-sans text-sm text-danger">{error}</Text>}
 
@@ -248,7 +251,7 @@ export default function HomeScreen() {
             <Text className="mt-1 font-display text-[24px] leading-8 text-ink">{today.prayer.title}</Text>
             <Text className="mt-2.5 font-serif text-[17px] leading-7 text-ink">{today.prayer.text}</Text>
             <View className="mt-5 items-center">
-              {today.streak.prayedToday ? (
+              {today.streak?.prayedToday ? (
                 <View className="flex-row items-center gap-2 rounded-full bg-sage px-5 py-3">
                   <CheckIcon size={16} color={c.onPastel} />
                   <Text className="font-sans-bold text-base text-on-pastel">Prayed today</Text>
@@ -379,13 +382,14 @@ function GlassButton({ label, onPress, children }: { label: string; onPress: () 
   );
 }
 
-// The companion, one tap away: a single card that opens a new conversation
+// The companion, one tap away: a single card that opens a new conversation (or sign-in, without an account)
 function AskCard() {
   const c = useColors();
   const [starting, setStarting] = useState(false);
 
   const start = async () => {
     if (starting) return;
+    if (!hasAccount()) return askToSignIn("companion");
     setStarting(true);
     try {
       const id = await createConversation();

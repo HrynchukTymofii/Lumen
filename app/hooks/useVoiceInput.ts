@@ -19,6 +19,8 @@ function loadSpeech(): SpeechModule | null {
 
 const speech = loadSpeech();
 
+const join = (a: string, b: string) => (a && b ? `${a} ${b}` : a || b);
+
 // Dictation with the phone's own speech recognition (Apple Speech / Google). The words arrive while the person
 // speaks; onText gets everything said since start. On iOS it stays on the phone when the language allows,
 // because what people say here is personal.
@@ -29,6 +31,9 @@ export function useVoiceInput(onText: (text: string) => void) {
   // that started listening takes them
   const mine = useRef(false);
   const handler = useRef(onText);
+  // Finished segments of this dictation, and the one still being heard
+  const done = useRef("");
+  const segment = useRef("");
   useEffect(() => {
     handler.current = onText;
   });
@@ -38,8 +43,24 @@ export function useVoiceInput(onText: (text: string) => void) {
     const { ExpoSpeechRecognitionModule: rec } = speech;
     const subs = [
       rec.addListener("result", (e) => {
-        const text = e.results[0]?.transcript;
-        if (mine.current && text) handler.current(text);
+        const text = e.results[0]?.transcript?.trim();
+        if (!mine.current || !text) return;
+        // Continuous recognition runs in segments: after a pause the results cover only the new words, not
+        // everything since start. A final result closes a segment (Android); on iOS a segment can also restart
+        // without one, seen as a shorter result that no longer begins like the previous one.
+        const prev = segment.current;
+        const firstWord = (s: string) => s.split(/\s+/)[0]?.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+        if (prev && text.length < prev.length && firstWord(text) !== firstWord(prev)) {
+          done.current = join(done.current, prev);
+        }
+        if (e.isFinal) {
+          done.current = join(done.current, text);
+          segment.current = "";
+          handler.current(done.current);
+        } else {
+          segment.current = text;
+          handler.current(join(done.current, text));
+        }
       }),
       rec.addListener("end", () => {
         mine.current = false;
@@ -72,6 +93,8 @@ export function useVoiceInput(onText: (text: string) => void) {
       setError("Allow the microphone and speech recognition in Settings to speak your message.");
       return;
     }
+    done.current = "";
+    segment.current = "";
     mine.current = true;
     setListening(true);
     rec.start({

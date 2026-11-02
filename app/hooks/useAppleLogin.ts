@@ -28,7 +28,7 @@ export function useAppleLogin() {
       });
       if (!credential.identityToken) throw new Error("Apple returned no identity token");
       // Apple sends the name only on the very first sign-in
-      await signIn(await signInWithAppleToken(credential.identityToken, credential.fullName?.givenName ?? undefined));
+      await signIn(await signInWithAppleToken(credential.identityToken, credential.fullName?.givenName ?? undefined, credential.authorizationCode));
     } catch (err) {
       if ((err as { code?: string }).code === "ERR_REQUEST_CANCELED") return; // closed the Apple sheet
       reportError(err);

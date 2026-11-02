@@ -72,7 +72,7 @@ export interface Today {
   date: string;
   prayer: { title: string; text: string; citations: Citation[] };
   verse: Citation & { translation: Translation };
-  streak: Streak;
+  streak: Streak | null; // null without an account
 }
 
 // Soft streak (website/lib/streak.ts): Mon–Sun in the user's timezone

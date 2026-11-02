@@ -3,11 +3,13 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
+import { InkButton } from "@/components/ui/Button";
 import { RichText } from "@/components/RichText";
 import { SectionTitle, TrackCard } from "@/components/TrackCard";
 import { BoltIcon, ChevronIcon, DownloadIcon, GearIcon, HeartIcon, NoteIcon, PlusIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
+import { askToSignIn, openPaywall } from "@/lib/account";
 import { cachedLibrary, getLibrary } from "@/lib/api/library";
 import { getToday } from "@/lib/api/today";
 import type { Library, Streak } from "@/lib/api/types";
@@ -17,7 +19,9 @@ import { JOURNAL_LABELS, useJournal, type JournalKind } from "@/lib/journal";
 import { downloadedIds, pick, useDownloads, useFavorites, useRecent } from "@/lib/userLibrary";
 
 // Me (replaces Journey): name and Settings, the week's streak (→ the Streak screen), then the person's own shelves:
-// recently prayed, favorites, downloads, intentions, reflections, Bible notes.
+// recently prayed, favorites, downloads, intentions, reflections, Bible notes. Without an account the shelves
+// show recently prayed and favorites; the streak, Premium, downloads, journal and Bible notes make way for a card
+// to create one.
 
 export default function MeScreen() {
   const { user, premium } = useAuth();
@@ -33,8 +37,8 @@ export default function MeScreen() {
 
   const load = useCallback(
     () =>
-      Promise.all([getToday().then((t) => setStreak(t.streak)), getLibrary().then(setLibrary)]).catch(reportError),
-    [],
+      Promise.all([user && getToday().then((t) => setStreak(t.streak)), getLibrary().then(setLibrary)]).catch(reportError),
+    [user],
   );
 
   // Praying elsewhere changes the week, so reload on every visit
@@ -82,34 +86,48 @@ export default function MeScreen() {
         </Pressable>
       </View>
 
-      {/* Streak */}
-      <View className="mt-7">
-        <SectionTitle title="Streak" onPress={() => router.push("/streak")} />
-        <Pressable
-          onPress={() => router.push("/streak")}
-          accessibilityRole="button"
-          className="mx-4 flex-row items-center gap-4 rounded-[24px] border-[1.5px] border-line2 bg-card px-5 py-5 active:opacity-80"
-        >
-          <View className="flex-row items-center gap-1.5">
-            <BoltIcon size={22} color={c.oliveDeep} filled />
-            <Text className="font-display text-[30px] leading-9 text-ink">{daysThisWeek}</Text>
-          </View>
-          <Text className="flex-1 font-sans text-[15px] leading-5 text-muted">
-            {!streak
-              ? " "
-              : streak.prayedToday
-                ? `${daysThisWeek} of ${streak.goal} days this week. Well done.`
-                : daysThisWeek
-                  ? `${daysThisWeek} of ${streak.goal} days this week. Pray today to keep going.`
-                  : "Pray today and start building a habit."}
+      {!user && (
+        <View className="mx-4 mt-7 rounded-[24px] bg-card px-5 py-5">
+          <Text className="font-display text-[22px] leading-7 text-ink">Create your free account</Text>
+          <Text className="mt-1 font-sans text-[15px] leading-6 text-muted">
+            Talk with the companion, keep a journal and Bible notes, download prayers and track your prayer week, on any device.
           </Text>
-        </Pressable>
-      </View>
+          <View className="mt-4">
+            <InkButton label="Sign in or create account" onPress={() => askToSignIn()} />
+          </View>
+        </View>
+      )}
 
-      {!premium.active && (
-        <Pressable onPress={() => router.push("/paywall")} accessibilityRole="button" className="mx-4 mt-4 flex-row items-center gap-3 rounded-[24px] bg-butter px-5 py-4 active:opacity-85">
+      {/* Streak */}
+      {user && (
+        <View className="mt-7">
+          <SectionTitle title="Streak" onPress={() => router.push("/streak")} />
+          <Pressable
+            onPress={() => router.push("/streak")}
+            accessibilityRole="button"
+            className="mx-4 flex-row items-center gap-4 rounded-[24px] border-[1.5px] border-line2 bg-card px-5 py-5 active:opacity-80"
+          >
+            <View className="flex-row items-center gap-1.5">
+              <BoltIcon size={22} color={c.oliveDeep} filled />
+              <Text className="font-display text-[30px] leading-9 text-ink">{daysThisWeek}</Text>
+            </View>
+            <Text className="flex-1 font-sans text-[15px] leading-5 text-muted">
+              {!streak
+                ? " "
+                : streak.prayedToday
+                  ? `${daysThisWeek} of ${streak.goal} days this week. Well done.`
+                  : daysThisWeek
+                    ? `${daysThisWeek} of ${streak.goal} days this week. Pray today to keep going.`
+                    : "Pray today and start building a habit."}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {user && !premium.active && (
+        <Pressable onPress={openPaywall} accessibilityRole="button" className="mx-4 mt-4 flex-row items-center gap-3 rounded-[24px] bg-butter px-5 py-4 active:opacity-85">
           <Light size={28} />
-          <Text className="flex-1 font-sans-bold text-[15px] text-on-pastel">Try Premium free for 7 days</Text>
+          <Text className="flex-1 font-sans-bold text-[15px] text-on-pastel">Unlock Lumen Premium</Text>
           <ChevronIcon color={c.onPastel} />
         </Pressable>
       )}
@@ -132,28 +150,33 @@ export default function MeScreen() {
         )}
       </Shelf>
 
-      <Shelf title="Downloads" onMore={() => list("downloads")}>
-        {downloadTracks.length ? (
-          downloadTracks.map((t, i) => <TrackCard key={t.id} track={t} seed={i + 8} />)
-        ) : (
-          <EmptyTile label="Save prayers for offline" onPress={() => router.navigate("/discover")}>
-            <DownloadIcon size={26} color={c.muted} />
-          </EmptyTile>
-        )}
-      </Shelf>
+      {/* Downloads, the journal and Bible notes are kept with the account */}
+      {user && (
+        <>
+          <Shelf title="Downloads" onMore={() => list("downloads")}>
+            {downloadTracks.length ? (
+              downloadTracks.map((t, i) => <TrackCard key={t.id} track={t} seed={i + 8} />)
+            ) : (
+              <EmptyTile label="Save prayers for offline" onPress={() => router.navigate("/discover")}>
+                <DownloadIcon size={26} color={c.muted} />
+              </EmptyTile>
+            )}
+          </Shelf>
 
-      <JournalSection kind="intention" />
-      <JournalSection kind="reflection" />
+          <JournalSection kind="intention" />
+          <JournalSection kind="reflection" />
 
-      <View className="mt-8">
-        <SectionTitle title="Bible notes" onPress={() => router.push("/bible/notes")} />
-        <Pressable onPress={() => router.push("/bible/notes")} accessibilityRole="button" className="mx-4 flex-row items-center gap-3 rounded-[24px] bg-card px-5 py-4 active:opacity-80">
-          <NoteIcon size={20} color={c.ink} />
-          <Text className="flex-1 font-sans-bold text-base text-ink">Notes, highlights & bookmarks</Text>
-          {markCount > 0 && <Text className="font-sans text-sm text-muted">{markCount}</Text>}
-          <ChevronIcon color={c.muted} />
-        </Pressable>
-      </View>
+          <View className="mt-8">
+            <SectionTitle title="Bible notes" onPress={() => router.push("/bible/notes")} />
+            <Pressable onPress={() => router.push("/bible/notes")} accessibilityRole="button" className="mx-4 flex-row items-center gap-3 rounded-[24px] bg-card px-5 py-4 active:opacity-80">
+              <NoteIcon size={20} color={c.ink} />
+              <Text className="flex-1 font-sans-bold text-base text-ink">Notes, highlights & bookmarks</Text>
+              {markCount > 0 && <Text className="font-sans text-sm text-muted">{markCount}</Text>}
+              <ChevronIcon color={c.muted} />
+            </Pressable>
+          </View>
+        </>
+      )}
     </ScrollView>
   );
 }

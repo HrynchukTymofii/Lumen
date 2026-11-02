@@ -22,8 +22,14 @@ export async function exchangeLoginLink(token: string) {
   return data;
 }
 
-export async function signInWithAppleToken(idToken: string, firstName?: string) {
-  const { data } = await api.post<LoginResponse>("/auth/apple", { id_token: idToken, firstName: firstName || undefined, platform });
+// authorizationCode lets the server revoke the Apple sign-in when the account is deleted
+export async function signInWithAppleToken(idToken: string, firstName?: string, authorizationCode?: string | null) {
+  const { data } = await api.post<LoginResponse>("/auth/apple", {
+    id_token: idToken,
+    firstName: firstName || undefined,
+    authorizationCode: authorizationCode || undefined,
+    platform,
+  });
   return data;
 }
 

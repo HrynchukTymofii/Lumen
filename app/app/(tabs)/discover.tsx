@@ -16,6 +16,7 @@ import { cachedLibrary, getLibrary } from "@/lib/api/library";
 import type { Library } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
 import { categoryTitle } from "@/lib/play";
+import { withAccount } from "@/lib/account";
 
 // Discover (replaces Prayers): search, then a grid of ways in (each category that has prayers, short prayers,
 // the Bible, the companion), then every prayer. Tiles appear as the catalog published in /admin grows.
@@ -122,7 +123,7 @@ export default function DiscoverScreen() {
                 }
               />
             )}
-            <ArtTile label="Notes & highlights" onPress={() => router.push("/bible/notes")} art={<Scene name="dusk" options={{ seed: 13, noBigTrees: true }} />} />
+            <ArtTile label="Notes & highlights" onPress={() => withAccount("notes", () => router.push("/bible/notes"))} art={<Scene name="dusk" options={{ seed: 13, noBigTrees: true }} />} />
           </View>
 
           {tracks.length > 0 ? (

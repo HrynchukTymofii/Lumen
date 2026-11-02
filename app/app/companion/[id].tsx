@@ -8,11 +8,14 @@ import { IconButton } from "@/components/ui/Button";
 import { BackIcon, BookIcon, MicIcon, SendIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
+import { useKeyboardShown } from "@/hooks/useKeyboardShown";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { ChatError, getConversation, sendMessage } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
 import type { ChatMessage, CrisisResource } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
+import { reviewMoment } from "@/lib/review";
+import { openPaywall } from "@/lib/account";
 
 // Chat (SPEC §10.2 Companion): the reply streams in as it's written; verses it cites show under it as cards.
 // Crisis replies carry call / text buttons. Errors before the stream (daily limit, too fast) show above the input.
@@ -36,6 +39,16 @@ export default function ChatScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [quotaHit, setQuotaHit] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const keyboardShown = useKeyboardShown();
+
+  // A multiline input grows with long (e.g. dictated) text but doesn't shrink back when cleared from code (iOS),
+  // so sending puts in a fresh one, focused again if the old one was
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const [fresh, setFresh] = useState({ key: 0, focus: false });
+  const resetInput = (text: string) => {
+    setInput(text);
+    setFresh((f) => ({ key: f.key + 1, focus: inputRef.current?.isFocused() ?? false }));
+  };
 
   // What was typed before the mic was tapped; the spoken words go after it
   const typed = useRef("");
@@ -60,8 +73,21 @@ export default function ChatScreen() {
     );
   }, [id]);
 
-  // Leaving the screen stops a reply that is still streaming
-  useEffect(() => () => abort.current?.abort(), []);
+  // Replies received on this visit, and the person's messages in the whole conversation
+  const talked = useRef({ replies: 0, mine: 0 });
+  useEffect(() => {
+    talked.current.mine = messages?.filter((m) => m.role === "user").length ?? 0;
+  }, [messages]);
+
+  // Leaving the screen stops a reply that is still streaming. Leaving a conversation of 3+ messages that went on
+  // here is a moment to ask how the companion is helping (lib/review.ts)
+  useEffect(() => {
+    const t = talked;
+    return () => {
+      abort.current?.abort();
+      if (t.current.replies > 0 && t.current.mine >= 3) reviewMoment("companion");
+    };
+  }, []);
 
   // Changes the last message (the reply being written)
   const updateReply = (change: (m: ChatMessage) => ChatMessage) =>
@@ -71,7 +97,7 @@ export default function ChatScreen() {
     const text = input.trim();
     if (!text || sending) return;
     if (voice.listening) voice.cancel();
-    setInput("");
+    resetInput("");
     setNotice(null);
     setQuotaHit(false);
     setSending(true);
@@ -112,6 +138,7 @@ export default function ChatScreen() {
       );
       // The connection closed without a word (e.g. the server timed out): same as an error before the stream
       if (!got && !controller.signal.aborted) throw new ChatError("The reply didn’t come through. Please try again.", 0);
+      if (got) talked.current.replies += 1;
     } catch (err) {
       if (controller.signal.aborted) return;
       // Nothing was written: take back both bubbles and give the text back to edit or resend
@@ -186,14 +213,20 @@ export default function ChatScreen() {
           <Text className="font-sans text-sm leading-5 text-muted">
             Until then, you could bring it to God in prayer, or share it with someone you trust.
           </Text>
-          <Pressable onPress={() => router.push("/paywall")} accessibilityRole="button" className="rounded-full bg-ink py-3 active:opacity-80">
+          <Pressable onPress={openPaywall} accessibilityRole="button" className="rounded-full bg-ink py-3 active:opacity-80">
             <Text className="text-center font-sans-bold text-sm text-bg">Keep talking with Premium</Text>
           </Pressable>
         </View>
       )}
 
-      <View className="flex-row items-end gap-2 border-t border-line bg-card px-3 pt-2.5" style={{ paddingBottom: insets.bottom + 10 }}>
+      {/* The keyboard covers the home-indicator area, so its inset only applies while the keyboard is down */}
+      <View
+        className="flex-row items-end gap-2 border-t border-line bg-card px-3 pt-2.5"
+        style={{ paddingBottom: (keyboardShown ? 0 : insets.bottom) + 10 }}
+      >
         <TextInput
+          key={fresh.key}
+          ref={inputRef}
           value={input}
           onChangeText={setInput}
           placeholder="Write a message"
@@ -201,7 +234,7 @@ export default function ChatScreen() {
           multiline
           maxLength={MAX_LENGTH}
           className="max-h-32 min-h-11 flex-1 rounded-3xl bg-bg px-4 py-2.5 font-sans text-base text-ink"
-          autoFocus={Boolean(prompt) && autoSend !== "1"}
+          autoFocus={fresh.key === 0 ? Boolean(prompt) && autoSend !== "1" : fresh.focus}
         />
         {voice.available && (
           <Pressable
