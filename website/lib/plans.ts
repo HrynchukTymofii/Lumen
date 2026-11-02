@@ -36,7 +36,7 @@ export const FREE_FEATURES = [
   "Full Bible: WEB, KJV, Douay-Rheims",
   "Verse of the day",
   "One daily prayer",
-  "Companion: 5 messages a day",
+  "Companion: 3 messages a day",
   "Weekly goal that forgives missed days",
 ];
 export const PREMIUM_FEATURES = [
