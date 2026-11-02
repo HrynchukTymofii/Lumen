@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/current";
 import { SITE } from "@/lib/site";
 import { DocPage } from "../_components/doc-page";
@@ -46,15 +47,23 @@ const HELP = [
   ],
 ] as const;
 
-export default async function SupportPage() {
+// Reads the session cookie, so it sits in <Suspense>: the rest of the page is prerendered, and signed-in users get
+// their email filled in once this resolves
+async function PrefilledForm() {
   const user = await getCurrentUser().catch(() => null);
+  return <SupportForm defaultEmail={user?.email} defaultName={user?.firstName ?? undefined} />;
+}
+
+export default function SupportPage() {
   return (
     <DocPage eyebrow="Help" title="Contact & Support">
       <p>
         We&apos;re a small team and read every message. Send us a note below and we&apos;ll reply within two working days, or
         email <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.
       </p>
-      <SupportForm defaultEmail={user?.email} defaultName={user?.firstName ?? undefined} />
+      <Suspense fallback={<SupportForm />}>
+        <PrefilledForm />
+      </Suspense>
       <div className="callout bg-rose">
         <b>Need help right now?</b> {SITE.name} isn&apos;t an emergency service. If you&apos;re in crisis or thinking about
         harming yourself, call or text <b>988</b> (US), call <b>911</b>, or your local emergency number.
