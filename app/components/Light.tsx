@@ -16,7 +16,7 @@ import Svg, { Circle, Defs, Ellipse, LinearGradient, RadialGradient, Stop } from
 // The sphere is lit from the upper left and its rim melts into a soft aura; the halo bobs on its own beat.
 //   idle: breathes (4.4s), halo floats · listening: 1.3s pulse, halo brightens
 //   thinking: halo turns (it narrows and widens like a ring seen spinning) · speaking: rings ripple out of the sphere
-// The website still draws the older sun-and-orbit (lightSvg() in website/lib/kit/art.ts).
+// The website draws the same Light (lightSvg() in website/lib/kit/art.ts + .light in site.css); keep them in step.
 
 export type LightState = "idle" | "listening" | "thinking" | "speaking";
 
