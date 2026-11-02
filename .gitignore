@@ -12,3 +12,6 @@ node_modules/
 assets/Hallow/
 # Stray empty lockfile at the repo root
 /package-lock.json
+
+# Store creatives (icon / screenshot sources and renders): kept locally, out of git and EAS uploads
+store-creatives/
