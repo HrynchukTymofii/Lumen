@@ -1,6 +1,6 @@
 import * as Application from "expo-application";
 import { router } from "expo-router";
-import { Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
 import { ScreenHeader } from "@/components/ScreenHeader";
@@ -9,14 +9,10 @@ import { ChevronIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { askToSignIn } from "@/lib/account";
-import { SITE_URL } from "@/lib/config";
-import { reportError } from "@/lib/errorReporting";
 import { shareApp } from "@/lib/play";
 
 // Settings, opened from Me: the account card, then General, Contact & Support, Subscription, Share, Legal, Log out.
 // Without an account: a card to create one, and the settings that don't need one.
-
-const openSupport = () => Linking.openURL(`${SITE_URL}/support`).catch(reportError);
 
 function appVersion() {
   return [Application.nativeApplicationVersion, Application.nativeBuildVersion && `(${Application.nativeBuildVersion})`].filter(Boolean).join(" ");
@@ -59,7 +55,7 @@ export default function SettingsScreen() {
 
         <View className="mt-3">
           <MenuRow label="General" hint="Theme, reminders, goal, Bible, companion" href="/settings/general" />
-          <MenuRow label="Contact & Support" onPress={openSupport} />
+          <MenuRow label="Contact & Support" href="/settings/support" />
           <MenuRow label={premium.active ? "Subscription" : "Subscribe"} hint={premium.active ? "Premium" : "Every prayer, unlimited companion"} href="/settings/subscription" />
           <MenuRow label="Share Lumen" onPress={shareApp} />
           <MenuRow label="Legal" href="/settings/legal" />
@@ -98,7 +94,7 @@ function GuestSettings() {
 
         <View className="mt-3">
           <MenuRow label="General" hint="Theme" href="/settings/general" />
-          <MenuRow label="Contact & Support" onPress={openSupport} />
+          <MenuRow label="Contact & Support" href="/settings/support" />
           <MenuRow label="Share Lumen" onPress={shareApp} />
           <MenuRow label="Legal" href="/settings/legal" />
         </View>

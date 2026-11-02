@@ -83,6 +83,7 @@ function RootNavigator() {
           <Stack.Screen name="settings/general" />
           <Stack.Screen name="settings/subscription" />
           <Stack.Screen name="settings/legal" />
+          <Stack.Screen name="settings/support" />
           <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !onboarded} redirectTo={home}>

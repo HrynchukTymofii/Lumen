@@ -94,18 +94,19 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  loginTokens   LoginToken[]
-  entitlements  Entitlement[]
-  appErrors     AppError[]
-  conversations Conversation[]
-  aiUsage       AiUsage[]
-  completions   PrayerCompletion[]
-  favorites     FavoriteTrack[]
-  plays         TrackPlay[]
-  journal       JournalEntry[]
-  bibleMarks    BibleMark[]
-  bookmarks     BibleBookmark[]
-  ratings       AppRating[]
+  loginTokens     LoginToken[]
+  entitlements    Entitlement[]
+  appErrors       AppError[]
+  conversations   Conversation[]
+  aiUsage         AiUsage[]
+  completions     PrayerCompletion[]
+  favorites       FavoriteTrack[]
+  plays           TrackPlay[]
+  journal         JournalEntry[]
+  bibleMarks      BibleMark[]
+  bookmarks       BibleBookmark[]
+  ratings         AppRating[]
+  supportRequests SupportRequest[]
 }
 
 enum LoginTokenPurpose {
@@ -265,6 +266,26 @@ model AppRating {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([createdAt])
+}
+
+// Messages sent through the Contact & Support form (website /support and the app's Settings).
+// Each one is also emailed to SITE.contactEmail; the row is the copy that survives a failed email.
+model SupportRequest {
+  id         String    @id @default(uuid())
+  userId     String?
+  email      String
+  name       String?
+  topic      String // "account" | "subscription" | "bug" | "feedback" | "other"
+  message    String
+  platform   Platform
+  appVersion String?
+  emailedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, createdAt])
   @@index([createdAt])
 }
 
