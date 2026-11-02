@@ -8,16 +8,25 @@ import { MenuRow } from "@/components/SettingsParts";
 import { ChevronIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
+import { askToSignIn } from "@/lib/account";
 import { SITE_URL } from "@/lib/config";
 import { reportError } from "@/lib/errorReporting";
 import { shareApp } from "@/lib/play";
 
 // Settings, opened from Me: the account card, then General, Contact & Support, Subscription, Share, Legal, Log out.
+// Without an account: a card to create one, and the settings that don't need one.
+
+const openSupport = () => Linking.openURL(`${SITE_URL}/support`).catch(reportError);
+
+function appVersion() {
+  return [Application.nativeApplicationVersion, Application.nativeBuildVersion && `(${Application.nativeBuildVersion})`].filter(Boolean).join(" ");
+}
+
 export default function SettingsScreen() {
   const { user, premium, signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const c = useColors();
-  if (!user) return null;
+  if (!user) return <GuestSettings />;
 
   const confirmSignOut = () =>
     Alert.alert("Log out?", "You can sign back in any time with the same email.", [
@@ -25,7 +34,7 @@ export default function SettingsScreen() {
       { text: "Log out", style: "destructive", onPress: signOut },
     ]);
 
-  const version = [Application.nativeApplicationVersion, Application.nativeBuildVersion && `(${Application.nativeBuildVersion})`].filter(Boolean).join(" ");
+  const version = appVersion();
 
   return (
     <View className="flex-1 bg-bg">
@@ -50,8 +59,8 @@ export default function SettingsScreen() {
 
         <View className="mt-3">
           <MenuRow label="General" hint="Theme, reminders, goal, Bible, companion" href="/settings/general" />
-          <MenuRow label="Contact & Support" onPress={() => Linking.openURL(`${SITE_URL}/support`).catch(reportError)} />
-          <MenuRow label={premium.active ? "Subscription" : "Subscribe"} hint={premium.active ? "Premium" : "Try Premium free for 7 days"} href="/settings/subscription" />
+          <MenuRow label="Contact & Support" onPress={openSupport} />
+          <MenuRow label={premium.active ? "Subscription" : "Subscribe"} hint={premium.active ? "Premium" : "Every prayer, unlimited companion"} href="/settings/subscription" />
           <MenuRow label="Share Lumen" onPress={shareApp} />
           <MenuRow label="Legal" href="/settings/legal" />
           <MenuRow label="Log out" onPress={confirmSignOut} />
@@ -61,6 +70,40 @@ export default function SettingsScreen() {
           {version ? `v${version} · ` : ""}
           {user.email}
         </Text>
+      </ScrollView>
+    </View>
+  );
+}
+
+function GuestSettings() {
+  const insets = useSafeAreaInsets();
+  const c = useColors();
+  const version = appVersion();
+  return (
+    <View className="flex-1 bg-bg">
+      <ScreenHeader title="Settings" fallback="/me" />
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+        <Pressable
+          onPress={() => askToSignIn()}
+          accessibilityRole="button"
+          className="mx-4 mt-2 flex-row items-center gap-4 rounded-[24px] border-[1.5px] border-line2 bg-card px-5 py-4 active:opacity-80"
+        >
+          <Light size={52} />
+          <View className="flex-1">
+            <Text className="font-display text-[22px] leading-7 text-ink">Sign in</Text>
+            <Text className="font-sans text-sm text-muted">Or create a free account</Text>
+          </View>
+          <ChevronIcon color={c.dim} />
+        </Pressable>
+
+        <View className="mt-3">
+          <MenuRow label="General" hint="Theme" href="/settings/general" />
+          <MenuRow label="Contact & Support" onPress={openSupport} />
+          <MenuRow label="Share Lumen" onPress={shareApp} />
+          <MenuRow label="Legal" href="/settings/legal" />
+        </View>
+
+        {version ? <Text className="mt-6 px-6 text-center font-sans text-xs text-dim">v{version}</Text> : null}
       </ScrollView>
     </View>
   );

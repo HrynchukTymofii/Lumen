@@ -1,7 +1,6 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
-import type { PurchasesPackage } from "react-native-purchases";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
 import { InkButton } from "@/components/ui/Button";
@@ -11,10 +10,11 @@ import { useAuth } from "@/context/AuthContext";
 import { errorMessage } from "@/lib/api/client";
 import { SITE_URL } from "@/lib/config";
 import { reportError } from "@/lib/errorReporting";
-import { buy, getPackages, purchasesEnabled, restore } from "@/lib/purchases";
+import { buy, getPlans, purchasesEnabled, restore, type Intro, type PeriodUnit, type Plan } from "@/lib/purchases";
 
-// In-app paywall (SPEC §10.2), opened as a modal. Prices and the trial come from the store through RevenueCat
-// (offering "default": $rc_annual with a 7-day trial, $rc_monthly). Close is always visible.
+// In-app paywall (SPEC §10.2), opened as a modal. Prices and intro offers come from the store through RevenueCat
+// (offering "default": $rc_annual, $rc_monthly). An intro offer (a lower first month, or a free trial) is shown only
+// to people who can get it (lib/purchases.ts). Close is always visible.
 // Feature lists: same copy as website/lib/plans.ts.
 
 const PREMIUM_FEATURES = [
@@ -27,21 +27,19 @@ const PREMIUM_FEATURES = [
 
 const close = () => (router.canGoBack() ? router.back() : router.replace("/today"));
 
-const DAYS_PER_UNIT: Record<string, number> = { DAY: 1, WEEK: 7, MONTH: 30, YEAR: 365 };
-
-// Free trial length in days, 0 = none. iOS reports it as the intro price, Android as the free phase of the
-// default offer; a "1 week" trial in App Store Connect is 7 days.
-function trialDaysOf(pkg: PurchasesPackage | undefined) {
-  if (!pkg) return 0;
-  const free = pkg.product.defaultOption?.freePhase?.billingPeriod;
-  if (free) return free.value * (DAYS_PER_UNIT[free.unit] ?? 0);
-  const intro = pkg.product.introPrice;
-  if (intro?.price === 0) return intro.periodNumberOfUnits * (DAYS_PER_UNIT[intro.periodUnit] ?? 0);
-  return 0;
-}
-
 const PLAN_NAME: Record<string, string> = { ANNUAL: "Yearly", MONTHLY: "Monthly", WEEKLY: "Weekly" };
 const PERIOD: Record<string, string> = { ANNUAL: "year", MONTHLY: "month", WEEKLY: "week" };
+
+/** "month", "3 months", "7 days" */
+function span(unit: PeriodUnit, count: number) {
+  const word = unit.toLowerCase();
+  return count === 1 ? word : `${count} ${word}s`;
+}
+
+/** "$2.99 for the first month" / "Free for the first 7 days" */
+function introLine(intro: Intro) {
+  return intro.free ? `Free for the first ${span(intro.unit, intro.count)}` : `${intro.price} for the first ${span(intro.unit, intro.count)}`;
+}
 
 const CANCEL_WHERE = Platform.OS === "android" ? "in Google Play → Subscriptions" : "in Settings → your name → Subscriptions";
 
@@ -51,17 +49,17 @@ export default function Paywall() {
   const c = useColors();
   // An iOS modal is a sheet that already starts below the status bar; on Android it is full screen
   const top = Platform.OS === "ios" ? 0 : insets.top;
-  const [packages, setPackages] = useState<PurchasesPackage[] | null>(purchasesEnabled ? null : []);
+  const [plans, setPlans] = useState<Plan[] | null>(purchasesEnabled ? null : []);
   const [selected, setSelected] = useState(0);
   const [busy, setBusy] = useState<"buy" | "restore" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!purchasesEnabled) return;
-    getPackages().then(setPackages, (err) => {
+    getPlans().then(setPlans, (err) => {
       reportError(err);
       setError(errorMessage(err));
-      setPackages([]);
+      setPlans([]);
     });
   }, []);
 
@@ -70,8 +68,9 @@ export default function Paywall() {
     if (premium.active) close();
   }, [premium.active]);
 
-  const pkg = packages?.[selected];
-  const trialDays = trialDaysOf(pkg);
+  const plan = plans?.[selected];
+  const pkg = plan?.pkg;
+  const intro = plan?.intro;
   const period = pkg ? PERIOD[pkg.packageType] : "";
 
   const purchase = async () => {
@@ -121,18 +120,18 @@ export default function Paywall() {
           ))}
         </View>
 
-        {packages === null ? (
+        {plans === null ? (
           <View className="mt-8 items-center">
             <Light size={48} state="thinking" />
           </View>
-        ) : packages.length === 0 ? (
+        ) : plans.length === 0 ? (
           <Text className="mt-6 text-center font-sans text-base leading-6 text-muted">
             {purchasesEnabled ? "Subscriptions can’t be loaded right now. Please try again later." : "Subscriptions aren’t available in this build yet."}
           </Text>
         ) : (
           <>
             <View className="mt-6 gap-3">
-              {packages.map((p, i) => {
+              {plans.map(({ pkg: p, intro: offer }, i) => {
                 const on = i === selected;
                 const yearly = p.packageType === "ANNUAL";
                 return (
@@ -147,24 +146,34 @@ export default function Paywall() {
                     <View className="flex-1">
                       <Text className="font-sans-bold text-base text-ink">{PLAN_NAME[p.packageType]}</Text>
                       <Text className="font-sans text-sm text-muted">
-                        {yearly && p.product.pricePerMonthString ? `${p.product.pricePerMonthString} a month` : `Billed ${PERIOD[p.packageType]}ly`}
+                        {offer
+                          ? introLine(offer)
+                          : yearly && p.product.pricePerMonthString
+                            ? `${p.product.pricePerMonthString} a month, billed yearly`
+                            : `Billed ${PERIOD[p.packageType]}ly`}
                       </Text>
                     </View>
-                    <Text className="font-sans-bold text-base text-ink">{p.product.priceString}</Text>
+                    <Text className="font-sans-bold text-base text-ink">
+                      {p.product.priceString}
+                      <Text className="font-sans text-sm text-muted">/{PERIOD[p.packageType]}</Text>
+                    </Text>
                   </Pressable>
                 );
               })}
             </View>
 
             <View className="mt-6">
-              <InkButton label={trialDays ? `Start your ${trialDays}-day free trial` : "Start subscription"} onPress={purchase} loading={busy === "buy"} disabled={busy !== null} />
+              <InkButton
+                label={!intro ? "Subscribe" : intro.free ? "Start free trial" : `Start for ${intro.price}`}
+                onPress={purchase}
+                loading={busy === "buy"}
+                disabled={busy !== null}
+              />
             </View>
             {pkg && (
               <Text className="mt-3 text-center font-sans text-xs leading-5 text-muted">
-                {trialDays
-                  ? `Free for ${trialDays} days, then ${pkg.product.priceString} per ${period}. `
-                  : `${pkg.product.priceString} per ${period}, renews automatically. `}
-                Cancel anytime {CANCEL_WHERE}.
+                {intro ? `${introLine(intro)}, then ${pkg.product.priceString} per ${period}. ` : `${pkg.product.priceString} per ${period}. `}
+                Renews automatically until cancelled. Cancel anytime {CANCEL_WHERE}, at least 24 hours before the renewal date.
               </Text>
             )}
           </>

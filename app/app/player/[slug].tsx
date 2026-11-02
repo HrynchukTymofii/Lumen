@@ -9,8 +9,10 @@ import { IconButton } from "@/components/ui/Button";
 import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, SkipIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { cachedLibrary } from "@/lib/api/library";
+import { hasAccount } from "@/lib/account";
 import { markPrayed } from "@/lib/api/today";
 import { reportError } from "@/lib/errorReporting";
+import { reviewMoment } from "@/lib/review";
 import { localAudio, recordPlayed } from "@/lib/userLibrary";
 
 // Guided player (SPEC §10.2): full-bleed scene, the Light speaking, the current line on a panel, progress,
@@ -51,8 +53,17 @@ export default function PlayerScreen() {
     if (!status.didJustFinish || counted.current) return;
     counted.current = true;
     setFinished(true);
-    markPrayed(track?.id).catch(reportError);
+    // The prayer week lives on the account
+    if (hasAccount()) markPrayed(track?.id).catch(reportError);
   }, [status.didJustFinish, track?.id]);
+
+  // Leaving after listening to the end is a moment to ask how Lumen is helping (lib/review.ts)
+  useEffect(() => {
+    const done = counted;
+    return () => {
+      if (done.current) reviewMoment("prayer");
+    };
+  }, []);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace("/discover"));
 

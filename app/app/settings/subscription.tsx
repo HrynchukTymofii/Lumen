@@ -1,4 +1,3 @@
-import { router } from "expo-router";
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { errorMessage } from "@/lib/api/client";
 import { reportError } from "@/lib/errorReporting";
 import { purchasesEnabled, restore } from "@/lib/purchases";
+import { openPaywall } from "@/lib/account";
 
 // Subscription: what plan this account is on, the way into the paywall, and restoring store purchases
 const PREMIUM_SOURCE = { stripe: "on the web", app_store: "in the App Store", play: "in Google Play" };
@@ -62,7 +62,7 @@ export default function SubscriptionSettings() {
                 Bible, verse of the day and a daily prayer, forever. Premium unlocks every guided prayer and unlimited companion conversations.
               </Text>
               <View className="mt-5">
-                <InkButton label="Try Premium free" onPress={() => router.push("/paywall")} />
+                <InkButton label="See Premium plans" onPress={openPaywall} />
               </View>
             </>
           )}

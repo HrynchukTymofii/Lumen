@@ -16,6 +16,8 @@ const config: ExpoConfig = {
     bundleIdentifier: "com.hrynchuk.biblecompanion",
     supportsTablet: true,
     usesAppleSignIn: true,
+    // Only standard HTTPS, so App Store Connect stops asking about encryption on every build
+    infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
   android: {
     package: "com.hrynchuk.biblecompanion",

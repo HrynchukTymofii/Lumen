@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/icons";
 import { highlightColor, useColors, type Colors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
+import { askToSignIn, hasAccount, withAccount } from "@/lib/account";
 import { getChapter } from "@/lib/api/bible";
 import { createConversation } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
@@ -86,6 +87,12 @@ export function BibleReader({ start, pointed, tab }: { start: Loc; pointed?: { f
   const setSelected = (s: typeof selected) => {
     setSelectedRaw(s);
     setCopied(false);
+  };
+  // Highlights and notes are kept on the account: without one the sheet closes and sign-in opens
+  const personal = (action: () => void) => {
+    if (hasAccount()) return action();
+    setSelected(null);
+    askToSignIn("notes");
   };
   // Tapping the selected verse again deselects it
   const toggleVerse = useCallback((osis: string, chapter: number, v: number) => {
@@ -217,7 +224,7 @@ export function BibleReader({ start, pointed, tab }: { start: Loc; pointed?: { f
           </Pressable>
           {current && (
             <Pressable
-              onPress={() => toggleBookmark({ osis: current.book.osis, book: current.book.name, chapter: current.chapter })}
+              onPress={() => withAccount("notes", () => toggleBookmark({ osis: current.book.osis, book: current.book.name, chapter: current.chapter }))}
               accessibilityRole="button"
               accessibilityLabel={bookmarked ? "Remove bookmark" : "Bookmark this chapter"}
               accessibilityState={{ selected: bookmarked }}
@@ -308,7 +315,7 @@ export function BibleReader({ start, pointed, tab }: { start: Loc; pointed?: { f
               return (
                 <Pressable
                   key={color}
-                  onPress={() => updateMark(verseInfo, on ? { highlight: false } : { highlight: true, color })}
+                  onPress={() => personal(() => updateMark(verseInfo, on ? { highlight: false } : { highlight: true, color }))}
                   accessibilityRole="button"
                   accessibilityLabel={on ? `Remove ${color} highlight` : `Highlight ${color}`}
                   accessibilityState={{ selected: on }}
@@ -328,7 +335,7 @@ export function BibleReader({ start, pointed, tab }: { start: Loc; pointed?: { f
           ) : null}
 
           <View className="mt-4 flex-row justify-center gap-4">
-            <Action label={mark?.note ? "Edit note" : "Note"} onPress={() => setEditing(true)}>
+            <Action label={mark?.note ? "Edit note" : "Note"} onPress={() => personal(() => setEditing(true))}>
               <NoteIcon color={c.ink} />
             </Action>
             <Action label={copied ? "Copied" : "Copy"} onPress={copy}>

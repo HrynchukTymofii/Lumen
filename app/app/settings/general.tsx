@@ -6,7 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import type { Translation } from "@/lib/api/types";
 import { setThemePref, useThemePref, type ThemePref } from "@/lib/themePref";
 
-// General settings. Every change saves right away (PATCH /api/me); the theme is kept on this device.
+// General settings. Every change saves right away (PATCH /api/me); the theme is kept on this device, so it's
+// the one setting here without an account.
 
 const THEMES: { value: ThemePref; label: string }[] = [
   { value: "system", label: "Automatic" },
@@ -27,7 +28,6 @@ export default function GeneralSettings() {
   const insets = useSafeAreaInsets();
   const { save, error, setError } = useSaveProfile();
   const theme = useThemePref();
-  if (!user) return null;
 
   return (
     <View className="flex-1 bg-bg">
@@ -39,26 +39,30 @@ export default function GeneralSettings() {
           <Chips options={THEMES} value={theme} onChange={setThemePref} />
         </Section>
 
-        <Section title="Daily reminder">
-          <ReminderControls save={save} setError={setError} />
-        </Section>
+        {user && (
+          <>
+            <Section title="Daily reminder">
+              <ReminderControls save={save} setError={setError} />
+            </Section>
 
-        <Section title="Weekly goal">
-          <Text className="font-sans text-sm text-muted">Days a week you’d like to pray. Missed days never reset anything.</Text>
-          <Chips options={GOALS.map((g) => ({ value: String(g), label: `${g} days` }))} value={String(user.weeklyGoal)} onChange={(g) => save({ weeklyGoal: Number(g) })} />
-          <View className="mt-4">
-            <Toggle label="Hide the week on Home" value={user.streakHidden} onChange={(streakHidden) => save({ streakHidden })} />
-          </View>
-        </Section>
+            <Section title="Weekly goal">
+              <Text className="font-sans text-sm text-muted">Days a week you’d like to pray. Missed days never reset anything.</Text>
+              <Chips options={GOALS.map((g) => ({ value: String(g), label: `${g} days` }))} value={String(user.weeklyGoal)} onChange={(g) => save({ weeklyGoal: Number(g) })} />
+              <View className="mt-4">
+                <Toggle label="Hide the week on Home" value={user.streakHidden} onChange={(streakHidden) => save({ streakHidden })} />
+              </View>
+            </Section>
 
-        <Section title="Bible">
-          <Text className="font-sans-bold text-sm text-ink">Translation</Text>
-          <Chips options={TRANSLATIONS} value={user.translation} onChange={(translation) => save({ translation })} />
-        </Section>
+            <Section title="Bible">
+              <Text className="font-sans-bold text-sm text-ink">Translation</Text>
+              <Chips options={TRANSLATIONS} value={user.translation} onChange={(translation) => save({ translation })} />
+            </Section>
 
-        <Section title="Companion">
-          <Toggle label="AI companion" hint="Chat about the Bible and ask for prayers." value={user.aiEnabled} onChange={(aiEnabled) => save({ aiEnabled })} />
-        </Section>
+            <Section title="Companion">
+              <Toggle label="AI companion" hint="Chat about the Bible and ask for prayers." value={user.aiEnabled} onChange={(aiEnabled) => save({ aiEnabled })} />
+            </Section>
+          </>
+        )}
       </ScrollView>
     </View>
   );

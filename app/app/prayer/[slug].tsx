@@ -12,6 +12,7 @@ import { cachedLibrary, getLibrary } from "@/lib/api/library";
 import type { Track } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
 import { downloadKey, downloadsSupported, downloadTrack, removeDownload, toggleFavorite, useDownloads, useFavorites } from "@/lib/userLibrary";
+import { askToSignIn, hasAccount, openPaywall } from "@/lib/account";
 
 // Prayer detail (SPEC §10.2): scene, title, length switch (1 / 3 / 5 min), "Pray" (the guided player, when the
 // length has audio), favorite and download (offline audio) for that length, and the text. Locked prayers show their first lines (the server sends no more) and the paywall.
@@ -90,6 +91,7 @@ export default function PrayerScreen() {
                     label={downloads[downloadKey(track.id, variant.minutes)] ? "Remove download" : `Download ${variant.minutes} min for offline`}
                     onPress={async () => {
                       if (downloads[downloadKey(track.id, variant.minutes)]) return removeDownload(track.id, variant.minutes);
+                      if (!hasAccount()) return askToSignIn("downloads");
                       setDownloading(true);
                       try {
                         await downloadTrack(track, variant);
@@ -127,13 +129,13 @@ export default function PrayerScreen() {
 
               {track.locked && (
                 <Pressable
-                  onPress={() => router.push("/paywall")}
+                  onPress={openPaywall}
                   accessibilityRole="button"
                   className="mt-6 flex-row items-center gap-3 rounded-2xl bg-butter px-4 py-4 active:opacity-80"
                 >
                   <LockIcon size={18} color={c.onPastel} />
                   <Text className="flex-1 font-sans-bold text-[15px] leading-6 text-on-pastel">
-                    The full prayer and audio are in Premium. Try it free for 7 days.
+                    The full prayer and audio are in Premium.
                   </Text>
                 </Pressable>
               )}

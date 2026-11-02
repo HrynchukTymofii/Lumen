@@ -1,5 +1,5 @@
 import * as AppleAuthentication from "expo-apple-authentication";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useColorScheme } from "nativewind";
 import { useEffect, useState } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
@@ -7,15 +7,32 @@ import { ArtSheet } from "@/components/ArtSheet";
 import { LineButton } from "@/components/ui/Button";
 import { CheckIcon, GoogleIcon, MailIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
+import { useAuth } from "@/context/AuthContext";
+import type { AccountReason } from "@/lib/account";
 import { useAppleLogin } from "@/hooks/useAppleLogin";
 import { useGoogleLogin } from "@/hooks/useGoogleLogin";
 import { SITE_URL } from "@/lib/config";
 import { getPendingOnboarding, hasSensitiveAnswers, savePendingOnboarding } from "@/lib/onboarding";
 
 // Apple / Google / email. After the quiz it saves the answers to the new account; from "I already have an
-// account" it just signs in. Signing in flips the route guards, which move on from this screen.
+// account" it just signs in. Someone trying the app without an account lands here from a feature that needs one
+// (?reason=, lib/account.ts). Signing in flips the route guards, which move on from this screen.
+
+const GUEST_COPY: Record<AccountReason | "default", [string, string]> = {
+  default: ["Create your free account", "Keep your prayers, notes and week safe on any device. What you’ve saved so far comes with you."],
+  companion: ["Talk with the companion", "Create a free account to ask about the Bible, ask for a prayer and keep your conversations."],
+  premium: ["Create your account first", "Premium belongs to your account, so it works on all your devices and can always be restored."],
+  streak: ["Keep track of your week", "Create a free account to count the days you pray and get a gentle daily reminder."],
+  reminders: ["Get a daily reminder", "Create a free account to choose a time for a gentle reminder to pray."],
+  notes: ["Keep your notes", "Create a free account to highlight verses, write notes and bookmark chapters, safe on any device."],
+  journal: ["Keep a prayer journal", "Create a free account to write your intentions and reflections, safe on any device."],
+  downloads: ["Pray offline", "Create a free account to download prayers and listen without a connection."],
+};
+
 export default function SignIn() {
   const c = useColors();
+  const { guest } = useAuth();
+  const { reason } = useLocalSearchParams<{ reason?: AccountReason }>();
   const { colorScheme } = useColorScheme();
   const apple = useAppleLogin();
   const google = useGoogleLogin();
@@ -39,13 +56,16 @@ export default function SignIn() {
   };
 
   const error = apple.error ?? google.error;
+  const [title, subtitle] = fromQuiz
+    ? ["Save your prayers", "Your prayers, journal and week stay safe on any device."]
+    : guest || reason
+      ? GUEST_COPY[reason && reason in GUEST_COPY ? reason : "default"]
+      : ["Welcome back", "Sign in the way you did before."];
 
   return (
     <ArtSheet scene="sky" artHeight={360} onBack={() => (router.canGoBack() ? router.back() : router.replace("/welcome"))}>
-      <Text className="font-display text-[30px] leading-[36px] text-ink">{fromQuiz ? "Save your prayers" : "Welcome back"}</Text>
-      <Text className="mt-2 font-sans text-base leading-6 text-muted">
-        {fromQuiz ? "Your prayers, journal and week stay safe on any device." : "Sign in the way you did before."}
-      </Text>
+      <Text className="font-display text-[30px] leading-[36px] text-ink">{title}</Text>
+      <Text className="mt-2 font-sans text-base leading-6 text-muted">{subtitle}</Text>
 
       {askConsent && (
         <Pressable onPress={toggleConsent} accessibilityRole="checkbox" accessibilityState={{ checked: consent }} className="mt-6 flex-row gap-3 rounded-2xl bg-sage p-4">
