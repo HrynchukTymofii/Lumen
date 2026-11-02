@@ -3,6 +3,7 @@ import { z } from "zod";
 import { HttpError } from "@/lib/admin-auth";
 import { handle, readJson } from "@/lib/api";
 import { reply, screen } from "@/lib/ai/companion";
+import { trackAfter } from "@/lib/analytics/server";
 import { companionUser, rateLimited } from "@/lib/ai/user";
 import { ownConversation, setTitleIfMissing } from "@/lib/chat";
 import { sseResponse } from "@/lib/sse";
@@ -28,9 +29,18 @@ export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/chat
   if (rateLimited(`chat:${user.id}`, 20)) throw new HttpError(429, "You're sending messages very fast. Please wait a moment.");
 
   const screened = await screen(user, input.text, premium);
+  const tier = premium ? "premium" : "free";
   // Crisis replies are never held back by the quota; fixed replies don't use it
   if (screened.category === "on_topic" && screened.quota.used >= screened.quota.limit) {
+    trackAfter(user.id, "chat_limit_reached", { tier, limit: screened.quota.limit });
     throw new HttpError(402, "You've used today's messages.", { code: "quota", quota: screened.quota, premium });
+  }
+
+  // Counts and categories only, never the text
+  if (screened.category === "on_topic") {
+    trackAfter(user.id, "chat_message_sent", { message_count_today: screened.quota.used + 1, tier, quick_prompt: input.quickPrompt });
+  } else {
+    trackAfter(user.id, "chat_message_blocked", { category: screened.category, tier });
   }
 
   await setTitleIfMissing(id, input.text);
