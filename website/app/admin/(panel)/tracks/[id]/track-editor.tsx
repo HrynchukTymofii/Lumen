@@ -136,7 +136,17 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
     );
   }
 
+  // The picture is saved on its own: it only updates imageUrl and keeps unsaved edits in the form.
+  const applyImage = async (imageUrl: string | null) => {
+    const r = await api<{ track: Track }>(`/api/admin/tracks/${id}`, { method: "PATCH", body: { imageUrl } });
+    setTrack((t) => (t ? { ...t, imageUrl: r.track.imageUrl } : t));
+  };
+
   async function uploadImage(file: File) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError(new ApiError("Pick a JPG, PNG or WebP picture.", 400));
+      return;
+    }
     await run(
       "image",
       async () => {
@@ -146,9 +156,9 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
         );
         const put = await fetch(presigned.uploadUrl, { method: "PUT", headers: presigned.headers, body: file });
         if (!put.ok) throw new ApiError(`Upload to R2 failed (${put.status}). Check the bucket's CORS rules.`, put.status);
-        return api(`/api/admin/tracks/${id}`, { method: "PATCH", body: { imageUrl: presigned.publicUrl } });
+        await applyImage(presigned.publicUrl);
       },
-      "Picture uploaded.",
+      "Picture updated.",
     );
   }
 
@@ -233,33 +243,6 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
                   ))}
                 </select>
               </Field>
-              <div className="sm:col-span-2">
-                <Field label="Picture" hint="Optional cover for the app (JPG, PNG or WebP, about 1200×1500). Without one the scene is shown.">
-                  <div className="flex flex-wrap items-center gap-3">
-                    {track.imageUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={track.imageUrl} alt="" className="h-24 w-20 rounded-xl object-cover" />
-                    )}
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      disabled={!me?.services.r2 || dirty || busy !== null}
-                      title={dirty ? "Save first" : undefined}
-                      onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0])}
-                      className="text-sm"
-                    />
-                    {track.imageUrl && (
-                      <Button
-                        variant="line"
-                        disabled={dirty || busy !== null}
-                        onClick={() => run("image", () => api(`/api/admin/tracks/${id}`, { method: "PATCH", body: { imageUrl: null } }), "Picture removed.")}
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-                </Field>
-              </div>
               <Field label="Tags" hint="Comma separated">
                 <input value={form.tags} onChange={(e) => set("tags", e.target.value)} className={inputClass} />
               </Field>
@@ -374,7 +357,19 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
             )}
           </Card>
 
-          {variant && <Preview key={`${tab}-${variant.url}`} variant={variant} scene={track.scene} title={track.title} />}
+          <Preview
+            key={`${tab}-${variant?.url}`}
+            variant={variant}
+            scene={form.scene}
+            title={form.title}
+            picture={{
+              imageUrl: track.imageUrl,
+              busy: busy === "image",
+              disabled: !me?.services.r2 || busy !== null,
+              onPick: uploadImage,
+              onRemove: () => run("image", () => applyImage(null), "Picture removed. The scene is shown again."),
+            }}
+          />
 
           {!live && (
             <button
