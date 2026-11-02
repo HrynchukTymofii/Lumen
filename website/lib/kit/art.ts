@@ -219,8 +219,9 @@ export type LightState = "idle" | "listening" | "speaking" | "thinking" | "celeb
 //   idle: breathes, halo floats · listening: quick pulse, halo brightens · thinking: halo turns
 //   speaking: rings ripple out of the sphere · celebrating (web only): pulse + ripples
 // Sphere centre (50, 60), radius 27 in the 100×100 drawing; the halo sits at (50, 21).
-export function lightSvg() {
-  const id = `lg${++uid}`;
+// `key` makes the gradient ids unique on the page; pass React's useId() so server and browser renders match.
+export function lightSvg(key?: string) {
+  const id = key ? `lg${key.replace(/[^a-zA-Z0-9]/g, "")}` : `lg${++uid}`;
   const ripple = (cls: string) =>
     `<circle class="ripple ${cls}" cx="50" cy="60" r="28" fill="none" stroke="#F5C77E" stroke-width="1.2"/>`;
   return `<svg viewBox="0 0 100 100"><defs>` +

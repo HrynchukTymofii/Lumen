@@ -2,15 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Light, Scene } from "@/components/kit";
+import { webSignInConfig } from "@/lib/auth/web-sign-in";
 import { SITE } from "@/lib/site";
 import { LoginForm } from "./login-form";
 import "../../_components/flow.css";
 
 export const metadata: Metadata = { title: "Sign in", robots: { index: false } };
 
-// Web app sign-in (email code), and the landing page of every emailed sign-in link (?token=).
+// Web app sign-in (Apple, Google or an email code), and the landing page of every emailed sign-in link (?token=).
 // The phone app opens the same /app/login?token= links itself once universal links are set up (SPEC §5.4).
 export default function LoginPage() {
+  const { google, apple } = webSignInConfig();
   return (
     <main className="fn">
       <header className="fn-nav">
@@ -23,7 +25,7 @@ export default function LoginPage() {
         <Scene name="sky" />
         <div className="fn-card">
           <Suspense fallback={<p className="sub">Loading…</p>}>
-            <LoginForm />
+            <LoginForm google={google} apple={apple} />
           </Suspense>
         </div>
       </div>

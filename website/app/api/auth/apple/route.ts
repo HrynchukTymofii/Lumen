@@ -3,11 +3,12 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { HttpError } from "@/lib/admin-auth";
 import { handle, readJson } from "@/lib/api";
-import { appleRefreshToken } from "@/lib/auth/apple";
+import { appleClientIds, appleRefreshToken } from "@/lib/auth/apple";
 import { findOrCreateUser, loginResponse } from "@/lib/auth/users";
 import { prisma } from "@/lib/prisma";
 
-// Sign in with Apple from the app (copied from PDR_pl, adapted). jose caches Apple's keys.
+// Sign in with Apple from the app and the website (copied from PDR_pl, adapted). jose caches Apple's keys.
+// The app's tokens are issued to the bundle id, the website's to the Services ID (lib/auth/web-sign-in.ts).
 const appleKeys = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
 
 const body = z.object({
@@ -20,8 +21,8 @@ const body = z.object({
 
 export const POST = handle(async (req: NextRequest) => {
   const input = body.parse(await readJson(req));
-  const audience = process.env.APPLE_CLIENT_ID;
-  if (!audience) throw new HttpError(503, "Sign in with Apple is not configured");
+  const audience = appleClientIds();
+  if (!audience.length) throw new HttpError(503, "Sign in with Apple is not configured");
 
   const { payload } = await jwtVerify(input.id_token, appleKeys, { issuer: "https://appleid.apple.com", audience }).catch(
     () => {
@@ -40,7 +41,7 @@ export const POST = handle(async (req: NextRequest) => {
   });
   if (input.authorizationCode) {
     try {
-      const refreshToken = await appleRefreshToken(input.authorizationCode);
+      const refreshToken = await appleRefreshToken(input.authorizationCode, typeof payload.aud === "string" ? payload.aud : undefined);
       if (refreshToken) await prisma.user.update({ where: { id: user.id }, data: { appleRefreshToken: refreshToken } });
     } catch (err) {
       // Signing in matters more than the token: it's only needed when the account is deleted

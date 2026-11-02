@@ -5,10 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowIcon } from "@/components/kit";
 import { identify, track } from "@/lib/analytics/client";
 import { post } from "../../_components/post";
+import { SocialSignIn } from "./social-sign-in";
 
 type LoginReply = { user: { id: string }; isNew: boolean };
 
-export function LoginForm() {
+export function LoginForm({ google, apple }: { google: string | null; apple: string | null }) {
   const params = useSearchParams();
   const token = params.get("token");
   const next = params.get("next");
@@ -67,8 +68,9 @@ export function LoginForm() {
     <form onSubmit={submit} className="fn-q">
       <h2>{sent ? "Check your email" : "Sign in"}</h2>
       <p className="sub">
-        {sent ? `We sent a 6-digit code and a sign-in link to ${email}. The code works for 15 minutes.` : "No password needed. We'll email you a code."}
+        {sent ? `We sent a 6-digit code and a sign-in link to ${email}. The code works for 15 minutes.` : "No password needed."}
       </p>
+      {!sent && <SocialSignIn google={google} apple={apple} onSignedIn={signedIn} onError={setError} />}
       {!sent ? (
         <input
           className="fn-input"
