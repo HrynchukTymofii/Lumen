@@ -213,7 +213,7 @@ export default function ChatScreen() {
           <Text className="font-sans text-sm leading-5 text-muted">
             Until then, you could bring it to God in prayer, or share it with someone you trust.
           </Text>
-          <Pressable onPress={openPaywall} accessibilityRole="button" className="rounded-full bg-ink py-3 active:opacity-80">
+          <Pressable onPress={() => openPaywall("companion_quota")} accessibilityRole="button" className="rounded-full bg-ink py-3 active:opacity-80">
             <Text className="text-center font-sans-bold text-sm text-bg">Keep talking with Premium</Text>
           </Pressable>
         </View>

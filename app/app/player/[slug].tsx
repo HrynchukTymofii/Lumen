@@ -10,6 +10,7 @@ import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, SkipIcon } from "@/component
 import { useColors } from "@/components/ui/theme";
 import { cachedLibrary } from "@/lib/api/library";
 import { hasAccount } from "@/lib/account";
+import { track as trackEvent } from "@/lib/analytics";
 import { markPrayed } from "@/lib/api/today";
 import { reportError } from "@/lib/errorReporting";
 import { reviewMoment } from "@/lib/review";
@@ -45,16 +46,23 @@ export default function PlayerScreen() {
     setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: "doNotMix" }).catch(reportError);
     if (track) player.setActiveForLockScreen(true, { title: track.title, artist: "Lumen" });
     player.play();
-    if (track) recordPlayed(track.id);
+    if (track) {
+      recordPlayed(track.id);
+      trackEvent("prayer_audio_played", { prayer_type: track.category, prayer_slug: track.slug, minutes: variant?.minutes });
+    }
     return () => player.setActiveForLockScreen(false);
+    // Once per opening of the player (variant comes from the same params as track)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player, track]);
 
   useEffect(() => {
     if (!status.didJustFinish || counted.current) return;
     counted.current = true;
     setFinished(true);
+    if (track) trackEvent("prayer_audio_finished", { prayer_type: track.category, prayer_slug: track.slug, minutes: variant?.minutes });
     // The prayer week lives on the account
     if (hasAccount()) markPrayed(track?.id).catch(reportError);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status.didJustFinish, track?.id]);
 
   // Leaving after listening to the end is a moment to ask how Lumen is helping (lib/review.ts)

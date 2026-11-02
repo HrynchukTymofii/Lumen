@@ -18,6 +18,7 @@ import { errorMessage } from "@/lib/api/client";
 import { cachedLibrary, getLibrary, getTrending } from "@/lib/api/library";
 import { applyGrace, getToday, markPrayed } from "@/lib/api/today";
 import type { Library, Streak, Today, Track } from "@/lib/api/types";
+import { track as trackEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/errorReporting";
 import { requestPermission, scheduleReminders } from "@/lib/notifications";
 import { categoryTitle, playTrack, shareApp } from "@/lib/play";
@@ -107,6 +108,7 @@ export default function HomeScreen() {
     setMarking(true);
     try {
       setStreak(await markPrayed());
+      trackEvent("prayer_marked_done", { prayer_type: "today_button" });
       setCelebrating(true);
       setTimeout(() => setCelebrating(false), 2500);
     } catch (err) {

@@ -8,7 +8,7 @@ import { POSTHOG_HOST, POSTHOG_KEY } from "@/lib/config";
 
 // Copy of website/lib/analytics/events.ts (the app can't import from website/). Keep the two in sync.
 type Source = "web" | "app_store" | "play_store";
-type Placement = "funnel" | "onboarding" | "companion_quota" | "library" | "settings";
+export type Placement = "funnel" | "onboarding" | "companion_quota" | "library" | "prayer" | "me" | "settings";
 
 export type AnalyticsEvents = {
   quiz_started: { funnel_slug: string };
@@ -16,6 +16,10 @@ export type AnalyticsEvents = {
   sample_prayer_generated: { latency_ms: number };
   paywall_viewed: { variant: string; placement: Placement };
   plan_selected: { product_id: string };
+  checkout_started: { product_id: string; placement?: Placement };
+  purchase_cancelled: { product_id: string; placement?: Placement };
+  purchase_failed: { product_id: string; placement?: Placement };
+  purchases_restored: { found: boolean };
   trial_started: { product_id: string; source: Source };
   subscription_started: { product_id: string; source: Source; price: number };
   app_opened: { is_first_open: boolean };
@@ -23,7 +27,9 @@ export type AnalyticsEvents = {
   onboarding_completed: { path: "web" | "app_store" };
   push_permission_result: { granted: boolean };
   today_prayer_viewed: { prayer_type: string };
-  prayer_audio_played: { prayer_type: string; minutes?: number };
+  prayer_viewed: { prayer_slug: string; locked: boolean };
+  prayer_audio_played: { prayer_type: string; prayer_slug: string; minutes?: number };
+  prayer_audio_finished: { prayer_type: string; prayer_slug: string; minutes?: number };
   prayer_marked_done: { prayer_type: string };
   verse_of_day_viewed: Record<string, never>;
   verse_shared: Record<string, never>;
