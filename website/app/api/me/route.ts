@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { HttpError } from "@/lib/admin-auth";
 import { handle, readJson } from "@/lib/api";
+import { revokeAppleToken } from "@/lib/auth/apple";
 import { USER_COOKIE, getRefreshedToken, requireUser } from "@/lib/auth/session";
 import { publicUser } from "@/lib/auth/users";
 import { getPremium } from "@/lib/entitlement";
@@ -83,6 +84,10 @@ export const DELETE = handle(async (req: NextRequest) => {
     for (const sub of stripeSubs) {
       await stripe.subscriptions.cancel(sub.externalId).catch((err) => console.error("[delete account] stripe cancel", err));
     }
+  }
+  // Sign in with Apple: the app's access to the Apple ID goes with the account (App Store guideline 5.1.1(v))
+  if (user.appleRefreshToken) {
+    await revokeAppleToken(user.appleRefreshToken).catch((err) => console.error("[delete account] apple revoke", err));
   }
   await prisma.user.delete({ where: { id: user.id } });
 

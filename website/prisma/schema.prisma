@@ -44,13 +44,15 @@ enum PaywallVariant {
 }
 
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  emailVerifiedAt DateTime?
-  firstName       String?
-  appleSub        String?   @unique
-  googleSub       String?   @unique
-  timezone        String    @default("America/New_York")
+  id                String    @id @default(uuid())
+  email             String    @unique
+  emailVerifiedAt   DateTime?
+  firstName         String?
+  appleSub          String?   @unique
+  // Sign in with Apple refresh token, revoked when the account is deleted (lib/auth/apple.ts)
+  appleRefreshToken String?
+  googleSub         String?   @unique
+  timezone          String    @default("America/New_York")
 
   // Profile (from the quiz or settings). Faith answers are sensitive data: stored only after explicit consent.
   denomination       Denomination?

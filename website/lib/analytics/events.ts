@@ -36,6 +36,7 @@ export type AnalyticsEvents = {
   streak_goal_set: { goal: number };
   streak_week_completed: { goal: number };
   ai_companion_toggled: { enabled: boolean };
+  guest_started: Record<string, never>; // the app opened without an account (welcome screen cross)
 };
 
 export type EventName = keyof AnalyticsEvents;

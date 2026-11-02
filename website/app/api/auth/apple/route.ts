@@ -3,7 +3,9 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { HttpError } from "@/lib/admin-auth";
 import { handle, readJson } from "@/lib/api";
+import { appleRefreshToken } from "@/lib/auth/apple";
 import { findOrCreateUser, loginResponse } from "@/lib/auth/users";
+import { prisma } from "@/lib/prisma";
 
 // Sign in with Apple from the app (copied from PDR_pl, adapted). jose caches Apple's keys.
 const appleKeys = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
@@ -11,6 +13,8 @@ const appleKeys = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/key
 const body = z.object({
   id_token: z.string().min(1),
   firstName: z.string().max(60).optional(), // Apple sends the name only on the very first sign-in
+  // One-time code, swapped for a refresh token so deleting the account can revoke it (lib/auth/apple.ts)
+  authorizationCode: z.string().max(2000).optional(),
   platform: z.enum(["ios", "android", "web"]).optional(),
 });
 
@@ -34,5 +38,14 @@ export const POST = handle(async (req: NextRequest) => {
     firstName: input.firstName,
     platform: input.platform ?? "ios",
   });
+  if (input.authorizationCode) {
+    try {
+      const refreshToken = await appleRefreshToken(input.authorizationCode);
+      if (refreshToken) await prisma.user.update({ where: { id: user.id }, data: { appleRefreshToken: refreshToken } });
+    } catch (err) {
+      // Signing in matters more than the token: it's only needed when the account is deleted
+      console.error("[apple sign-in] token exchange", err);
+    }
+  }
   return loginResponse(user, isNew);
 });

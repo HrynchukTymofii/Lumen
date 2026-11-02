@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { HttpError, hashCode, sameHash } from "@/lib/admin-auth";
 import { handle, readJson } from "@/lib/api";
+import { isReviewLogin } from "@/lib/auth/review";
 import { findOrCreateUser, loginResponse, normalizeEmail } from "@/lib/auth/users";
 import { prisma } from "@/lib/prisma";
 
@@ -17,6 +18,11 @@ export const POST = handle(async (req: NextRequest) => {
   const input = body.parse(await readJson(req));
   const email = normalizeEmail(input.email);
   const wrong = new HttpError(400, "That code is wrong or expired");
+
+  if (isReviewLogin(email, input.code)) {
+    const { user, isNew } = await findOrCreateUser({ email, platform: input.platform });
+    return loginResponse(user, isNew);
+  }
 
   const row = await prisma.loginToken.findFirst({
     where: { email, purpose: "email_code", usedAt: null, expiresAt: { gt: new Date() } },
