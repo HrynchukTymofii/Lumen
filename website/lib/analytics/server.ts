@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { PostHog } from "posthog-node";
 import type { AnalyticsEvents, EventName } from "./events";
 
@@ -24,4 +25,9 @@ export async function trackServer<E extends EventName>(userId: string, event: E,
   } catch (err) {
     console.error("[analytics]", err); // analytics must never break a webhook
   }
+}
+
+// Same, sent after the response is finished, so analytics never slows a request (chat, API routes)
+export function trackAfter<E extends EventName>(userId: string, event: E, props: AnalyticsEvents[E]) {
+  after(() => trackServer(userId, event, props));
 }
