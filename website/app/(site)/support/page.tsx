@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth/current";
 import { SITE } from "@/lib/site";
 import { DocPage } from "../_components/doc-page";
+import { SupportForm } from "./support-form";
 
-export const metadata: Metadata = { title: "Support", description: `Help with ${SITE.name}: subscriptions, refunds and your account.` };
+export const metadata: Metadata = { title: "Contact & Support", description: `Help with ${SITE.name}: subscriptions, refunds and your account.` };
 
 const HELP = [
   [
@@ -44,13 +46,15 @@ const HELP = [
   ],
 ] as const;
 
-export default function SupportPage() {
+export default async function SupportPage() {
+  const user = await getCurrentUser().catch(() => null);
   return (
-    <DocPage eyebrow="Help" title="Support">
+    <DocPage eyebrow="Help" title="Contact & Support">
       <p>
-        We&apos;re a small team and read every message. Email{" "}
-        <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> and we&apos;ll reply within two working days.
+        We&apos;re a small team and read every message. Send us a note below and we&apos;ll reply within two working days, or
+        email <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.
       </p>
+      <SupportForm defaultEmail={user?.email} defaultName={user?.firstName ?? undefined} />
       <div className="callout bg-rose">
         <b>Need help right now?</b> {SITE.name} isn&apos;t an emergency service. If you&apos;re in crisis or thinking about
         harming yourself, call or text <b>988</b> (US), call <b>911</b>, or your local emergency number.

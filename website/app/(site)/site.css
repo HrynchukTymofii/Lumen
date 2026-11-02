@@ -301,6 +301,28 @@
   .doc .callout { border-radius: 22px; padding: 18px 22px; margin: 18px 0; }
   .doc .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
   .doc .toc a { display: inline-block; padding: 6px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--line2); text-decoration: none; font-size: 13.5px; color: var(--ink); }
+
+  /* Contact & Support form (support/support-form.tsx) */
+  .support-form { background: var(--card); border-radius: 26px; padding: 24px; margin: 22px 0 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 16px; }
+  .support-form label { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+  .support-form label > span { font-weight: 800; font-size: 14px; }
+  .support-form label i { font-style: normal; font-weight: 600; color: var(--muted); }
+  .support-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .support-row label { flex: 1 1 220px; }
+  .support-form input, .support-form select, .support-form textarea {
+    width: 100%; padding: 14px 16px; border-radius: 16px; border: 1.5px solid var(--line2); background: var(--bg); color: var(--ink);
+    font: inherit; font-size: 16px; font-weight: 600;
+    &:focus { outline: none; border-color: var(--peach-2); }
+  }
+  .support-form textarea { resize: vertical; min-height: 140px; line-height: 1.5; }
+  .support-form .fn-error { color: #b2413a; font-weight: 700; font-size: 14px; margin: 0; }
+  .support-form .btn-ink { align-self: flex-start; border: 0; cursor: pointer; font: inherit; font-weight: 800; }
+  .support-form .btn-ink:disabled { opacity: 0.5; cursor: default; }
+  .support-form .btn-line { align-self: flex-start; cursor: pointer; color: var(--ink); font: inherit; font-weight: 800; }
+  .support-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .support-sent h3 { margin: 0; }
+  .support-sent p { margin: 0; color: var(--muted); }
+  @media (max-width: 520px) { .support-form { padding: 18px; } .support-form .btn-ink { align-self: stretch; } }
 }
 
 @keyframes lumen-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
