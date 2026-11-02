@@ -5,9 +5,9 @@ import type { FunnelConfig } from "./types";
 export const struggle: FunnelConfig = {
   slug: "struggle",
   hook: "Carrying something heavy? Get a prayer for exactly that.",
-  hypothesis: "People in a hard moment will finish a short quiz and start a trial for a prayer written for their situation.",
+  hypothesis: "People in a hard moment will finish a short quiz and start Premium in the app for a prayer written for their situation.",
   scene: "dusk",
-  plans: ["annual_59_99", "monthly_9_99"],
+  plans: ["yearly", "monthly"],
   steps: [
     {
       id: "landing",

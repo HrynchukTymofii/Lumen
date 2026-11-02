@@ -1,5 +1,9 @@
+import { headers } from "next/headers";
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowIcon, CheckIcon, Doodle, Light, Scene } from "@/components/kit";
+import { FREE_FEATURES, PREMIUM_FEATURES } from "@/lib/plans";
+import { pricesFor, US_PRICES, type Prices } from "@/lib/prices";
 import { SITE } from "@/lib/site";
 import { SiteFooter, SiteNav } from "./_components/chrome";
 import { VerseChip, type Verse } from "./_components/verse-chip";
@@ -234,7 +238,7 @@ export default function LandingPage() {
             <div className="amt">$0</div>
             <p className="note">No card needed.</p>
             <ul>
-              {["Full Bible: WEB, KJV, Douay-Rheims", "Verse of the day", "One daily prayer", "Companion: 3 messages a day", "Weekly goal that forgives missed days"].map((t) => (
+              {FREE_FEATURES.map((t) => (
                 <li key={t}>
                   <i>
                     <CheckIcon size={13} />
@@ -247,35 +251,9 @@ export default function LandingPage() {
               Start free
             </Link>
           </div>
-          <div className="tier bg-butter motif">
-            <h3>
-              Premium{" "}
-              <span className="pill" style={{ background: "#26301F", color: "#FAF8F1" }}>
-                {SITE.prices.trialDays} days free
-              </span>
-            </h3>
-            <div className="amt">
-              {SITE.prices.yearly}
-              <small> / year</small>
-            </div>
-            <p className="note">
-              That&apos;s $5 a month, or {SITE.prices.monthly} monthly. Cancel in two taps; we email you 2 days before your trial
-              ends.
-            </p>
-            <ul>
-              {["Unlimited companion chat", "Personal daily prayer, text and audio", "Full guided prayer library", "Prayer journal and history", "7-day and 30-day prayer paths"].map((t) => (
-                <li key={t}>
-                  <i>
-                    <CheckIcon size={13} />
-                  </i>
-                  {t}
-                </li>
-              ))}
-            </ul>
-            <Cta href="/f/struggle" className="full">
-              Try Premium free
-            </Cta>
-          </div>
+          <Suspense fallback={<PremiumTier prices={US_PRICES} />}>
+            <LocalPremiumTier />
+          </Suspense>
         </div>
       </section>
 
@@ -302,5 +280,49 @@ export default function LandingPage() {
 
       <SiteFooter />
     </main>
+  );
+}
+
+// Premium card in the visitor's local App Store prices (Vercel's IP country). Streams in after the static page;
+// the fallback and any unknown country show the US prices.
+async function LocalPremiumTier() {
+  const country = (await headers()).get("x-vercel-ip-country");
+  return <PremiumTier prices={pricesFor(country)} />;
+}
+
+function PremiumTier({ prices }: { prices: Prices }) {
+  const intro = prices.yearlyIntro;
+  return (
+    <div className="tier bg-butter motif">
+      <h3>
+        Premium{" "}
+        {intro && (
+          <span className="pill" style={{ background: "#26301F", color: "#FAF8F1" }}>
+            First month {intro}
+          </span>
+        )}
+      </h3>
+      <div className="amt">
+        {prices.yearly}
+        <small> / year</small>
+      </div>
+      <p className="note">
+        {intro ? `${intro} for your first month, then ${prices.yearly} a year.` : `${prices.yearly} a year.`} Or {prices.monthly} a
+        month. Subscribe in the app; cancel anytime in your store settings.
+      </p>
+      <ul>
+        {PREMIUM_FEATURES.map((t) => (
+          <li key={t}>
+            <i>
+              <CheckIcon size={13} />
+            </i>
+            {t}
+          </li>
+        ))}
+      </ul>
+      <Cta href="/f/struggle" className="full">
+        {intro ? `Start for ${intro}` : "Get Premium"}
+      </Cta>
+    </div>
   );
 }

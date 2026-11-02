@@ -5,7 +5,7 @@ import { DocPage } from "../_components/doc-page";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
-  description: `The terms for using ${SITE.name}, including subscriptions and free trials.`,
+  description: `The terms for using ${SITE.name}, including subscriptions.`,
 };
 
 export default function TermsPage() {
@@ -16,7 +16,7 @@ export default function TermsPage() {
       updated={SITE.legalUpdated}
       toc={[
         ["ai", "AI and not advice"],
-        ["subscriptions", "Subscriptions and trials"],
+        ["subscriptions", "Subscriptions"],
         ["content", "Your content"],
         ["apple", "App Store terms"],
         ["liability", "Liability"],
@@ -78,24 +78,28 @@ export default function TermsPage() {
         but do not promise it will be uninterrupted or error-free.
       </p>
 
-      <h2 id="subscriptions">4. Premium subscriptions and free trials</h2>
+      <h2 id="subscriptions">4. Premium subscriptions</h2>
       <p>
-        Some features require a paid subscription (&quot;Premium&quot;). Current
-        prices are shown before you buy (at the time of writing{" "}
-        {SITE.prices.monthly} per month or {SITE.prices.yearly} per year in the
-        US; local prices and taxes may differ).
+        Some features require a paid subscription (&quot;Premium&quot;).
+        Premium is sold only through in-app purchase in Apple&apos;s App Store
+        and Google Play; we do not take payments on our website. Current prices
+        and plans are shown in the app before you buy (at the time of writing,
+        in the US: {SITE.prices.yearly} per year with an introductory price of{" "}
+        {SITE.prices.yearlyIntro} for the first month, or {SITE.prices.monthly}{" "}
+        per month; other plans may be offered in the app, and local prices and
+        taxes may differ).
       </p>
       <ul>
         <li>
-          <b>Free trial.</b> If you start a free trial ({SITE.prices.trialDays}{" "}
-          days unless stated otherwise), your subscription starts automatically
-          when the trial ends and you are charged unless you cancel before it
-          ends. One trial per person. We email you before a web trial ends.
+          <b>Introductory price.</b> If you buy a plan with an introductory
+          price, you pay that price for the introductory period, after which the
+          subscription renews automatically at the regular price unless you
+          cancel before the introductory period ends. Introductory offers are
+          available once per person per plan, as determined by the store.
         </li>
         <li>
           <b>Automatic renewal.</b> Subscriptions renew automatically at the end
-          of each period (monthly or yearly) at the then-current price until you
-          cancel.
+          of each period at the then-current price until you cancel.
         </li>
         <li>
           <b>Bought in the App Store:</b> payment is charged to your Apple ID at
@@ -103,28 +107,34 @@ export default function TermsPage() {
           turned off at least 24 hours before the end of the current period, and
           your account is charged for renewal within 24 hours before the end of
           the period. Manage or cancel in your device&apos;s Settings → your
-          name → Subscriptions. Any unused part of a free trial is forfeited
-          when you buy a subscription.
+          name → Subscriptions.
         </li>
         <li>
-          <b>Bought on our website:</b> payments are processed by Stripe. Cancel
-          any time from your account page or the link in our emails; you keep
-          Premium until the end of the period you paid for.
+          <b>Bought on Google Play:</b> payment is charged to your Google
+          account. Manage or cancel in the Play Store app → your profile →
+          Payments &amp; subscriptions → Subscriptions.
         </li>
         <li>
-          <b>Refunds.</b> App Store purchases are refunded by Apple under its
-          policies (request at reportaproblem.apple.com). For web purchases,
-          contact us within 14 days of a charge you did not intend and we will
-          review it fairly. Nothing here limits refund rights you have under the
-          law where you live.
+          <b>Cancelling.</b> If you cancel, you keep Premium until the end of the
+          period you paid for. Deleting your account or the app does not cancel
+          a store subscription.
         </li>
         <li>
-          <b>Price changes.</b> We will tell you before a price change applies
-          to your subscription, and you can cancel before it takes effect.
+          <b>Refunds.</b> Purchases are refunded by Apple or Google under their
+          policies: request an App Store refund at reportaproblem.apple.com and
+          a Google Play refund through Google Play. We cannot issue refunds for
+          store purchases ourselves. Nothing here limits refund rights you have
+          under the law where you live.
         </li>
         <li>
-          <b>One subscription, all platforms.</b> Premium bought on the web or
-          in the app works when you sign in with the same account elsewhere.
+          <b>Price changes.</b> Price changes are handled by the store, which
+          tells you before a new price applies to your subscription, and you can
+          cancel before it takes effect.
+        </li>
+        <li>
+          <b>One subscription, all platforms.</b> Premium works on the website
+          and in the app when you sign in with the same account you used to
+          subscribe.
         </li>
       </ul>
 
@@ -178,8 +188,8 @@ export default function TermsPage() {
       <p>
         You can stop using {SITE.name} and{" "}
         <Link href="/delete-account">delete your account</Link> at any time.
-        Deleting your account does not cancel an App Store subscription: cancel
-        it in your Apple settings. We may suspend or end your access if you
+        Deleting your account does not cancel an App Store or Google Play
+        subscription: cancel it in the store. We may suspend or end your access if you
         seriously or repeatedly break these Terms, or if we stop offering the
         Service; if we stop the Service, we will give reasonable notice and
         refund any prepaid period you could not use, where required.

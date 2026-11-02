@@ -12,23 +12,27 @@ const HELP = [
   [
     "How do I cancel my subscription?",
     <>
-      <b>Bought in the iPhone app:</b> open Settings on your iPhone → tap your name → Subscriptions → {SITE.name} → Cancel
-      Subscription. <b>Bought on our website:</b> use the &quot;Manage subscription&quot; link in your account or in any email
-      from us. You keep Premium until the end of the period you paid for.
+      <b>iPhone:</b> open Settings → tap your name → Subscriptions → {SITE.name} → Cancel Subscription.{" "}
+      <b>Android:</b> open the Play Store app → your profile → Payments &amp; subscriptions → Subscriptions → {SITE.name}{" "}
+      → Cancel. You keep Premium until the end of the period you paid for. Deleting the app or your account doesn&apos;t
+      cancel it.
     </>,
   ],
   [
     "How do I get a refund?",
     <>
-      App Store purchases are refunded by Apple: go to <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>.
-      For web purchases, email us within 14 days of the charge and we&apos;ll sort it out.
+      Subscriptions are sold by Apple and Google, so they handle refunds. iPhone: go to{" "}
+      <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>. Android: open{" "}
+      <a href="https://play.google.com/store/account/orderhistory">your Google Play order history</a> and choose Request
+      a refund.
     </>,
   ],
   [
     "I paid but Premium isn't showing",
     <>
-      Make sure you&apos;re signed in with the same email you used to pay. In the iPhone app, tap Settings → Restore
-      purchases. Still stuck? Email us and include the email address you paid with.
+      Make sure you&apos;re signed in to the same {SITE.name} account you subscribed with. In the app, open Settings →
+      Subscription → Restore purchases. Still stuck? Email us with your account email and, if you can, the order number
+      from your App Store or Google Play receipt.
     </>,
   ],
   [

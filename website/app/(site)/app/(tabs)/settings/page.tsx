@@ -4,8 +4,8 @@ import { Suspense } from "react";
 import { Light } from "@/components/kit";
 import { requirePageUser } from "@/lib/auth/current";
 import { getPremium } from "@/lib/entitlement";
-import { PLANS, type PlanId } from "@/lib/plans";
-import { ProfileForm, SubscriptionButton, AccountActions } from "./settings-client";
+import { planOf } from "@/lib/plans";
+import { ProfileForm, AccountActions } from "./settings-client";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -25,7 +25,7 @@ const STATUS = { trial: "Free trial", active: "Active", grace: "Payment problem"
 async function Settings() {
   const user = await requirePageUser("/app/settings");
   const premium = await getPremium(user.id);
-  const plan = premium && premium.productId in PLANS ? PLANS[premium.productId as PlanId] : null;
+  const plan = premium ? planOf(premium.productId) : null;
   const until = premium?.currentPeriodEnd.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   return (
@@ -50,11 +50,11 @@ async function Settings() {
                 {STATUS[premium.status]}
                 {premium.status === "canceled" ? ` ${until}` : premium.status === "trial" ? ` until ${until}` : ` · renews ${until}`}
               </p>
-              {premium.source === "stripe" ? (
-                <SubscriptionButton />
-              ) : (
-                <p className="wa-lead">Bought in the App Store: manage it in your iPhone&apos;s Settings → Apple ID → Subscriptions.</p>
-              )}
+              <p className="wa-lead">
+                {premium.source === "play"
+                  ? "Bought on Google Play: manage or cancel it in the Play Store app → your profile → Payments & subscriptions."
+                  : "Bought in the App Store: manage or cancel it in your iPhone's Settings → your name → Subscriptions."}
+              </p>
             </>
           ) : (
             <div className="wa-row">
@@ -73,7 +73,7 @@ async function Settings() {
       <section className="wa-sec">
         <h2>Account</h2>
         <div className="wa-card">
-          <AccountActions hasWebSubscription={premium?.source === "stripe"} />
+          <AccountActions />
           <p className="fine" style={{ marginTop: 16 }}>
             <Link href="/privacy">Privacy Policy</Link> · <Link href="/terms">Terms</Link> · <Link href="/support">Support</Link>
           </p>

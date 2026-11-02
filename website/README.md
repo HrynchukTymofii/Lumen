@@ -68,14 +68,15 @@ CORS rule allowing `PUT` from your site's origin (for browser uploads).
 ## Funnel, accounts and payments
 
 - **Funnel:** `/f/struggle` (config in `funnels/struggle.ts`, engine in `app/(site)/f/[slug]/funnel.tsx`).
-  Quiz → loading → plan + sample prayer → email (consent checkbox) → paywall → Stripe → `/success`.
+  Quiz → loading → plan + sample prayer → email (consent checkbox) → paywall → App Store / Google Play → `/success`.
   The sample prayer uses Claude when `ANTHROPIC_API_KEY` is set, otherwise a template; it can only cite the
   verses in `funnels/verses.ts`.
 - **Accounts:** passwordless. `/app/login` emails a 6-digit code + a one-time link (printed in the dev terminal
   without `RESEND_API_KEY`). Needs `JWT_SECRET`. Apple/Google routes are ready for the phone app
   (`APPLE_CLIENT_ID`, `GOOGLE_CLIENT_ID`).
 - **Web app:** `/app` (Today, Prayers, Companion placeholder, Settings, Upgrade), signed-in only.
-- **Stripe: won't work for us** (no legal entity, Stripe doesn't onboard Ukraine). The code stays as a reference until
-  a replacement is chosen (Paddle, WayForPay, monobank). For the record, Stripe test setup was: create two recurring prices, fill `STRIPE_*` in `.env`, then
-  `stripe listen --forward-to localhost:3000/api/webhooks/stripe` and copy the `whsec_` into `STRIPE_WEBHOOK_SECRET`.
-  Without keys the paywall says "Payments aren't set up yet" and "continue free" still works.
+- **Payments: only in the stores.** No web checkout (no Stripe: not available without a registered business in
+  Ukraine). The website paywall shows the plans and sends people to the App Store / Google Play
+  (`NEXT_PUBLIC_APP_STORE_URL`, `NEXT_PUBLIC_GOOGLE_PLAY_URL`); they sign in to the app with the same email and
+  subscribe there. RevenueCat's webhook (`/api/webhooks/revenuecat`) unlocks Premium on the website too.
+  Website prices live in `lib/site.ts` (US for now).

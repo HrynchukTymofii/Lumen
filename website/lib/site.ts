@@ -11,5 +11,14 @@ export const SITE = {
   governingLaw: "",
   legalUpdated: "31 October 2026",
   minAge: 13,
-  prices: { monthly: "$9.99", yearly: "$59.99", trialDays: 7 },
+  // US App Store prices, and the fallback everywhere the synced local prices (lib/prices.ts) are missing or broken.
+  // Purchases only happen in the stores (no web checkout). A weekly plan exists in the app but isn't shown here.
+  prices: { yearly: "$69.99", yearlyIntro: "$2.99", monthly: "$9.99" },
+  stores: {
+    // The link works once the app is live on the App Store
+    appStore: process.env.NEXT_PUBLIC_APP_STORE_URL ?? "https://apps.apple.com/app/id6829436290",
+    // No Android app yet: empty hides the button. When it's live:
+    // "https://play.google.com/store/apps/details?id=com.hrynchuk.biblecompanion"
+    googlePlay: process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL ?? "",
+  },
 } as const;

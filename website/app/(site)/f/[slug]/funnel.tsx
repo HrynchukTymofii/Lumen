@@ -10,12 +10,13 @@ import { buildPlan } from "@/funnels/plan";
 import type { Answers, Option, Step } from "@/funnels/types";
 import type { Citation } from "@/funnels/verses";
 import { Paywall } from "../../_components/paywall";
+import { prefetchPrices } from "../../_components/use-prices";
 import { PostError, post } from "../../_components/post";
 
 // The quiz funnel state machine (SPEC §8.2): one question per screen, answers kept in sessionStorage
 // so a refresh resumes, analytics on every step. Faith answers never go to analytics, only "hidden".
 
-type Saved = { index: number; answers: Answers; startedAt?: number; signedUp?: boolean };
+type Saved = { index: number; answers: Answers; startedAt?: number; signedUp?: boolean; email?: string };
 type Prayer = { title: string; text: string; citations: Citation[]; source?: string };
 
 const UTM_KEYS = ["source", "medium", "campaign", "content", "term"] as const;
@@ -42,8 +43,8 @@ function paywallVariant(): "A" | "B" {
   return v;
 }
 
-// Resume where the visitor left off. Coming back from Stripe's "back" (?step=paywall) jumps to the paywall,
-// but only for someone who already got that far.
+// Resume where the visitor left off. A link with ?step=paywall jumps to the paywall, but only for someone who
+// already got that far.
 function restore(key: string, steps: Step[]): Saved {
   const saved = load<Saved>(key) ?? { index: 0, answers: {} };
   const jump = new URLSearchParams(window.location.search).get("step");
@@ -62,6 +63,8 @@ export function Funnel({ slug }: { slug: string }) {
   const key = `pc_funnel_${slug}`;
   // Client-only component (see funnel-loader.tsx), so sessionStorage can be read while initialising
   const [state, setState] = useState<Saved>(() => restore(key, config.steps));
+  // Local prices for the paywall at the end, fetched while the quiz is answered
+  useEffect(() => void prefetchPrices(), []);
   const [dir, setDir] = useState<1 | -1>(1);
 
   useEffect(() => {
@@ -127,8 +130,9 @@ export function Funnel({ slug }: { slug: string }) {
             track("quiz_completed", { funnel_slug: slug, duration_ms: Date.now() - (state.startedAt ?? Date.now()) });
             go(1, patch);
           }}
-          onSignedUp={() => {
-            setState((s) => ({ ...s, signedUp: true }));
+          email={state.email}
+          onSignedUp={(email) => {
+            setState((s) => ({ ...s, signedUp: true, email }));
             go(1);
           }}
         />
@@ -145,10 +149,11 @@ type StepProps = {
   onAnswer: (step: Step, value: string | string[] | number, patch: Partial<Answers>) => void;
   onNext: (patch?: Partial<Answers>) => void;
   onLoaded: (patch: Partial<Answers>) => void;
-  onSignedUp: () => void;
+  email?: string;
+  onSignedUp: (email: string) => void;
 };
 
-function StepView({ step, slug, answers, onStart, onAnswer, onNext, onLoaded, onSignedUp }: StepProps) {
+function StepView({ step, slug, answers, email, onStart, onAnswer, onNext, onLoaded, onSignedUp }: StepProps) {
   switch (step.type) {
     case "landing":
       return (
@@ -242,8 +247,8 @@ function StepView({ step, slug, answers, onStart, onAnswer, onNext, onLoaded, on
         <Paywall
           variant={paywallVariant()}
           name={answers.firstName}
+          email={email}
           placement="funnel"
-          funnelSlug={slug}
           onFree={() => (window.location.href = "/success?plan=free")}
         />
       );
@@ -470,7 +475,7 @@ function PlanStep({ slug, answers, onNext }: { slug: string; answers: Answers; o
   );
 }
 
-function EmailStep({ slug, answers, onDone }: { slug: string; answers: Answers; onDone: () => void }) {
+function EmailStep({ slug, answers, onDone }: { slug: string; answers: Answers; onDone: (email: string) => void }) {
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [marketing, setMarketing] = useState(false);
@@ -494,7 +499,7 @@ function EmailStep({ slug, answers, onDone }: { slug: string; answers: Answers; 
       });
       identify(user.id, { funnel_slug: slug, paywall_variant: paywallVariant() });
       track("email_submitted", { funnel_slug: slug });
-      onDone();
+      onDone(email.trim());
     } catch (err) {
       if (err instanceof PostError && err.code === "exists") setExists(true);
       else setError(err instanceof Error ? err.message : "Something went wrong");

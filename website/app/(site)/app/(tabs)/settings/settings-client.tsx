@@ -52,35 +52,7 @@ export function ProfileForm({ firstName, denomination }: { firstName: string; de
   );
 }
 
-export function SubscriptionButton() {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  return (
-    <>
-      <button
-        type="button"
-        className="btn-line"
-        disabled={busy}
-        style={{ marginTop: 12 }}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            const { url } = await post<{ url: string }>("/api/stripe/portal");
-            window.location.href = url;
-          } catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong");
-            setBusy(false);
-          }
-        }}
-      >
-        {busy ? "Opening…" : "Manage or cancel"}
-      </button>
-      {error && <p className="fn-error">{error}</p>}
-    </>
-  );
-}
-
-export function AccountActions({ hasWebSubscription }: { hasWebSubscription: boolean }) {
+export function AccountActions() {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,9 +86,8 @@ export function AccountActions({ hasWebSubscription }: { hasWebSubscription: boo
           <b>Delete your account and everything in it?</b>
           <p style={{ marginTop: 6, lineHeight: 1.5, fontWeight: 600 }}>
             This can&apos;t be undone.{" "}
-            {hasWebSubscription
-              ? "Your web subscription is cancelled right away."
-              : "If you subscribed in the App Store, cancel it in your iPhone settings too."}
+If you subscribed in the App Store or Google Play, cancel it there too: deleting your account doesn&apos;t stop
+            the store from charging you.
           </p>
           <div className="wa-row" style={{ marginTop: 12, justifyContent: "flex-start" }}>
             <button type="button" className="wa-danger" onClick={remove}>

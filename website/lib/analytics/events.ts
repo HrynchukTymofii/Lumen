@@ -14,11 +14,11 @@ export type AnalyticsEvents = {
   email_submitted: { funnel_slug?: string };
   paywall_viewed: { variant: string; placement: Placement };
   plan_selected: { product_id: string };
-  checkout_started: { product_id: string; placement?: Placement }; // web: Stripe checkout; app: the store purchase sheet
+  checkout_started: { product_id: string; placement?: Placement }; // the store purchase sheet in the app (there is no web checkout)
   purchase_cancelled: { product_id: string; placement?: Placement };
   purchase_failed: { product_id: string; placement?: Placement };
   purchases_restored: { found: boolean };
-  // Purchases come from the server (Stripe and RevenueCat webhooks). `sandbox`: TestFlight / App Review / test purchases.
+  // Purchases come from the server (RevenueCat webhooks). `sandbox`: TestFlight / App Review / test purchases.
   trial_started: { product_id: string; source: Source; sandbox?: boolean };
   subscription_started: { product_id: string; source: Source; price: number; trial_conversion?: boolean; sandbox?: boolean };
   subscription_renewed: { product_id: string; source: Source; price?: number; sandbox?: boolean };
@@ -26,7 +26,7 @@ export type AnalyticsEvents = {
   subscription_expired: { product_id: string; source: Source; reason?: string; sandbox?: boolean };
   billing_issue: { product_id: string; source: Source; sandbox?: boolean };
   refund_issued: { product_id: string; source: Source; sandbox?: boolean };
-  app_download_clicked: { placement: string };
+  app_download_clicked: { placement: string }; // web "App Store / Google Play" buttons: "<where>:<store>"
   app_opened: { is_first_open: boolean };
   login_link_used: { success: boolean };
   onboarding_completed: { path: "web" | "app_store" };
