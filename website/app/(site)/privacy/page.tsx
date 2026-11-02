@@ -14,6 +14,11 @@ const PROCESSORS = [
     "Generates prayers and companion replies from what you write",
     "Your messages, prayer requests, quiz answers needed for the reply",
   ],
+  [
+    "Voyage AI",
+    "Finds Bible verses that match a companion message (AI text search)",
+    "The text of the message you send to the companion",
+  ],
   ["ElevenLabs", "Turns prayer text into audio", "Prayer text"],
   [
     "Apple (App Store), Google (Google Play) and RevenueCat",
@@ -198,12 +203,15 @@ export default function PrivacyPage() {
 
       <h2 id="ai">3. The AI companion</h2>
       <p>
-        When you write to the companion or ask for a prayer, the relevant text
-        (and the preferences needed to answer, such as your tradition and
-        translation) is sent to our AI provider, Anthropic, to generate the
-        reply. Under its commercial terms, Anthropic does not use this data to
-        train its models. Bible verses shown in replies are loaded from our own
-        Bible database, not written by the AI.
+        The companion uses AI from two third-party providers, and the app asks
+        for your permission before your first message is sent. Anthropic
+        (Claude) writes the reply: it receives your messages in the
+        conversation and the details needed to answer, such as your first name,
+        tradition and what you asked prayer for. Under its commercial terms,
+        Anthropic does not use this data to train its models. Voyage AI finds
+        matching Bible verses: it receives the text of your message. Bible
+        verses shown in replies are loaded from our own Bible database, not
+        written by the AI.
       </p>
       <p>
         AI replies can be wrong. They are not pastoral, medical, legal or
