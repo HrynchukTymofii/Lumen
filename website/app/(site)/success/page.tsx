@@ -5,13 +5,12 @@ import { ArrowIcon, Light, Scene } from "@/components/kit";
 import { getCurrentUser } from "@/lib/auth/current";
 import { getPremium } from "@/lib/entitlement";
 import { SITE } from "@/lib/site";
-import { stripeConfigured, getStripe } from "@/lib/stripe";
 import { SiteFooter } from "../_components/chrome";
+import { StoreButtons } from "../_components/store-buttons";
 
 export const metadata: Metadata = { title: "You're in", robots: { index: false } };
 
-// After checkout (or "continue free"): SPEC §8.5. The webhook may land a few seconds after this page,
-// so a paid Stripe session counts as Premium here even before the entitlement row exists.
+// After the funnel ("continue free"): SPEC §8.5. Premium is bought in the app, so this points to the stores too.
 export default function SuccessPage({ searchParams }: PageProps<"/success">) {
   return (
     <main className="wrap">
@@ -29,16 +28,9 @@ export default function SuccessPage({ searchParams }: PageProps<"/success">) {
 }
 
 async function Welcome({ searchParams }: Pick<PageProps<"/success">, "searchParams">) {
-  const { session_id } = await searchParams;
+  await searchParams;
   const user = await getCurrentUser();
-
-  let premium = user ? Boolean(await getPremium(user.id)) : false;
-  if (!premium && user && typeof session_id === "string" && stripeConfigured()) {
-    const checkout = await getStripe()
-      .checkout.sessions.retrieve(session_id)
-      .catch(() => null);
-    premium = checkout?.client_reference_id === user.id && checkout.status === "complete";
-  }
+  const premium = user ? Boolean(await getPremium(user.id)) : false;
 
   return (
     <>
@@ -55,9 +47,10 @@ async function Welcome({ searchParams }: Pick<PageProps<"/success">, "searchPara
           <ArrowIcon />
         </span>
       </Link>
+      <StoreButtons placement="success" />
       <p className="fine" style={{ marginTop: 14 }}>
-        {user ? `Sign in anywhere with ${user.email}. ` : ""}We also emailed you a link. The iPhone app is coming soon and
-        uses the same account.
+        {user ? `Sign in to the app or the website with ${user.email}. ` : ""}We also emailed you a link. Premium is
+        available in the app.
       </p>
     </>
   );

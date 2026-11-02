@@ -36,8 +36,6 @@ async function fetchSubscriber(userId: string): Promise<RcSubscriber> {
   return res.json();
 }
 
-// Store product ids → our plan ids (SPEC §9.1). Google Play ids can carry a base plan: "pc_annual_5999:annual".
-const planFor = (productId: string) => (/annual|year/i.test(productId) ? "annual_59_99" : "monthly_9_99");
 const sourceFor = (store: string): EntitlementSource => (store === "play_store" ? "play" : "app_store");
 
 function statusFor(sub: RcSubscription | undefined, expires: Date): EntitlementStatus {
@@ -69,7 +67,9 @@ export async function syncRevenueCat(userId: string) {
   const status = statusFor(sub, currentPeriodEnd);
   const data = {
     source: sourceFor(sub?.store ?? "app_store"),
-    productId: planFor(ent.product_identifier),
+    // The store's own product id (Google Play ids can carry a base plan: "lumen_yearly:yearly"); planOf() in
+    // lib/plans.ts turns it into yearly / monthly for display. Weekly has no website plan and shows as "Premium".
+    productId: ent.product_identifier,
     status,
     currentPeriodEnd,
     trialEndsAt: status === "trial" ? currentPeriodEnd : null,

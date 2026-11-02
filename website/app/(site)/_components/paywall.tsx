@@ -1,52 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowIcon, CheckIcon } from "@/components/kit";
+import { useEffect } from "react";
+import { CheckIcon } from "@/components/kit";
 import { track } from "@/lib/analytics/client";
-import { FREE_FEATURES, PLANS, PREMIUM_FEATURES, renewalLine, type PlanId } from "@/lib/plans";
-import { post } from "./post";
+import { FREE_FEATURES, PREMIUM_FEATURES, plansFor, priceLine } from "@/lib/plans";
+import { StoreButtons } from "./store-buttons";
+import { usePrices } from "./use-prices";
 
-// Paywall used by the funnel and by /app/upgrade (SPEC §8.4). Variant A: Free vs Premium first.
-// Variant B: trial timeline first. No countdowns, no fake discounts; "continue free" is always visible.
+// Paywall used by the funnel and by /app/upgrade (SPEC §8.4). There is no web checkout: Premium is bought in the
+// App Store / Google Play, so this shows the plans and sends people to the app, where they sign in with the same
+// email and subscribe. Variant A: Free vs Premium first. Variant B: the three steps first.
+// No countdowns, no fake discounts; "continue free" is always visible.
 export function Paywall({
   variant,
   name,
+  email,
   placement,
-  funnelSlug,
   onFree,
 }: {
   variant: "A" | "B";
   name?: string;
+  email?: string;
   placement: "funnel" | "settings";
-  funnelSlug?: string;
   onFree: () => void;
 }) {
-  const [plan, setPlan] = useState<PlanId>("annual_59_99");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const prices = usePrices();
+  const PLANS = plansFor(prices);
+  const intro = PLANS.yearly.intro;
   useEffect(() => {
     track("paywall_viewed", { variant, placement });
   }, [variant, placement]);
 
-  async function checkout() {
-    setBusy(true);
-    setError(null);
-    track("checkout_started", { product_id: plan });
-    try {
-      const { url } = await post<{ url: string }>("/api/stripe/checkout", {
-        productId: plan,
-        from: placement === "funnel" ? "funnel" : "app",
-        funnelSlug,
-      });
-      window.location.href = url;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setBusy(false);
-    }
-  }
-
-  const trial = PLANS[plan].trialDays;
   const compare = (
     <div className="pw-compare">
       <div>
@@ -70,16 +54,18 @@ export function Paywall({
       </div>
     </div>
   );
-  const timeline = (
+  const steps = (
     <ol className="pw-timeline">
       <li>
-        <b>Today</b>Full access to everything in Premium
+        <b>Get the app</b>Free to download
       </li>
       <li>
-        <b>Day 5</b>We email you a reminder
+        <b>Sign in</b>
+        {email ? `With ${email}: your answers and prayer path are already there` : "Your prayer path is saved to your account"}
       </li>
       <li>
-        <b>Day 7</b>Your plan starts. Cancel before and you pay nothing
+        <b>Choose Premium</b>
+        {intro ? `${intro} for your first month, then ${PLANS.yearly.price} a year` : `${PLANS.yearly.price} a year`}
       </li>
     </ol>
   );
@@ -87,24 +73,15 @@ export function Paywall({
   return (
     <div className="pw">
       <h2>{name ? `${name}, your 7-day prayer path is ready` : "Your 7-day prayer path is ready"}</h2>
-      <p className="sub">Pray with it free for {PLANS.annual_59_99.trialDays} days. Keep the free plan after if you like.</p>
+      <p className="sub">
+        Open it in the app. {intro ? `Start Premium for ${intro} for the first month` : "Start Premium"}, or keep the free plan.
+      </p>
 
-      {variant === "A" ? compare : timeline}
+      {variant === "A" ? compare : steps}
 
-      <div className="pw-plans" role="radiogroup" aria-label="Choose a plan">
+      <div className="pw-plans">
         {Object.values(PLANS).map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            role="radio"
-            aria-checked={plan === p.id}
-            className={`pw-plan ${plan === p.id ? "on" : ""}`}
-            onClick={() => {
-              setPlan(p.id);
-              track("plan_selected", { product_id: p.id });
-            }}
-          >
-            <span className="radio" />
+          <div key={p.id} className="pw-plan">
             <span className="what">
               <b>{p.label}</b>
               <small>{p.note}</small>
@@ -113,19 +90,16 @@ export function Paywall({
               {p.price}
               <small>/{p.period}</small>
             </span>
-            {p.trialDays > 0 && <span className="badge">{p.trialDays} days free</span>}
-          </button>
+            {p.intro && <span className="badge">First month {p.intro}</span>}
+          </div>
         ))}
       </div>
 
-      <button type="button" className="btn-ink full" onClick={checkout} disabled={busy}>
-        {busy ? "Opening checkout…" : trial ? "Start my free week" : "Continue"}
-        <span className="dot">
-          <ArrowIcon />
-        </span>
-      </button>
-      <p className="fine pw-renew">{renewalLine(plan)}</p>
-      {error && <p className="fn-error">{error}</p>}
+      <StoreButtons placement={placement === "funnel" ? "funnel_paywall" : "web_upgrade"} />
+      <p className="fine pw-renew">
+        {email ? `Sign in with ${email} and subscribe in the app. ` : "Subscribe in the app. "}
+        {priceLine(prices)}
+      </p>
 
       {variant === "B" && compare}
 

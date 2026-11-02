@@ -12,7 +12,8 @@
     "db:studio": "prisma studio",
     "prayers:generate": "tsx scripts/generate-prayers.ts",
     "bible:import": "tsx scripts/import-bible.ts",
-    "bible:embed": "tsx scripts/embed-bible.ts"
+    "bible:embed": "tsx scripts/embed-bible.ts",
+    "prices:sync": "tsx scripts/sync-prices.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
@@ -28,7 +29,6 @@
     "react-dom": "19.3.0",
     "resend": "^6.37.0",
     "server-only": "^0.0.1",
-    "stripe": "^23.1.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -40,6 +40,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "fflate": "^0.8.3",
+    "i18n-iso-countries": "^7.14.0",
     "prisma": "^7.10.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",

@@ -16,12 +16,7 @@ const PROCESSORS = [
   ],
   ["ElevenLabs", "Turns prayer text into audio", "Prayer text"],
   [
-    "Stripe",
-    "Web payments and subscription management",
-    "Email, payment details (held by Stripe, never by us), subscription status",
-  ],
-  [
-    "Apple (App Store) and RevenueCat",
+    "Apple (App Store), Google (Google Play) and RevenueCat",
     "In-app purchases and subscription status",
     "Purchase and subscription records, an app user id",
   ],
@@ -144,9 +139,9 @@ export default function PrivacyPage() {
       <h3>Information from others</h3>
       <ul>
         <li>
-          <b>Payment providers</b> (Stripe, Apple, RevenueCat) tell us whether
-          your subscription is active, its plan and renewal dates. We never
-          receive or store your full card number.
+          <b>App stores</b> (Apple, Google, through RevenueCat) tell us whether
+          your subscription is active, its plan and renewal dates. Payments are
+          handled by the store: we never receive your card or bank details.
         </li>
         <li>
           <b>Apple or Google</b> share your email (or an Apple relay address)
@@ -179,11 +174,11 @@ export default function PrivacyPage() {
           signs and show emergency resources, and prevent abuse of the service.
         </li>
         <li>
-          To handle subscriptions: free trials, renewals, cancellations and
-          refunds.
+          To handle subscriptions: unlocking Premium, renewals and
+          cancellations.
         </li>
         <li>
-          To communicate: sign-in codes, receipts, trial-ending reminders,
+          To communicate: sign-in codes, replies to your support messages,
           service updates, and, if you choose, prayer reminders.
         </li>
         <li>

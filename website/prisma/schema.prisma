@@ -83,7 +83,7 @@ model User {
   utmContent       String?
   utmTerm          String?
   signupPlatform   Platform?
-  stripeCustomerId String?         @unique
+  stripeCustomerId String?         @unique // unused: there are no web payments (kept to avoid a migration)
 
   // The app as last opened (POST /api/me/seen, sent on launch and at most every few hours)
   appVersion   String?
@@ -133,7 +133,7 @@ model LoginToken {
 // ───────── Payments (SPEC §9) ─────────
 
 enum EntitlementSource {
-  stripe
+  stripe // unused: there are no web payments (kept to avoid a migration)
   app_store
   play
 }
@@ -151,8 +151,8 @@ model Entitlement {
   userId           String
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   source           EntitlementSource
-  productId        String // annual_59_99 | monthly_9_99
-  externalId       String            @unique // Stripe subscription id / "revenuecat:<userId>" (one row, synced from RevenueCat)
+  productId        String // the store product id from RevenueCat (older rows: annual_59_99 | monthly_9_99)
+  externalId       String            @unique // "revenuecat:<userId>" (one row, synced from RevenueCat)
   status           EntitlementStatus
   trialEndsAt      DateTime?
   currentPeriodEnd DateTime
@@ -163,7 +163,7 @@ model Entitlement {
   @@index([userId])
 }
 
-// Idempotency for Stripe + RevenueCat webhooks
+// Idempotency for RevenueCat webhooks
 model WebhookEvent {
   id          String   @id // provider event id
   provider    String

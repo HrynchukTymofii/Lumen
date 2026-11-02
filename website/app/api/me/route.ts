@@ -7,7 +7,6 @@ import { USER_COOKIE, getRefreshedToken, requireUser } from "@/lib/auth/session"
 import { publicUser } from "@/lib/auth/users";
 import { getPremium } from "@/lib/entitlement";
 import { prisma } from "@/lib/prisma";
-import { getStripe, stripeConfigured } from "@/lib/stripe";
 
 async function loadUser(id: string) {
   const user = await prisma.user.findUnique({ where: { id } });
@@ -70,21 +69,12 @@ export const PATCH = handle(async (req: NextRequest) => {
   return NextResponse.json({ user: publicUser(user) });
 });
 
-// Account deletion (App Store requirement): cancels web subscriptions now, then deletes everything (cascade).
-// App Store subscriptions can only be cancelled by the user in iOS settings; the app reminds them.
+// Account deletion (App Store requirement): deletes everything (cascade). Store subscriptions can only be cancelled
+// by the user in the App Store / Google Play; the app and website remind them.
 export const DELETE = handle(async (req: NextRequest) => {
   const session = await requireUser(req);
   const user = await loadUser(session.id);
 
-  const stripeSubs = await prisma.entitlement.findMany({
-    where: { userId: user.id, source: "stripe", status: { in: ["trial", "active", "grace", "canceled"] } },
-  });
-  if (stripeSubs.length && stripeConfigured()) {
-    const stripe = getStripe();
-    for (const sub of stripeSubs) {
-      await stripe.subscriptions.cancel(sub.externalId).catch((err) => console.error("[delete account] stripe cancel", err));
-    }
-  }
   // Sign in with Apple: the app's access to the Apple ID goes with the account (App Store guideline 5.1.1(v))
   if (user.appleRefreshToken) {
     await revokeAppleToken(user.appleRefreshToken).catch((err) => console.error("[delete account] apple revoke", err));
