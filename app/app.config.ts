@@ -17,7 +17,12 @@ const config: ExpoConfig = {
     supportsTablet: true,
     usesAppleSignIn: true,
     // Only standard HTTPS, so App Store Connect stops asking about encryption on every build
-    infoPlist: { ITSAppUsesNonExemptEncryption: false },
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      // Required by App Store Connect (ITMS-90683): expo-file-system's code can read photo-library assets (ph://),
+      // so the binary references the Photos API. Lumen never asks for photo access; this text would only show if it did.
+      NSPhotoLibraryUsageDescription: "Lumen doesn’t use your photo library. If a future feature needs a picture from it, Lumen will ask you first and only open the picture you choose.",
+    },
   },
   android: {
     package: "com.hrynchuk.biblecompanion",
