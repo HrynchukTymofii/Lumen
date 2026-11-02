@@ -83,6 +83,12 @@ model User {
   signupPlatform   Platform?
   stripeCustomerId String?         @unique
 
+  // The app as last opened (POST /api/me/seen, sent on launch and at most every few hours)
+  appVersion   String?
+  appBuild     String?
+  lastPlatform Platform?
+  lastSeenAt   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -97,6 +103,7 @@ model User {
   journal       JournalEntry[]
   bibleMarks    BibleMark[]
   bookmarks     BibleBookmark[]
+  ratings       AppRating[]
 }
 
 enum LoginTokenPurpose {
@@ -242,6 +249,22 @@ model ContentVersion {
 }
 
 // ───────── App diagnostics (SPEC §10, copied from PDR_pl) ─────────
+
+// "How is Lumen helping you?" answers, asked in the app after a finished prayer or a longer companion chat
+model AppRating {
+  id         String   @id @default(uuid())
+  userId     String
+  stars      Int // 1..5
+  moment     String // "prayer" | "companion"
+  comment    String?
+  platform   Platform
+  appVersion String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+}
 
 // Crash and error reports from the phone app. userId is null for signed-out installs.
 model AppError {
