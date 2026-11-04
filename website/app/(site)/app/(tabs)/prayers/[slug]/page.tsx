@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ArrowIcon, Light, Scene } from "@/components/kit";
 import { requirePageUser } from "@/lib/auth/current";
-import { toPublicTrack } from "@/lib/content";
+import { paragraphs, toPublicTrack } from "@/lib/content";
 import { getPremium } from "@/lib/entitlement";
 import { prisma } from "@/lib/prisma";
 
@@ -43,8 +43,8 @@ async function Prayer({ params }: Pick<PageProps<"/app/prayers/[slug]">, "params
         {variant ? (
           <>
             <div className="prayer-text">
-              {variant.lines.map((l, i) => (
-                <p key={i}>{l.text}</p>
+              {paragraphs(variant.lines).map((p, i) => (
+                <p key={i}>{p}</p>
               ))}
             </div>
             {variant.url && <audio controls preload="none" src={variant.url} />}

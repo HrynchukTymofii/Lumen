@@ -29,7 +29,7 @@ export const SCENES = ["dawn", "golden", "lake", "meadow", "dusk", "evening", "n
 export const CATEGORIES = ["morning", "evening", "peace", "psalms", "grief", "family", "sleep"] as const;
 
 export type Status = "draft" | "review" | "published" | "archived";
-export type Line = { t: number | null; text: string };
+export type Line = { t: number | null; text: string; p?: boolean }; // p: a new paragraph starts here
 export type Variant = { minutes: 1 | 3 | 5; url: string | null; durationSec: number | null; lines: Line[] };
 
 export type Track = {

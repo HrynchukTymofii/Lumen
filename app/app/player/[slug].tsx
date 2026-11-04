@@ -1,12 +1,13 @@
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
 import { TrackArt } from "@/components/TrackArt";
 import { IconButton } from "@/components/ui/Button";
-import { CheckIcon, CloseIcon, PauseIcon, PlayIcon, SkipIcon } from "@/components/ui/icons";
+import { CloseIcon, PauseIcon, PlayIcon, SkipIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { cachedLibrary } from "@/lib/api/library";
 import type { TrackVariant } from "@/lib/api/types";
@@ -17,10 +18,10 @@ import { reportError } from "@/lib/errorReporting";
 import { reviewMoment } from "@/lib/review";
 import { localAudio, recordPlayed } from "@/lib/userLibrary";
 
-// Guided player (SPEC §10.2): the scene behind, the Light speaking, and the whole prayer as a scrolling text that
-// follows the audio: the phrase being spoken is bright, the page scrolls with it, and it can be scrolled by hand
-// (or a phrase tapped to jump there). Progress, back / play-pause / forward 15 s. Keeps playing with the screen
-// locked. Finishing counts as "prayed" for the week. Opened with ?minutes= for the chosen length.
+// Guided player (SPEC §10.2): the scene and the Light speaking on the top half, and on the bottom half the whole
+// prayer as a scrolling text that follows the audio: the phrase being spoken fades up, the ones around it fade
+// back, the page scrolls with it, and it can be scrolled by hand (or a phrase tapped to jump there). At the end the
+// text gives way to "Amen." Keeps playing with the screen locked. Finishing counts as "prayed" for the week.
 
 const SKIP = 15;
 // After scrolling by hand, the text stays where it was put for this long before following the audio again
@@ -49,12 +50,14 @@ function sentences(text: string) {
 // Without timestamps the time is shared across the whole prayer by length, which follows a steady reading voice.
 function phrases(variant: TrackVariant | undefined, duration: number): Phrase[] {
   if (!variant) return [];
-  const lines = variant.lines.flatMap((l) =>
+  // Paragraphs: where the admin editor marked them, otherwise every line starts one
+  const marked = variant.lines.some((l) => l.p);
+  const lines = variant.lines.flatMap((l, n) =>
     l.text
       .split(/\n+/)
       .map((t) => t.trim())
       .filter(Boolean)
-      .map((text, i) => ({ text, t: i === 0 ? l.t : null })),
+      .map((text, i) => ({ text, t: i === 0 ? l.t : null, para: i > 0 || n === 0 || !marked || Boolean(l.p) })),
   );
   const timed = lines.length > 0 && lines.every((l) => l.t !== null);
   const out: Phrase[] = [];
@@ -66,13 +69,13 @@ function phrases(variant: TrackVariant | undefined, duration: number): Phrase[] 
       const total = parts.reduce((n, p) => n + p.length, 0) || 1;
       let at = from;
       parts.forEach((p, j) => {
-        out.push({ text: p, start: at, paragraph: j === 0 });
+        out.push({ text: p, start: at, paragraph: j === 0 && l.para });
         at += ((to - from) * p.length) / total;
       });
     });
     return out;
   }
-  const parts = lines.flatMap((l) => sentences(l.text).map((p, j) => ({ text: p, paragraph: j === 0 })));
+  const parts = lines.flatMap((l) => sentences(l.text).map((p, j) => ({ text: p, paragraph: j === 0 && l.para })));
   const total = parts.reduce((n, p) => n + p.text.length, 0) || 1;
   let at = 0;
   for (const p of parts) {
@@ -85,6 +88,7 @@ function phrases(variant: TrackVariant | undefined, duration: number): Phrase[] 
 export default function PlayerScreen() {
   const { slug, minutes } = useLocalSearchParams<{ slug: string; minutes?: string }>();
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const c = useColors();
   const track = cachedLibrary()?.tracks.find((t) => t.slug === slug);
   const variant = track?.variants.find((v) => v.minutes === Number(minutes)) ?? track?.variants.find((v) => v.url);
@@ -172,55 +176,60 @@ export default function PlayerScreen() {
         <IconButton label="Close" onPress={close}>
           <CloseIcon color={c.ink} />
         </IconButton>
-        <Light size={64} state={status.playing ? "speaking" : "idle"} />
         <View className="h-10 min-w-10 items-center justify-center rounded-full bg-black/35 px-3">
           <Text className="font-sans-semibold text-sm text-white">{variant.minutes} min</Text>
         </View>
       </View>
 
-      <View className="mx-3 mt-3 flex-1 overflow-hidden rounded-[32px] bg-bg/95" style={{ marginBottom: insets.bottom + 12 }}>
+      <View className="flex-1 items-center justify-center">
+        <Light size={110} state={status.playing ? "speaking" : "idle"} />
+      </View>
+
+      {/* The text and controls take the bottom half */}
+      <View className="overflow-hidden rounded-t-[32px] bg-bg" style={{ height: Math.round(height * 0.56), paddingBottom: insets.bottom }}>
         <Text className="px-6 pt-5 font-sans text-sm text-muted" numberOfLines={1}>
           {track.title}
         </Text>
 
-        {/* The whole prayer, following the audio */}
-        <ScrollView
-          ref={scroll}
-          className="flex-1"
-          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 10, paddingBottom: 120 }}
-          showsVerticalScrollIndicator={false}
-          onScrollBeginDrag={() => (handScrolledAt.current = Date.now())}
-          onMomentumScrollEnd={() => (handScrolledAt.current = Date.now())}
-        >
-          {list.map((p, i) => (
-            <Pressable
-              key={i}
-              onLayout={(e) => (tops.current[i] = e.nativeEvent.layout.y)}
-              onPress={() => {
-                handScrolledAt.current = 0;
-                if (finished) setFinished(false);
-                player.seekTo(p.start);
-                player.play();
-              }}
-              accessibilityRole="button"
-              accessibilityHint="Plays from here"
-              style={{ marginTop: p.paragraph && i > 0 ? 16 : 4 }}
+        <View className="flex-1">
+          {/* The whole prayer, following the audio */}
+          <FadeView visible={!finished} style={{ flex: 1 }}>
+            <ScrollView
+              ref={scroll}
+              className="flex-1"
+              contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 96 }}
+              showsVerticalScrollIndicator={false}
+              onScrollBeginDrag={() => (handScrolledAt.current = Date.now())}
+              onMomentumScrollEnd={() => (handScrolledAt.current = Date.now())}
             >
-              <Text
-                className="font-serif text-[21px] text-ink"
-                style={{ lineHeight: 32, opacity: i === current ? 1 : i < current ? 0.55 : 0.3 }}
-              >
-                {p.text}
+              {list.map((p, i) => (
+                <Pressable
+                  key={i}
+                  onLayout={(e) => (tops.current[i] = e.nativeEvent.layout.y)}
+                  onPress={() => {
+                    handScrolledAt.current = 0;
+                    player.seekTo(p.start);
+                    player.play();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityHint="Plays from here"
+                  style={{ marginTop: p.paragraph && i > 0 ? 18 : 4 }}
+                >
+                  <FadeText text={p.text} opacity={i === current ? 1 : i < current ? 0.5 : 0.22} />
+                </Pressable>
+              ))}
+            </ScrollView>
+          </FadeView>
+
+          {/* The end: just "Amen." */}
+          <FadeView visible={finished} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
+            <View className="flex-1 items-center justify-center">
+              <Text className="font-serif text-[44px] text-ink" style={{ lineHeight: 52 }}>
+                Amen.
               </Text>
-            </Pressable>
-          ))}
-          {finished && (
-            <View className="mt-6 flex-row items-center gap-2">
-              <CheckIcon size={16} color={c.ink} />
-              <Text className="font-sans-semibold text-sm text-ink">Amen. Counted for this week</Text>
             </View>
-          )}
-        </ScrollView>
+          </FadeView>
+        </View>
 
         <View className="border-t border-line px-6 pb-5 pt-4">
           <View className="h-1.5 overflow-hidden rounded-full bg-line">
@@ -263,5 +272,46 @@ export default function PlayerScreen() {
         </View>
       </View>
     </View>
+  );
+}
+
+// A phrase whose brightness eases between spoken, already said and still to come
+function FadeText({ text, opacity }: { text: string; opacity: number }) {
+  const value = useSharedValue(opacity);
+  useEffect(() => {
+    value.value = withTiming(opacity, { duration: 600, easing: Easing.out(Easing.quad) });
+  }, [opacity, value]);
+  const style = useAnimatedStyle(() => ({ opacity: value.value }));
+  return (
+    // The fade is on a wrapper: NativeWind's classes don't reach Animated.Text
+    <Animated.View style={style}>
+      <Text className="font-serif text-[21px] text-ink" style={{ lineHeight: 32 }}>
+        {text}
+      </Text>
+    </Animated.View>
+  );
+}
+
+// Fades its content in and out (the prayer text, and "Amen." at the end)
+function FadeView({
+  visible,
+  style,
+  pointerEvents,
+  children,
+}: {
+  visible: boolean;
+  style?: object;
+  pointerEvents?: "none" | "auto";
+  children: React.ReactNode;
+}) {
+  const value = useSharedValue(visible ? 1 : 0);
+  useEffect(() => {
+    value.value = withTiming(visible ? 1 : 0, { duration: 700, easing: Easing.inOut(Easing.quad) });
+  }, [visible, value]);
+  const animated = useAnimatedStyle(() => ({ opacity: value.value, transform: [{ translateY: (1 - value.value) * 8 }] }));
+  return (
+    <Animated.View style={[style, animated]} pointerEvents={pointerEvents ?? (visible ? "auto" : "none")}>
+      {children}
+    </Animated.View>
   );
 }

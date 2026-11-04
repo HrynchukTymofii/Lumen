@@ -54,7 +54,7 @@ export async function speakLines(lines: Variant["lines"]) {
       // Alignment didn't match the text 1:1; spread lines by character share instead
       t = durationSec * (starts[i] / text.length);
     }
-    return { t: Math.round(t * 100) / 100, text: l.text };
+    return { ...l, t: Math.round(t * 100) / 100 };
   });
 
   return { audio, durationSec: Math.ceil(durationSec), lines: timed };

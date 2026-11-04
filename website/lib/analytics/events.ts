@@ -38,6 +38,9 @@ export type AnalyticsEvents = {
   prayer_audio_played: { prayer_type: string; prayer_slug: string; minutes?: number };
   prayer_audio_finished: { prayer_type: string; prayer_slug: string; minutes?: number };
   prayer_marked_done: { prayer_type: string };
+  reading_plan_started: { plan_id: string; reminder: boolean };
+  reading_plan_day_done: { plan_id: string; day: number };
+  reading_plan_stopped: { plan_id: string; days_done: number };
   verse_of_day_viewed: Record<string, never>;
   verse_shared: Record<string, never>;
   chat_conversation_started: Record<string, never>;

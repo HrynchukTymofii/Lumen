@@ -1,13 +1,14 @@
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomShade } from "@/components/ArtTile";
 import { Light } from "@/components/Light";
+import { StreakWeek } from "@/components/StreakWeek";
 import { SectionTitle, Shelf } from "@/components/TrackCard";
 import { TrackArt } from "@/components/TrackArt";
 import { InkButton, OliveButton } from "@/components/ui/Button";
-import { BellIcon, CheckIcon, LockIcon, PlayIcon, SearchIcon, SendIcon } from "@/components/ui/icons";
+import { ArrowIcon, BellIcon, BibleIcon, CheckIcon, ChevronIcon, LockIcon, PlayIcon, SearchIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { askToSignIn, hasAccount } from "@/lib/account";
@@ -18,6 +19,8 @@ import { applyGrace, getToday, markPrayed } from "@/lib/api/today";
 import type { Library, Streak, Today, Track } from "@/lib/api/types";
 import { track as trackEvent } from "@/lib/analytics";
 import { companionTopic, type CompanionTopic } from "@/lib/companionTopics";
+import { refreshPlanReminders } from "@/lib/planActions";
+import { dayChapters, nextDay, planById, readingLabel, readingMinutes, usePlanProgress } from "@/lib/readingPlans";
 import { APP_NAME } from "@/lib/config";
 import { reportError } from "@/lib/errorReporting";
 import { requestPermission, scheduleReminders } from "@/lib/notifications";
@@ -93,6 +96,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     load();
+    // Keeps the next week of Bible-reading reminders scheduled (lib/planActions.ts)
+    refreshPlanReminders().catch(reportError);
   }, [load]);
 
   // Keeps the next week of reminders scheduled, without today's once it's prayed
@@ -273,27 +278,17 @@ export default function HomeScreen() {
         onPress={() => (streak ? router.push("/streak") : askToSignIn("streak"))}
         accessibilityRole="button"
         accessibilityLabel="Your prayer week"
-        className="mx-4 mt-5 rounded-[28px] bg-ink p-5 active:opacity-90"
+        className="mx-4 mt-5 rounded-[28px] bg-card p-5 active:opacity-90"
       >
-        <Text className="font-sans text-sm text-bg/70">This week</Text>
         {streak && !streak.hidden ? (
-          <View className="mt-1 flex-row items-end justify-between">
-            <View>
-              <Text className="font-display text-[50px] text-bg" style={{ lineHeight: 54, letterSpacing: -2 }}>
-                {streak.doneThisWeek.filter(Boolean).length}/{streak.goal}
-              </Text>
-              <Text className="font-sans text-sm text-bg/70">days prayed</Text>
-            </View>
-            <View className="mb-1 flex-row gap-1.5">
-              {streak.doneThisWeek.map((d, i) => (
-                <View key={streak.weekDays[i]} className={`h-3.5 w-3.5 rounded-full ${d ? (streak.graceDays[i] ? "bg-gold" : "bg-bg") : "bg-bg/25"}`} />
-              ))}
-            </View>
-          </View>
+          <StreakWeek streak={streak} />
         ) : (
-          <View className="mt-2 flex-row items-center gap-3">
-            <Light size={46} />
-            <Text className="flex-1 font-display text-[20px] leading-6 text-bg">Start your week of prayer</Text>
+          <View className="flex-row items-center gap-3">
+            <Light size={40} />
+            <View className="flex-1">
+              <Text className="font-display text-[18px] text-ink">Start your week of prayer</Text>
+              <Text className="mt-0.5 font-sans text-sm text-muted">Pray a few days a week and watch them fill up here.</Text>
+            </View>
           </View>
         )}
       </Pressable>
@@ -317,6 +312,9 @@ export default function HomeScreen() {
           </View>
         )}
       </Pressable>
+
+      {/* Today's Bible reading, or an invitation to start a plan */}
+      <ReadingCard />
 
       {/* The companion, one tap away */}
       {(!user || user.aiEnabled) && <TalkCard topic={companionTopic(user)} />}
@@ -410,6 +408,60 @@ export default function HomeScreen() {
   );
 }
 
+// Today's reading of the plan in progress; without a plan, a quiet invitation to start one
+function ReadingCard() {
+  const c = useColors();
+  const progress = usePlanProgress();
+  const plan = progress ? planById(progress.planId) : undefined;
+  const day = progress && plan ? nextDay(plan, progress) : null;
+
+  if (!progress || !plan || day === null) {
+    return (
+      <Pressable
+        onPress={() => router.push("/plans")}
+        accessibilityRole="button"
+        className="mx-4 mt-4 flex-row items-center gap-4 rounded-[28px] bg-card p-5 active:opacity-90"
+      >
+        <View className="h-12 w-12 items-center justify-center rounded-full bg-bg">
+          <BibleIcon size={22} color={c.ink} />
+        </View>
+        <View className="flex-1">
+          <Text className="font-display text-[18px] text-ink">Read the Bible every day</Text>
+          <Text className="mt-0.5 font-sans text-sm text-muted">Start a reading plan, a few minutes a day</Text>
+        </View>
+        <ChevronIcon size={18} color={c.dim} />
+      </Pressable>
+    );
+  }
+
+  const chapters = dayChapters(plan, day);
+  const doneToday = progress.lastDoneOn === todayKey();
+  return (
+    <Pressable onPress={() => router.push("/plans")} accessibilityRole="button" className="mx-4 mt-4 rounded-[28px] bg-card p-5 active:opacity-90">
+      <View className="flex-row items-center justify-between">
+        <Text className="font-sans text-sm text-muted">
+          {doneToday ? "Read today · up next" : "Today’s reading"} · day {day + 1} of {plan.days}
+        </Text>
+        <BibleIcon size={18} color={c.muted} />
+      </View>
+      <Text className="mt-1.5 font-display text-[22px] text-ink" style={{ lineHeight: 27, letterSpacing: -0.5 }}>
+        {readingLabel(chapters)}
+      </Text>
+      <Text className="mt-1 font-sans text-sm text-muted">
+        {plan.title} · about {readingMinutes(plan, chapters)} min
+      </Text>
+      <View className="mt-4 h-1.5 overflow-hidden rounded-full bg-line">
+        <View className="h-full rounded-full bg-gold" style={{ width: `${Math.max(2, (progress.done.length / plan.days) * 100)}%` }} />
+      </View>
+    </Pressable>
+  );
+}
+
+const todayKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 function RoundButton({ label, onPress, children }: { label: string; onPress: () => void; children: ReactNode }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} className="h-10 w-10 items-center justify-center rounded-full bg-card active:opacity-70">
@@ -445,22 +497,19 @@ function PosterCard({ track, seed }: { track: Track; seed: number }) {
   );
 }
 
-// "Talk it through": what's on your heart goes straight into a new conversation with the companion
-// (or to sign-in, without an account)
+// "Talk it through": one big sentence for what they're carrying (lib/companionTopics.ts) on the Light's warm glow,
+// so it stands apart from the grey cards. Tapping it opens a new conversation (or sign-in, without an account).
 function TalkCard({ topic }: { topic: CompanionTopic }) {
   const c = useColors();
-  const [text, setText] = useState("");
   const [starting, setStarting] = useState(false);
 
-  const start = async (suggestion?: string) => {
+  const start = async () => {
     if (starting) return;
     if (!hasAccount()) return askToSignIn("companion");
     setStarting(true);
     try {
       const id = await createConversation();
-      const prompt = (suggestion ?? text).trim();
-      router.push({ pathname: "/companion/[id]", params: prompt ? { id, prompt, send: "1" } : { id } });
-      setText("");
+      router.push({ pathname: "/companion/[id]", params: { id } });
     } catch (err) {
       reportError(err);
       router.navigate("/companion");
@@ -470,41 +519,24 @@ function TalkCard({ topic }: { topic: CompanionTopic }) {
   };
 
   return (
-    <View className="mx-4 mt-4 rounded-[28px] bg-card p-4">
-      <View className="flex-row items-center gap-2.5 px-1">
-        <Light size={34} state={starting ? "thinking" : "idle"} />
-        <View className="flex-1">
-          <Text className="font-display text-[20px] text-ink" style={{ letterSpacing: -0.5 }}>
-            Talk it through
-          </Text>
-          <Text className="font-sans text-sm text-muted">{topic.hint}</Text>
+    <Pressable
+      onPress={start}
+      accessibilityRole="button"
+      accessibilityLabel={`${topic.line[0]} ${topic.line[1]} Talk with the companion`}
+      className="mx-4 mt-4 overflow-hidden rounded-[28px] bg-gold px-6 pb-6 pt-5 active:opacity-90"
+    >
+      <View className="flex-row items-start justify-between">
+        <Light size={52} state={starting ? "thinking" : "idle"} />
+        <View className="h-11 w-11 items-center justify-center rounded-full bg-on-pastel">
+          {starting ? <ActivityIndicator color={c.gold} /> : <ArrowIcon size={18} color={c.gold} />}
         </View>
       </View>
-      <View className="mt-3 h-14 flex-row items-center rounded-full bg-ink pl-5 pr-1.5">
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          onSubmitEditing={() => start()}
-          placeholder="What’s on your heart?"
-          placeholderTextColor={c.dim}
-          returnKeyType="send"
-          accessibilityLabel="Ask the companion"
-          className="flex-1 font-sans text-base text-bg"
-        />
-        <Pressable onPress={() => start()} accessibilityRole="button" accessibilityLabel="Send" className="h-11 w-11 items-center justify-center rounded-full bg-bg active:opacity-80">
-          {starting ? <ActivityIndicator color={c.ink} /> : <SendIcon size={18} color={c.ink} />}
-        </Pressable>
-      </View>
-      {/* Ready-made first messages, for someone not sure what to say */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3" contentContainerStyle={{ gap: 8 }}>
-        {topic.prompts
-          .filter((p) => !p.endsWith("…"))
-          .map((p) => (
-            <Pressable key={p} onPress={() => start(p)} disabled={starting} accessibilityRole="button" className="h-9 justify-center rounded-full bg-bg px-3.5 active:opacity-75">
-              <Text className="font-sans text-sm text-ink">{p}</Text>
-            </Pressable>
-          ))}
-      </ScrollView>
-    </View>
+      <Text className="mt-3 font-display text-[30px] text-on-pastel" style={{ lineHeight: 34, letterSpacing: -1 }}>
+        {topic.line[0]}{" "}
+        <Text className="font-serif text-[28px]" style={{ letterSpacing: -0.3 }}>
+          {topic.line[1]}
+        </Text>
+      </Text>
+    </Pressable>
   );
 }

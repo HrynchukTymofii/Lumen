@@ -19,6 +19,15 @@ const CATEGORY_TITLES: Record<string, string> = {
 
 export const categoryTitle = (key: string) => CATEGORY_TITLES[key] ?? key.charAt(0).toUpperCase() + key.slice(1);
 
+/** A prayer's lines as paragraphs: lines flow together until one starts a new paragraph (set in the admin editor).
+ *  Prayers without paragraph marks keep one paragraph per line. */
+export function paragraphs(lines: Track["variants"][number]["lines"]) {
+  if (!lines.some((l) => l.p)) return lines.map((l) => l.text);
+  const out: string[] = [];
+  lines.forEach((l, i) => (l.p || i === 0 ? out.push(l.text) : (out[out.length - 1] += ` ${l.text}`)));
+  return out;
+}
+
 /** "1 · 3 · 5 min" */
 export const trackMinutes = (t: Track) => `${t.variants.map((v) => v.minutes).join(" · ")} min`;
 

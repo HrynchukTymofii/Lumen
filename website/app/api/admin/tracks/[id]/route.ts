@@ -4,7 +4,8 @@ import { handle, readJson } from "@/lib/api";
 import { bumpContentVersion, readVariants, trackPatchSchema, type Variant } from "@/lib/content";
 import { prisma } from "@/lib/prisma";
 
-const scriptOf = (v: Variant) => v.lines.map((l) => l.text.trim()).join("\n");
+// The spoken words, ignoring how they're split into lines and paragraphs, so re-laying out a live prayer keeps its audio
+const scriptOf = (v: Variant) => v.lines.map((l) => l.text).join(" ").replace(/\s+/g, " ").trim();
 
 export const GET = handle(async (req: NextRequest, ctx: RouteContext<"/api/admin/tracks/[id]">) => {
   await requireAdmin(req);
