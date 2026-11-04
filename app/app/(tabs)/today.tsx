@@ -278,16 +278,16 @@ export default function HomeScreen() {
         onPress={() => (streak ? router.push("/streak") : askToSignIn("streak"))}
         accessibilityRole="button"
         accessibilityLabel="Your prayer week"
-        className="mx-4 mt-5 rounded-[28px] bg-card p-5 active:opacity-90"
+        className="mx-4 mt-5 rounded-[28px] bg-ink p-5 active:opacity-90"
       >
         {streak && !streak.hidden ? (
-          <StreakWeek streak={streak} />
+          <StreakWeek streak={streak} dark />
         ) : (
           <View className="flex-row items-center gap-3">
             <Light size={40} />
             <View className="flex-1">
-              <Text className="font-display text-[18px] text-ink">Start your week of prayer</Text>
-              <Text className="mt-0.5 font-sans text-sm text-muted">Pray a few days a week and watch them fill up here.</Text>
+              <Text className="font-display text-[18px] text-bg">Start your week of prayer</Text>
+              <Text className="mt-0.5 font-sans text-sm text-bg/65">Pray a few days a week and watch them fill up here.</Text>
             </View>
           </View>
         )}
