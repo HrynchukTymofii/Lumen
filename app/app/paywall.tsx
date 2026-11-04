@@ -121,7 +121,7 @@ export default function Paywall() {
       <ScrollView contentContainerStyle={{ paddingTop: top + 24, paddingBottom: insets.bottom + 24, paddingHorizontal: 20 }}>
         <View className="items-center">
           <Light size={90} />
-          <Text className="mt-4 text-center font-display text-[30px] leading-9 text-ink">Pray with more of Lumen</Text>
+          <Text className="mt-4 text-center font-display text-[30px] leading-9 text-ink">Pray with more of Holy Hush</Text>
         </View>
 
         <View className="mt-6 gap-3 rounded-[24px] bg-card px-5 py-5">

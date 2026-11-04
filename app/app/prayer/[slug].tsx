@@ -12,6 +12,7 @@ import { cachedLibrary, getLibrary } from "@/lib/api/library";
 import type { Track } from "@/lib/api/types";
 import { track as trackEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/errorReporting";
+import { openPlayer } from "@/lib/play";
 import { downloadKey, downloadsSupported, downloadTrack, removeDownload, toggleFavorite, useDownloads, useFavorites } from "@/lib/userLibrary";
 import { askToSignIn, hasAccount, openPaywall } from "@/lib/account";
 
@@ -85,7 +86,7 @@ export default function PrayerScreen() {
                 {variant?.url && (
                   <OliveButton
                     label="Pray"
-                    onPress={() => router.push({ pathname: "/player/[slug]", params: { slug: track.slug, minutes: String(variant.minutes) } })}
+                    onPress={() => openPlayer(track.slug, variant.minutes)}
                   />
                 )}
                 <RoundAction

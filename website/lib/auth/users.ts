@@ -66,6 +66,8 @@ export function publicUser(user: User) {
     streakHidden: user.streakHidden,
     reminderTime: user.reminderTime,
     remindersEnabled: user.remindersEnabled,
+    // What they're carrying (quiz, stored only with consent): the app tailors the companion's suggestions to it
+    struggles: user.struggles,
   };
 }
 

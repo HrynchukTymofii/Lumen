@@ -4,7 +4,7 @@ import { hasApiToken } from "./api/client";
 import { createLocalStore } from "./localStore";
 import { reportError } from "./errorReporting";
 
-// When to ask how Lumen is helping: only after a good moment has ended (a prayer listened to the end, a companion
+// When to ask how Holy Hush is helping: only after a good moment has ended (a prayer listened to the end, a companion
 // chat of 3+ messages left), never during one, and at most every 90 days. Our card asks for stars
 // (components/RatingPrompt.tsx): 4–5 go on to the store's own review prompt, 1–3 to a short "what could be
 // better?" saved to the account (POST /api/me/rating). Apple and Google decide themselves whether their prompt
@@ -37,7 +37,7 @@ export function closeRating() {
   emit();
 }
 
-/** A good moment just ended: maybe ask how Lumen is helping (signed-in only: the answer is saved to the account) */
+/** A good moment just ended: maybe ask how Holy Hush is helping (signed-in only: the answer is saved to the account) */
 export async function reviewMoment(moment: Moment) {
   try {
     if (!hasApiToken()) return;

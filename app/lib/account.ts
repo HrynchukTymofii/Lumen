@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import type { Placement } from "./analytics";
 import { hasApiToken } from "./api/client";
 
-// Lumen can be tried without an account: reading the Bible, praying, Discover, favorites. Everything personal
+// Holy Hush can be tried without an account: reading the Bible, praying, Discover, favorites. Everything personal
 // (the companion, the prayer week, reminders, Premium, Bible notes / highlights / bookmarks, the journal,
 // downloads) sends someone without one to sign-in, with a line saying why.
 

@@ -5,7 +5,7 @@ import type { ExpoConfig } from "expo/config";
 const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.replace(/\.apps\.googleusercontent\.com$/, "");
 
 const config: ExpoConfig = {
-  name: "Lumen",
+  name: "Holy Hush",
   slug: "prayer-companion",
   version: "1.0.0",
   orientation: "portrait",
@@ -20,14 +20,14 @@ const config: ExpoConfig = {
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       // Required by App Store Connect (ITMS-90683): expo-file-system's code can read photo-library assets (ph://),
-      // so the binary references the Photos API. Lumen never asks for photo access; this text would only show if it did.
-      NSPhotoLibraryUsageDescription: "Lumen doesn’t use your photo library. If a future feature needs a picture from it, Lumen will ask you first and only open the picture you choose.",
+      // so the binary references the Photos API. Holy Hush never asks for photo access; this text would only show if it did.
+      NSPhotoLibraryUsageDescription: "Holy Hush doesn’t use your photo library. If a future feature needs a picture from it, Holy Hush will ask you first and only open the picture you choose.",
     },
   },
   android: {
     package: "com.hrynchuk.biblecompanion",
     adaptiveIcon: {
-      backgroundColor: "#141A10",
+      backgroundColor: "#1C1915",
       foregroundImage: "./assets/android-icon-foreground.png",
       backgroundImage: "./assets/android-icon-background.png",
       monochromeImage: "./assets/android-icon-monochrome.png",
@@ -49,13 +49,13 @@ const config: ExpoConfig = {
     // Guided prayers keep playing with the screen locked
     ["expo-audio", { enableBackgroundPlayback: true }],
     // Daily reminders are scheduled on the phone (lib/notifications.ts)
-    ["expo-notifications", { color: "#5F7334" }],
+    ["expo-notifications", { color: "#1C1915" }],
     // Speaking a message in the companion chat (hooks/useVoiceInput.ts)
     [
       "expo-speech-recognition",
       {
-        microphonePermission: "Lumen uses the microphone so you can speak your messages instead of typing.",
-        speechRecognitionPermission: "Lumen turns what you say into text for your message and doesn’t keep the audio.",
+        microphonePermission: "Holy Hush uses the microphone so you can speak your messages instead of typing.",
+        speechRecognitionPermission: "Holy Hush turns what you say into text for your message and doesn’t keep the audio.",
       },
     ],
     ...(googleIosClientId

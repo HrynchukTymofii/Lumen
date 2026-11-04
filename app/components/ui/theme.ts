@@ -1,8 +1,8 @@
 import { useColorScheme } from "nativewind";
 
-// Raw colors for props that can't take a class (icons, spinners, placeholder text). Mirrors global.css.
-const LIGHT = { ink: "#26301F", bg: "#FAF8F1", muted: "#717866", dim: "#AAAE9E", onPastel: "#26301F", oliveDeep: "#5F7334", card: "#FFFFFF", line: "#E9E6D9", butter: "#F2E4B4", butterDeep: "#E9D48C", sage: "#D8E3C4", sky: "#D6E3E0", rose: "#EFDACF", lav: "#E3E0EA", olive: "#C5D19E", gold: "#E3C771", select: "rgba(95,115,52,0.14)" };
-const DARK = { ink: "#EEF0E4", bg: "#141A10", muted: "#9CA38E", dim: "#5F6852", onPastel: "#26301F", oliveDeep: "#C3D38D", card: "#1D2518", line: "#262F1F", butter: "#E8DBAC", butterDeep: "#DCC985", sage: "#CFDBBB", sky: "#CEDCD9", rose: "#E5D1C6", lav: "#DAD7E2", olive: "#C5D19E", gold: "#E3C771", select: "rgba(195,211,141,0.18)" };
+// Raw colors for props that can't take a class (icons, spinners, placeholder text). Mirrors global.css (Holy Hush palette).
+const LIGHT = { ink: "#0E0E10", bg: "#FFFFFF", muted: "#55555C", dim: "#8A8A91", onPastel: "#0E0E10", oliveDeep: "#0E0E10", card: "#F3F3F5", line: "#E9E9EC", butter: "#F6E8C4", butterDeep: "#EED9A0", sage: "#DFE8D3", sky: "#D8E4EC", rose: "#F4DED4", lav: "#E6E2F0", olive: "#F5C77E", gold: "#F5C77E", select: "rgba(14,14,16,0.08)" };
+const DARK = { ink: "#F4EEE4", bg: "#1C1915", muted: "#B6B0A6", dim: "#8D8982", onPastel: "#1C1915", oliveDeep: "#F4EEE4", card: "#2C2721", line: "#322D26", butter: "#ECDEBA", butterDeep: "#DDC98F", sage: "#D6DFCA", sky: "#D0DCE4", rose: "#ECD6CC", lav: "#DEDAE8", olive: "#F5C77E", gold: "#F5C77E", select: "rgba(244,238,228,0.12)" };
 
 export function useColors() {
   const { colorScheme } = useColorScheme();

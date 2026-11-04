@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 
-// Brand colors are CSS variables from global.css (Olive palette, SPEC §3), so dark mode needs no dark: classes
+// Brand colors are CSS variables from global.css (Holy Hush palette), so dark mode needs no dark: classes
 const token = (name) => `rgb(var(--${name}) / <alpha-value>)`;
 
 module.exports = {
@@ -33,10 +33,11 @@ module.exports = {
       },
       // Custom fonts on native are one file per weight, so each weight is its own family
       fontFamily: {
-        sans: ['Manrope_500Medium'],
-        'sans-semibold': ['Manrope_600SemiBold'],
-        'sans-bold': ['Manrope_800ExtraBold'],
-        display: ['Outfit_600SemiBold'],
+        // Hanken Grotesk, like the website: 500 for text and buttons, 600 for titles
+        sans: ['HankenGrotesk_500Medium'],
+        'sans-semibold': ['HankenGrotesk_600SemiBold'],
+        'sans-bold': ['HankenGrotesk_700Bold'],
+        display: ['HankenGrotesk_600SemiBold'],
         serif: ['Literata_400Regular'],
       },
     },

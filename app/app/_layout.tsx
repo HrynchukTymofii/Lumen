@@ -1,10 +1,9 @@
-import { Literata_400Regular } from "@expo-google-fonts/literata";
 import {
-  Manrope_500Medium,
-  Manrope_600SemiBold,
-  Manrope_800ExtraBold,
-} from "@expo-google-fonts/manrope";
-import { Outfit_600SemiBold } from "@expo-google-fonts/outfit";
+  HankenGrotesk_500Medium,
+  HankenGrotesk_600SemiBold,
+  HankenGrotesk_700Bold,
+} from "@expo-google-fonts/hanken-grotesk";
+import { Literata_400Regular } from "@expo-google-fonts/literata";
 import { useFonts } from "expo-font";
 import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -29,12 +28,11 @@ function RootNavigator() {
   const { status, onboarded, guest } = useAuth();
   const pathname = usePathname();
   useApplyTheme();
-  // Outfit (titles), Manrope (UI), Literata (Scripture and prayers), SPEC §3
+  // Hanken Grotesk (titles and UI, as on the website), Literata (Scripture and prayers)
   const [fontsLoaded, fontError] = useFonts({
-    Outfit_600SemiBold,
-    Manrope_500Medium,
-    Manrope_600SemiBold,
-    Manrope_800ExtraBold,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
+    HankenGrotesk_700Bold,
     Literata_400Regular,
   });
   const ready = status !== "loading" && (fontsLoaded || Boolean(fontError));

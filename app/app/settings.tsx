@@ -57,7 +57,7 @@ export default function SettingsScreen() {
           <MenuRow label="General" hint="Theme, reminders, goal, Bible, companion" href="/settings/general" />
           <MenuRow label="Contact & Support" href="/settings/support" />
           <MenuRow label={premium.active ? "Subscription" : "Subscribe"} hint={premium.active ? "Premium" : "Every prayer, unlimited companion"} href="/settings/subscription" />
-          <MenuRow label="Share Lumen" onPress={shareApp} />
+          <MenuRow label="Share Holy Hush" onPress={shareApp} />
           <MenuRow label="Legal" href="/settings/legal" />
           <MenuRow label="Log out" onPress={confirmSignOut} />
         </View>
@@ -95,7 +95,7 @@ function GuestSettings() {
         <View className="mt-3">
           <MenuRow label="General" hint="Theme" href="/settings/general" />
           <MenuRow label="Contact & Support" href="/settings/support" />
-          <MenuRow label="Share Lumen" onPress={shareApp} />
+          <MenuRow label="Share Holy Hush" onPress={shareApp} />
           <MenuRow label="Legal" href="/settings/legal" />
         </View>
 
