@@ -29,6 +29,8 @@ export type AnalyticsEvents = {
   app_download_clicked: { placement: string }; // web "App Store / Google Play" buttons: "<where>:<store>"
   app_opened: { is_first_open: boolean };
   login_link_used: { success: boolean };
+  // 6-digit email code typed on the funnel's "Welcome back" step
+  login_code_used: { success: boolean; placement: string };
   onboarding_completed: { path: "web" | "app_store" };
   push_permission_result: { granted: boolean };
   today_prayer_viewed: { prayer_type: string };

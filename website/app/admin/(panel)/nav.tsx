@@ -29,7 +29,7 @@ export function AdminNav() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
         <Link href="/admin" className="flex items-center gap-2 font-display text-lg font-semibold">
           <span className="h-5 w-5 rounded-full bg-gold ring-4 ring-gold/25" aria-hidden />
-          Lumen admin
+          Holy Hush admin
         </Link>
         <nav className="flex gap-1">
           {LINKS.map((l) => {

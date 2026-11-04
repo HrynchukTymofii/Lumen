@@ -65,6 +65,7 @@
     background: var(--card); color: var(--ink); font: inherit; font-size: 17px; font-weight: 600;
     &:focus { outline: none; border-color: var(--peach-2); }
   }
+  .fn-input.code { letter-spacing: 0.4em; text-align: center; font-size: 22px; }
   .fn-check { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; font-size: 14px; line-height: 1.45; color: var(--muted); font-weight: 600; }
   .fn-check input { width: 20px; height: 20px; margin-top: 1px; accent-color: var(--peach-2); flex: none; }
   .fn-check a { color: var(--peach-2); }

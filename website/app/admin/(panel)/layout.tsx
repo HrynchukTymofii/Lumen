@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { AdminNav } from "./nav";
 
-export const metadata: Metadata = { title: "Admin · Lumen", robots: { index: false } };
+export const metadata: Metadata = { title: "Admin · Holy Hush", robots: { index: false } };
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   return (

@@ -115,6 +115,21 @@
   .art { position: relative; overflow: hidden; border-radius: 22px; background: var(--line); }
   .art svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 
+  /* a scene with the Light in place of the sun (LightScene in components/kit.tsx) */
+  .light-scene { container-type: size; }
+  .light-scene .ls-light { position: absolute; z-index: 1; transform: translate(-50%, -60%); line-height: 0; }
+  .light-scene .ls-light .light { width: calc(var(--k) * 100cqh); height: calc(var(--k) * 100cqh); }
+  .light-scene .ls-light svg { position: static; filter: drop-shadow(0 0 calc(var(--k) * 14cqh) rgba(255, 214, 140, 0.75)); }
+
+  /* "holy hush" with the Light as the "o" (Wordmark in components/kit.tsx): the sphere sits on the baseline at
+     about x-height, the halo floats above it like a dot */
+  .wordmark-lo { display: inline-block; white-space: nowrap; }
+  .wordmark-lo .wm-o { display: inline-block; letter-spacing: 0; margin: 0 -0.02em 0 0.01em; }
+  .wordmark-lo .wm-o .light { display: block; width: 0.74em; height: 0.74em; margin-bottom: -0.08em; }
+  /* small sizes (nav logos) need a bigger sphere to read as a letter */
+  .brand .wm-o, .lp-brand .wm-o { margin: 0 -0.04em; }
+  .brand .wm-o .light, .lp-brand .wm-o .light { width: 0.86em; height: 0.86em; margin-bottom: -0.11em; }
+
   /* the Light */
   .light { display: inline-block; flex: none; width: var(--s, 96px); height: var(--s, 96px); }
   .light svg { width: 100%; height: 100%; overflow: visible; }

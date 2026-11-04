@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Literata, Manrope, Outfit } from "next/font/google";
+import { Geist_Mono, Hanken_Grotesk, Literata, Manrope, Outfit } from "next/font/google";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
@@ -10,6 +10,12 @@ const manrope = Manrope({
 
 const outfit = Outfit({
   variable: "--font-outfit",
+  subsets: ["latin", "latin-ext"],
+});
+
+// Landing page type (the "Expressive type" redesign)
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin", "latin-ext"],
 });
 
@@ -35,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${manrope.variable} ${outfit.variable} ${literata.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${manrope.variable} ${outfit.variable} ${hanken.variable} ${literata.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

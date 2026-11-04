@@ -27,7 +27,8 @@
   .wa-lead { color: var(--muted); font-weight: 600; margin-top: 6px; }
   .wa-sec { margin-top: 28px; }
   .wa-sec > h2 { font-size: 22px; margin-bottom: 12px; }
-  .wa-card { background: var(--card); border-radius: 26px; padding: 22px; box-shadow: var(--shadow-sm); }
+  /* :where() keeps this at .site specificity so .bg-butter/.bg-lav/.motif on the same element win */
+  :where(.wa-card) { background: var(--card); border-radius: 26px; padding: 22px; box-shadow: var(--shadow-sm); }
   .wa-card + .wa-card { margin-top: 14px; }
   .wa-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 

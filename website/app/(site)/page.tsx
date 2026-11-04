@@ -1,12 +1,17 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowIcon, CheckIcon, Doodle, Light, Scene } from "@/components/kit";
+import { Light, MascotPill, Scene } from "@/components/kit";
 import { FREE_FEATURES, PREMIUM_FEATURES } from "@/lib/plans";
 import { pricesFor, US_PRICES, type Prices } from "@/lib/prices";
 import { SITE } from "@/lib/site";
+import { ChoiceChips } from "./_components/choice-chips";
+import { ChatDemo, type Talk } from "./_components/chat-demo";
 import { SiteFooter, SiteNav } from "./_components/chrome";
-import { VerseChip, type Verse } from "./_components/verse-chip";
+import type { Verse } from "./_components/verse-chip";
+
+// Landing page, "Style exploration B · Expressive type" (Figma: Bible-Companion, node 31:1649), light and dark warm.
+// The Light (the mascot) acts out the words in the picture pills, answers in the chat demo and is the "o" of the wordmark.
 
 // World English Bible (public domain)
 const PHIL4: Verse = {
@@ -17,6 +22,63 @@ const PHIL4: Verse = {
   ],
 };
 const PETER5: Verse = { ref: "1 Peter 5:7", verses: [[7, "casting all your worries on him, because he cares for you."]] };
+const v = (ref: string, ...verses: [number, string][]): Verse => ({ ref, verses });
+
+// The "Grounded in Scripture" chat cycles through these, each over its own scene. Verse text is the WEB as stored
+// in our Bible database (GET /api/bible/passage).
+const TALKS: (Talk & { scene: string })[] = [
+  {
+    scene: "night",
+    me: "I can't stop worrying about my job interview tomorrow.",
+    reply: "That's a lot to carry tonight. Scripture invites us to bring exactly this to God, not to hold it alone. Would you like to pray about it together?",
+    verses: [PHIL4, PETER5],
+  },
+  {
+    scene: "dusk",
+    me: "My grandma passed away last week. I miss her so much.",
+    reply: "I'm so sorry. Missing her this much shows how deeply you loved her, and God draws especially close to the broken-hearted. Would you like a short prayer for her and for you?",
+    verses: [
+      v("Psalm 34:18", [18, "Yahweh is near to those who have a broken heart, and saves those who have a crushed spirit."]),
+      v("Matthew 5:4", [4, "Blessed are those who mourn, for they shall be comforted."]),
+    ],
+  },
+  {
+    scene: "golden",
+    me: "Work, kids, everything. I'm exhausted and I have nothing left.",
+    reply: "That sounds so heavy. Jesus doesn't ask the weary to try harder; he invites them to come and rest. Can we take a quiet minute together?",
+    verses: [
+      v("Matthew 11:28", [28, "Come to me, all you who labor and are heavily burdened, and I will give you rest."]),
+      v("Isaiah 40:31", [31, "but those who wait for Yahweh will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint."]),
+    ],
+  },
+  {
+    scene: "evening",
+    me: "It's 2am and my mind won't stop racing.",
+    reply: "Night thoughts always feel louder. Let's hand them to God one by one. Would you like me to pray you into rest?",
+    verses: [
+      v("Psalm 4:8", [8, "In peace I will both lay myself down and sleep, for you alone, Yahweh, make me live in safety."]),
+      v("Isaiah 41:10", [10, "Don't you be afraid, for I am with you. Don't be dismayed, for I am your God. I will strengthen you. Yes, I will help you. Yes, I will uphold you with the right hand of my righteousness."]),
+    ],
+  },
+  {
+    scene: "dawn",
+    me: "I snapped at my son today and I feel awful.",
+    reply: "That ache shows how much you love him. God's mercy is bigger than this moment, and tomorrow is a fresh start for both of you. Shall we pray about it?",
+    verses: [
+      v("1 John 1:9", [9, "If we confess our sins, he is faithful and righteous to forgive us the sins and to cleanse us from all unrighteousness."]),
+      v("Lamentations 3:22–23", [22, "It is because of Yahweh's loving kindnesses that we are not consumed, because his mercies don't fail."], [23, "They are new every morning. Great is your faithfulness."]),
+    ],
+  },
+  {
+    scene: "sky",
+    me: "I just moved to a new city and I feel completely alone.",
+    reply: "Starting over is lonely, and that's okay to say. You're not unseen: God goes with you into every new place. Want to pray for this new chapter?",
+    verses: [
+      v("Deuteronomy 31:6", [6, "Be strong and courageous. Don't be afraid or scared of them, for Yahweh your God himself is who goes with you. He will not fail you nor forsake you."]),
+      v("Psalm 139:9–10", [9, "If I take the wings of the dawn, and settle in the uttermost parts of the sea,"], [10, "even there your hand will lead me, and your right hand will hold me."]),
+    ],
+  },
+];
 
 const LIBRARY = [
   ["Morning Offering", "dawn", "3 min · Morning"],
@@ -24,9 +86,22 @@ const LIBRARY = [
   ["Psalm 23 Meditation", "meadow", "5 min · Psalms"],
   ["Evening Examen", "golden", "6 min · Evening"],
   ["Near the Broken-hearted", "dusk", "4 min · Grief"],
+  ["Night Prayer", "night", "7 min · Evening"],
   ["Blessing for Home", "sky", "3 min · Family"],
-  ["Night Prayer", "evening", "7 min · Evening"],
-  ["Rest in Safety", "night", "8 min · Sleep"],
+  ["Rest in Safety", "evening", "8 min · Sleep"],
+] as const;
+
+// [number, verb, picture, rest of the line]: in each picture the Light acts out the line
+const STEPS = [
+  ["1", "Share", "share", "what's on your heart."],
+  ["2", "Pray", "pray", "with a guide."],
+  ["3", "Talk", "talk", "it through."],
+] as const;
+
+const CAPTIONS = [
+  ["01", "Tell us what's on your heart", "A two-minute quiz: your tradition, what you're carrying and when you like to pray."],
+  ["02", "Pray with a guide", "A short prayer written for you, read aloud over a calm scene, one line at a time."],
+  ["03", "Talk it through", `Ask about a passage or ask ${SITE.name} to pray for you. Save any talk as a prayer.`],
 ] as const;
 
 const FAQ = [
@@ -36,7 +111,7 @@ const FAQ = [
   ],
   [
     "Is it Catholic or Protestant?",
-    "Both. You choose your tradition and Lumen respects it. Catholic users can pick the Douay-Rheims Bible, which includes the deuterocanonical books.",
+    `Both. You choose your tradition and ${SITE.name} respects it. Catholic users can pick the Douay-Rheims Bible, which includes the deuterocanonical books.`,
   ],
   [
     "Can the AI make things up?",
@@ -44,7 +119,7 @@ const FAQ = [
   ],
   [
     "Is this a replacement for church?",
-    "No. Lumen helps you pray day to day and encourages you to stay connected to your church, pastor or priest.",
+    `No. ${SITE.name} helps you pray day to day and encourages you to stay connected to your church, pastor or priest.`,
   ],
   [
     "What happens to my conversations?",
@@ -52,277 +127,193 @@ const FAQ = [
   ],
 ] as const;
 
-function Cta({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
-  return (
-    <Link href={href} className={`btn-ink ${className}`}>
-      {children}
-      <span className="dot">
-        <ArrowIcon />
-      </span>
-    </Link>
-  );
-}
+const START = "/f/struggle";
 
 export default function LandingPage() {
   return (
-    <main className="wrap">
+    <div className="lp hh">
       <SiteNav landing />
 
-      <header className="hero">
-        <div>
-          <span className="kicker">
-            <span>Free to start</span>Catholic &amp; Protestant · real Scripture
+      <header className="lp-hero">
+        <h1 className="lp-big">
+          <span className="line">
+            A daily <MascotPill art="daily" className="ipill" /> prayer,
           </span>
-          <h1>
-            A daily prayer, <span className="hl">made for you.</span>
-          </h1>
-          <p className="lead">
-            {SITE.name} writes a short prayer for what you&apos;re carrying, guides you through it, and talks with you about
-            faith. Every verse it mentions opens the actual Bible text.
-          </p>
-          <div className="cta-row">
-            <Cta href="/f/struggle">Get my prayer</Cta>
-            <a className="btn-line" href="#pricing">
-              See what&apos;s free
-            </a>
-          </div>
-          <ul className="checks">
-            {["No card needed", "Daily prayer free forever", "Cancel in two taps"].map((t) => (
-              <li key={t}>
-                <CheckIcon size={15} />
-                {t}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="collage" aria-hidden>
-          <div className="c1">
-            <Scene name="dawn" />
-            <div className="b">
-              <h3>Handing Over the Worry</h3>
-              <p>Written for you this morning</p>
-              <div className="tags">
-                <span className="tag">Peace</span>
-                <span className="tag">2 min</span>
-              </div>
-            </div>
-          </div>
-          <div className="c2 bg-butter motif">
-            <span className="eyebrow">Verse of the day</span>
-            <q>“Come to me, all you who labor and are heavily burdened, and I will give you rest.”</q>
-            <b style={{ fontSize: 13 }}>Matthew 11:28 · WEB</b>
-          </div>
-          <div className="c3 bg-lav motif">
-            <span style={{ fontSize: 13, fontWeight: 800 }}>This week</span>
-            <div className="big">4 of 5</div>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>days prayed · no streak lost</span>
-            <div className="wk">
-              {[1, 1, 0, 1, 1, 0, 0].map((on, i) => (
-                <i key={i} className={on ? "on" : undefined} />
-              ))}
-            </div>
-          </div>
-          <span className="c-light">
-            <Light size={96} />
+          <span className="line">
+            made for you.
           </span>
-          <span className="sticker">Free daily prayer, forever</span>
+        </h1>
+        <p className="lp-lead">
+          {SITE.name} writes a short prayer for what you&apos;re carrying and guides you through it. Every verse it mentions
+          opens the real Bible text.
+        </p>
+        <div className="lp-ctas">
+          <Link href={START} className="lp-btn">
+            Get my prayer
+          </Link>
+          <a href="#pricing" className="lp-btn soft">
+            See what&apos;s free
+          </a>
         </div>
       </header>
 
-      <section className="tiles">
-        <div className="tile bg-peach motif">
-          <b>3</b>
-          <span>public-domain Bibles: WEB, KJV, Douay-Rheims</span>
-        </div>
-        <div className="tile bg-butter motif">
-          <b>2 min</b>
-          <span>a personal prayer, every morning</span>
-        </div>
-        <div className="tile bg-sage motif">
-          <b>0</b>
-          <span>invented verses: every one comes from the Bible text</span>
-        </div>
-        <div className="tile dash">
-          <b>$0</b>
-          <span>for the Bible, daily verse and a daily prayer</span>
-        </div>
+      <section className="lp-carousel" id="library" aria-label="Guided prayers">
+        {LIBRARY.map(([title, scene, meta], i) => (
+          <Link key={title} href={START} className="lp-card">
+            <Scene name={scene} seed={i + 2} noBigTrees />
+            <span className="lbl">
+              <b>{title}</b>
+              <small>{meta}</small>
+            </span>
+          </Link>
+        ))}
       </section>
 
-      <section className="blk" id="how">
-        <div className="shead">
-          <h2>Five quiet minutes, every day</h2>
-          <p>Each step leads to the next, so you always know what to pray today.</p>
-        </div>
-        <ol className="steps">
-          {[
-            ["1", "bg-peach", "sky", "Tell us what's on your heart", "A two-minute quiz: your tradition, what you're carrying, when you like to pray.", "2-minute quiz"],
-            ["2", "bg-butter", "dawn", "Pray with a guide", "A short prayer written for you, read aloud over a calm scene, one line at a time.", "Text + audio"],
-            ["3", "bg-sage", "meadow", "Talk it through", `Ask about a passage or ask ${SITE.name} to pray for you. Save any talk as a prayer.`, "Verse-grounded"],
-          ].map(([n, bg, scene, title, text, pill]) => (
-            <li key={n} className="step">
-              <span className={`n ${bg}`}>{n}</span>
-              <Scene name={scene} />
-              <h3>{title}</h3>
+      <section className="lp-how" id="how">
+        <p className="lp-kicker">How it works — five quiet minutes, every day</p>
+        <h2 className="lp-statement">
+          {STEPS.map(([n, verb, art, rest]) => (
+            <span key={n} className="line">
+              <span className="n">{n}</span>
+              {verb} <MascotPill art={art} className="ipill sm" /> {rest}
+            </span>
+          ))}
+        </h2>
+        <ol className="lp-captions">
+          {CAPTIONS.map(([n, title, text]) => (
+            <li key={n}>
+              <b>
+                {n}&nbsp;&nbsp;{title}
+              </b>
               <p>{text}</p>
-              <span className={`pill ${bg}`}>{pill}</span>
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="blk">
-        <div className="shead">
-          <h2>The verses come from the Bible, not the AI</h2>
-          <p>{SITE.name} can only cite verses we look up in our Bible database. Tap one and read the real text.</p>
-        </div>
-        <div className="trust">
-          <div className="chatcard">
-            <div className="who">
-              <Light size={42} />
-              <span>
-                {SITE.name}
-                <small>AI companion · not a member of the clergy</small>
-              </span>
-            </div>
-            <div className="bub me">I can&apos;t stop worrying about my job interview tomorrow.</div>
-            <div className="bub ai">
-              That&apos;s a lot to carry tonight. Scripture invites us to bring exactly this to God, not to hold it alone. Would
-              you like to pray about it together?
-              <div className="row">
-                <VerseChip verse={PHIL4} />
-                <VerseChip verse={PETER5} />
-              </div>
-            </div>
-            <p className="fine">Tap a verse to read the Bible text.</p>
-          </div>
-          <div className="panel bg-lav motif">
+      <section className="lp-scripture">
+        <div className="copy-card">
+          <p className="lp-kicker">Grounded in Scripture</p>
+          <h2>The verses come from the Bible, not the AI.</h2>
+          <p className="body">
+            {SITE.name} can only cite verses we look up in our Bible database. Tap one and read the real text.
+          </p>
+          <div className="choice">
             <h3>Your tradition, your Bible, your choice</h3>
-            <p>
-              Catholic, Protestant, Orthodox or still exploring. Choose WEB, KJV or Douay-Rheims. Prefer no AI? Turn it off and
-              keep the Bible, prayers and journal.
-            </p>
-            <Doodle name="dove" className="doodle" />
+            <ChoiceChips label="Tradition" options={["Catholic", "Protestant", "Orthodox", "Still exploring"]} initial="Protestant" />
+            <ChoiceChips label="Bible" options={["WEB", "KJV", "Douay-Rheims", "No AI, just the Bible"]} initial="WEB" />
           </div>
         </div>
+        <ChatDemo
+          name={SITE.name}
+          talks={TALKS.map(({ me, reply, verses }) => ({ me, reply, verses }))}
+          scenes={TALKS.map((t, n) => <Scene key={n} name={t.scene} />)}
+        />
       </section>
 
-      <section className="blk" id="library">
-        <div className="shead">
-          <h2>Prayers for every part of the day</h2>
-          <p>Guided prayers with calm scenes and a gentle voice. Morning, evening, worry, grief, family, sleep.</p>
-        </div>
-        <div className="lib">
-          {LIBRARY.map(([title, scene, meta], i) => (
-            <Link key={title} href="/f/struggle">
-              <Scene name={scene} seed={i + 2} noBigTrees />
-              <div className="t">
-                {title}
-                <small>{meta}</small>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="blk" id="pricing">
-        <div className="shead">
-          <h2>See what&apos;s free before you sign up</h2>
-          <p>No surprise paywall after the quiz. This is exactly what you get.</p>
-        </div>
-        <div className="price">
-          <div className="tier free">
-            <h3>
-              Free <span className="pill bg-sage">Forever</span>
-            </h3>
+      <section className="lp-pricing" id="pricing">
+        <p className="lp-kicker">Pricing</p>
+        <h2>
+          See what&apos;s free
+          <br />
+          before you sign up.
+        </h2>
+        <p className="sub">No surprise paywall after the quiz. This is exactly what you get.</p>
+        <div className="plans">
+          <div className="plan free">
+            <div className="top">
+              <h3>Free</h3>
+              <span className="badge">Forever</span>
+            </div>
             <div className="amt">$0</div>
             <p className="note">No card needed.</p>
             <ul>
               {FREE_FEATURES.map((t) => (
-                <li key={t}>
-                  <i>
-                    <CheckIcon size={13} />
-                  </i>
-                  {t}
-                </li>
+                <li key={t}>{t}</li>
               ))}
             </ul>
-            <Link href="/f/struggle" className="btn-line full">
+            <Link href={START} className="lp-btn full">
               Start free
             </Link>
           </div>
-          <Suspense fallback={<PremiumTier prices={US_PRICES} />}>
-            <LocalPremiumTier />
+          <Suspense fallback={<PremiumPlan prices={US_PRICES} />}>
+            <LocalPremiumPlan />
           </Suspense>
         </div>
       </section>
 
-      <section className="blk faq" id="faq">
-        <div className="shead">
-          <h2>Questions</h2>
+      <section className="lp-faq" id="faq">
+        <div className="title">
+          <h2>Questions.</h2>
+          <p>
+            Can&apos;t find your answer? Write to us at <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.
+          </p>
         </div>
-        {FAQ.map(([q, a]) => (
-          <details key={q}>
-            <summary>{q}</summary>
-            <p>{a}</p>
-          </details>
-        ))}
+        <div className="acc">
+          {FAQ.map(([q, a], i) => (
+            <details key={q} open={i === 0}>
+              <summary>
+                {q}
+                <i aria-hidden />
+              </summary>
+              <p>{a}</p>
+            </details>
+          ))}
+        </div>
       </section>
 
-      <section className="foot-cta">
-        <Scene name="golden" />
-        <div className="in">
-          <h2>Your first prayer is two minutes away</h2>
-          <p>Answer a few gentle questions and get a prayer written for you.</p>
-          <Cta href="/f/struggle">Get my prayer</Cta>
-        </div>
+      <section className="lp-final">
+        <h2 className="lp-big">
+          <span className="line">
+            Your first <MascotPill art="first" className="ipill" /> prayer
+          </span>
+          <span className="line">is two minutes away.</span>
+        </h2>
+        <p className="lp-lead">Answer a few gentle questions and get a prayer written for you.</p>
+        <Link href={START} className="lp-btn">
+          Get my prayer
+        </Link>
       </section>
 
-      <SiteFooter />
-    </main>
+      <SiteFooter landing />
+    </div>
   );
 }
 
-// Premium card in the visitor's local App Store prices (Vercel's IP country). Streams in after the static page;
+// Premium plan in the visitor's local App Store prices (Vercel's IP country). Streams in after the static page;
 // the fallback and any unknown country show the US prices.
-async function LocalPremiumTier() {
+async function LocalPremiumPlan() {
   const country = (await headers()).get("x-vercel-ip-country");
-  return <PremiumTier prices={pricesFor(country)} />;
+  return <PremiumPlan prices={pricesFor(country)} />;
 }
 
-function PremiumTier({ prices }: { prices: Prices }) {
+function PremiumPlan({ prices }: { prices: Prices }) {
   const intro = prices.yearlyIntro;
   return (
-    <div className="tier bg-butter motif">
-      <h3>
-        Premium{" "}
-        {intro && (
-          <span className="pill" style={{ background: "#26301F", color: "#FAF8F1" }}>
-            First month {intro}
-          </span>
-        )}
-      </h3>
+    <div className="plan premium">
+      <span className="glow" aria-hidden>
+        <Light size={110} label="" />
+      </span>
+      <div className="top">
+        <h3>Premium</h3>
+        {intro && <span className="badge">First month {intro}</span>}
+      </div>
       <div className="amt">
         {prices.yearly}
         <small> / year</small>
       </div>
       <p className="note">
         {intro ? `${intro} for your first month, then ${prices.yearly} a year.` : `${prices.yearly} a year.`} Or {prices.monthly} a
-        month. Subscribe in the app; cancel anytime in your store settings.
+        month. Cancel anytime in your store settings.
       </p>
       <ul>
         {PREMIUM_FEATURES.map((t) => (
-          <li key={t}>
-            <i>
-              <CheckIcon size={13} />
-            </i>
-            {t}
-          </li>
+          <li key={t}>{t}</li>
         ))}
       </ul>
-      <Cta href="/f/struggle" className="full">
+      <Link href={START} className="lp-btn full">
         {intro ? `Start for ${intro}` : "Get Premium"}
-      </Cta>
+      </Link>
     </div>
   );
 }
