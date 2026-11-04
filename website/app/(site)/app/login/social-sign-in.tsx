@@ -7,6 +7,9 @@ import { post } from "../../_components/post";
 // Sign in with Google (Google Identity Services) and Sign in with Apple (Apple JS, popup) on the web. Both hand
 // back an ID token that /api/auth/google or /api/auth/apple verifies, the same routes the phone app uses; the
 // reply sets the session cookie. Client ids: lib/auth/web-sign-in.ts.
+//
+// Google only draws its own button (an iframe we can't restyle), so we show our own pill in the site's style and lay
+// Google's real button over it, stretched to the same size and invisible: the click still goes to Google.
 
 type LoginReply = { user: { id: string }; isNew: boolean };
 
@@ -63,7 +66,8 @@ export function SocialSignIn({
         }
       },
     });
-    window.google.accounts.id.renderButton(googleBox.current, {
+    const box = googleBox.current;
+    window.google.accounts.id.renderButton(box, {
       type: "standard",
       theme: "outline",
       size: "large",
@@ -71,8 +75,27 @@ export function SocialSignIn({
       text: "continue_with",
       logo_alignment: "center",
       locale: "en",
-      width: Math.min(googleBox.current.offsetWidth || 360, 400),
+      width: Math.min(box.offsetWidth || 360, 400), // Google's maximum
     });
+    // Stretch Google's button over ours once it's drawn (and again when the card resizes)
+    const fit = () => {
+      const inner = box.firstElementChild as HTMLElement | null;
+      const frame = box.querySelector("iframe");
+      if (!inner || !frame || !frame.offsetWidth || !frame.offsetHeight) return false;
+      // Google's frame is at most 400px wide, so shrink its wrapper to the frame, then scale both up to our pill
+      inner.style.width = `${frame.offsetWidth}px`;
+      inner.style.transformOrigin = "0 0";
+      inner.style.transform = `scale(${box.offsetWidth / frame.offsetWidth}, ${box.offsetHeight / frame.offsetHeight})`;
+      return true;
+    };
+    let tries = 0;
+    const wait = window.setInterval(() => (fit() || ++tries > 40) && window.clearInterval(wait), 100);
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(box);
+    return () => {
+      window.clearInterval(wait);
+      ro.disconnect();
+    };
   }, [google, googleReady]);
 
   useEffect(() => {
@@ -135,7 +158,24 @@ export function SocialSignIn({
       {google && (
         <>
           <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => setGoogleReady(true)} />
-          <div ref={googleBox} className="google-btn" />
+          {/* A click only reaches our face when Google's button failed to load (blocked script, origin not allowed) */}
+          <div
+            className="google-wrap"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest(".google-face")) onError("Google sign-in isn't available right now. Use your email instead.");
+            }}
+          >
+            <span className="google-face" aria-hidden>
+              <svg width={18} height={18} viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.2l7.9 6.2C12.4 13.6 17.7 9.5 24 9.5z" />
+                <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.3 5.7c4.3-3.9 7-9.7 7-17.1z" />
+                <path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.2C1 16.5 0 20.1 0 24s1 7.5 2.6 10.8l7.9-6.2z" />
+                <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.3-5.7c-2.2 1.5-5 2.3-8.6 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.2C6.6 42.6 14.6 48 24 48z" />
+              </svg>
+              Continue with Google
+            </span>
+            <div ref={googleBox} className="google-btn" />
+          </div>
         </>
       )}
       <div className="or">

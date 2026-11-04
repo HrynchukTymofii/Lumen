@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { handle, readJson } from "@/lib/api";
+import { emailSignInCode } from "@/lib/auth/email-code";
 import { LINK_TTL_MS, hashToken, loginResponse, newLinkToken, normalizeEmail } from "@/lib/auth/users";
 import { sendWelcomeEmail } from "@/lib/email";
 import type { AiComfort, Denomination } from "@/lib/generated/prisma/client";
@@ -25,7 +26,8 @@ const body = z.object({
 //
 // Anyone can type any email here, so a session is only handed out for an account nobody has proven yet
 // (never signed in, nothing bought). Its answers are replaced by this visitor's, so nothing earlier leaks.
-// For a real existing account the reply is 409 and the owner gets the sign-in link by email instead.
+// For a real existing account the reply is 409 and the owner gets a sign-in code and link by email instead; the
+// funnel then asks for the code on the spot (POST /api/auth/email/verify).
 export const POST = handle(async (req: NextRequest) => {
   const input = body.parse(await readJson(req));
   const email = normalizeEmail(input.email);
@@ -66,14 +68,17 @@ export const POST = handle(async (req: NextRequest) => {
       ? await prisma.user.update({ where: { id: existing.id }, data: fresh })
       : existing;
 
+  if (!claimable) {
+    await emailSignInCode(email).catch((err) => console.error("[sign-in code email]", err));
+    return Response.json({ error: "You already have an account. We emailed you a sign-in code.", code: "exists" }, { status: 409 });
+  }
+
   const token = newLinkToken();
   await prisma.loginToken.create({
     data: { purpose: "web_to_app", email, userId: user.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + LINK_TTL_MS) },
   });
-  await sendWelcomeEmail(email, claimable ? user.firstName : null, `${SITE.url}/app/login?token=${token}`).catch((err) =>
+  await sendWelcomeEmail(email, user.firstName, `${SITE.url}/app/login?token=${token}`).catch((err) =>
     console.error("[welcome email]", err),
   );
-
-  if (!claimable) return Response.json({ error: "You already have an account. We emailed you a sign-in link.", code: "exists" }, { status: 409 });
   return loginResponse(user, !existing);
 });

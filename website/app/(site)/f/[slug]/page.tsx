@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { Light } from "@/components/kit";
+import { Wordmark } from "@/components/kit";
 import { SITE } from "@/lib/site";
 import { funnels } from "@/funnels";
 import { FunnelLoader } from "./funnel-loader";
@@ -17,17 +17,18 @@ export function generateStaticParams() {
 // Links to funnels that aren't built yet (/f/habit, /f/scripture) are redirected in next.config.ts, keeping UTMs
 export default function FunnelPage({ params }: PageProps<"/f/[slug]">) {
   return (
-    <main className="fn">
-      <header className="fn-nav">
-        <Link href="/" className="brand">
-          <Light size={30} label={`${SITE.name} home`} />
-          {SITE.name}
-        </Link>
-      </header>
-      <Suspense fallback={<div className="fn-shell" aria-busy />}>
-        <FunnelFor params={params} />
-      </Suspense>
-    </main>
+    <div className="hh">
+      <main className="fn">
+        <header className="fn-nav">
+          <Link href="/" className="brand" aria-label={`${SITE.name} home`}>
+            <Wordmark />
+          </Link>
+        </header>
+        <Suspense fallback={<div className="fn-shell" aria-busy />}>
+          <FunnelFor params={params} />
+        </Suspense>
+      </main>
+    </div>
   );
 }
 

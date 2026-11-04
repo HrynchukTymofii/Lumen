@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Light, Scene } from "@/components/kit";
+import { Scene, Wordmark } from "@/components/kit";
 import { webSignInConfig } from "@/lib/auth/web-sign-in";
 import { SITE } from "@/lib/site";
 import { LoginForm } from "./login-form";
@@ -14,21 +14,22 @@ export const metadata: Metadata = { title: "Sign in", robots: { index: false } }
 export default function LoginPage() {
   const { google, apple } = webSignInConfig();
   return (
-    <main className="fn">
-      <header className="fn-nav">
-        <Link href="/" className="brand">
-          <Light size={30} label={`${SITE.name} home`} />
-          {SITE.name}
-        </Link>
-      </header>
-      <div className="fn-landing">
-        <Scene name="sky" />
-        <div className="fn-card">
-          <Suspense fallback={<p className="sub">Loading…</p>}>
-            <LoginForm google={google} apple={apple} />
-          </Suspense>
+    <div className="hh">
+      <main className="fn">
+        <header className="fn-nav">
+          <Link href="/" className="brand" aria-label={`${SITE.name} home`}>
+            <Wordmark />
+          </Link>
+        </header>
+        <div className="fn-landing">
+          <Scene name="sky" />
+          <div className="fn-card">
+            <Suspense fallback={<p className="sub">Loading…</p>}>
+              <LoginForm google={google} apple={apple} />
+            </Suspense>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

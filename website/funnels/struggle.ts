@@ -1,4 +1,4 @@
-import { AI_COMFORT, DENOMINATIONS, FREQUENCY, OBSTACLES, PRAYER_TIME, STRUGGLES } from "./options";
+import { AI_COMFORT, DENOMINATIONS, FREQUENCY, OBSTACLES, STRUGGLES } from "./options";
 import type { FunnelConfig } from "./types";
 
 // The one funnel for now. Others (habit, scripture…) come after competitor research + ICP interviews.
@@ -83,8 +83,8 @@ export const struggle: FunnelConfig = {
     {
       id: "loading",
       type: "loading",
+      // No question during the loading: "when do you pray" felt like the quiz asking twice. Prayer time is set in the app.
       messages: ["Reading your answers", "Choosing verses for you", "Shaping your 7-day path", "Writing your first prayer"],
-      micro: { title: "When would you like to pray?", options: PRAYER_TIME, answerKey: "prayerTime" },
     },
     { id: "plan", type: "plan" },
     { id: "email", type: "email" },

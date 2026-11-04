@@ -344,32 +344,70 @@ function TextStep({ step, value, onDone }: { step: Extract<Step, { type: "text" 
   );
 }
 
+// The "making your path" screen: one smooth sweep of ~6.5 s that breathes, quick then slow then quick again,
+// drawn as a golden halo around the Light. Optional micro-question (step.micro) pauses it at 45%.
+const LOAD_MS = 6500;
+// Monotone 0→1 curve with a changing speed: a slow start and finish, plus a gentle wave so it surges and lingers
+// (derivative of the wave term is 0.55·cos(5πt), so it never runs backwards). Ends exactly at 1.
+const loadCurve = (t: number) => {
+  const wave = t + (0.55 * Math.sin(5 * Math.PI * t)) / (5 * Math.PI);
+  return wave < 0.5 ? 4 * wave ** 3 : 1 - (-2 * wave + 2) ** 3 / 2;
+};
+const HALO_R = 54;
+const HALO_C = 2 * Math.PI * HALO_R;
+
 function LoadingStep({ step, answers, onDone }: { step: Extract<Step, { type: "loading" }>; answers: Answers; onDone: (p: Partial<Answers>) => void }) {
-  const [pct, setPct] = useState(0);
+  const [pct, setPct] = useState(0); // 0..100, fractional
   const [micro, setMicro] = useState<string | undefined>(step.micro ? (answers[step.micro.answerKey] as string | undefined) : undefined);
   const asking = Boolean(step.micro) && !micro && pct >= 45;
+  const elapsed = useRef(0); // ms of animation so far, kept across a micro-question pause
   const done = useRef(false);
 
   useEffect(() => {
-    if (asking) return; // pause while the micro-question is open
-    if (pct >= 100) {
-      if (!done.current) {
+    if (asking || done.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) elapsed.current = Math.max(elapsed.current, LOAD_MS * 0.6);
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      elapsed.current = Math.min(LOAD_MS, elapsed.current + (now - last));
+      last = now;
+      const p = loadCurve(elapsed.current / LOAD_MS) * 100;
+      setPct(p);
+      if (step.micro && !micro && p >= 45) return; // stop here; the sheet opens
+      if (elapsed.current < LOAD_MS) raf = requestAnimationFrame(tick);
+      else if (!done.current) {
         done.current = true;
-        setTimeout(() => onDone(step.micro && micro ? { [step.micro.answerKey]: micro } : {}), 350);
+        setTimeout(() => onDone(step.micro && micro ? { [step.micro.answerKey]: micro } : {}), 450);
       }
-      return;
-    }
-    const t = setTimeout(() => setPct((p) => Math.min(100, p + 2)), 70);
-    return () => clearTimeout(t);
-  }, [pct, asking, micro, onDone, step.micro]);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [asking, micro, onDone, step.micro]);
 
   const shown = Math.floor((pct / 100) * step.messages.length);
   return (
     <div className="fn-loading">
-      <div className="ring" style={{ "--p": pct } as React.CSSProperties}>
+      <div className="halo-ring">
+        <svg viewBox="0 0 120 120" aria-hidden>
+          <defs>
+            <linearGradient id="halo-g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#FFF1C9" />
+              <stop offset=".5" stopColor="#F5C77E" />
+              <stop offset="1" stopColor="#F5AE6C" />
+            </linearGradient>
+            <filter id="halo-glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="3" />
+            </filter>
+          </defs>
+          <circle className="track" cx="60" cy="60" r={HALO_R} />
+          <g transform="rotate(-90 60 60)" style={{ strokeDasharray: HALO_C, strokeDashoffset: HALO_C * (1 - pct / 100) }}>
+            <circle className="glow" cx="60" cy="60" r={HALO_R} filter="url(#halo-glow)" />
+            <circle className="arc" cx="60" cy="60" r={HALO_R} />
+          </g>
+        </svg>
         <Light size={88} state="thinking" />
       </div>
-      <div className="pct">{pct}%</div>
+      <div className="pct">{Math.floor(pct)}%</div>
       <ul>
         {step.messages.map((m, i) => (
           <li key={m} className={i < shown ? "done" : i === shown ? "now" : ""}>
@@ -392,6 +430,17 @@ function LoadingStep({ step, answers, onDone }: { step: Extract<Step, { type: "l
       )}
     </div>
   );
+}
+
+// The 7-day path reads like a week, not a numbered list: real day names from today, and a small scene per day that
+// moves from sunrise to night over the week.
+const WEEK_SCENES = ["dawn", "sky", "meadow", "lake", "golden", "dusk", "evening"];
+function dayLabel(i: number) {
+  if (i === 0) return "Today";
+  if (i === 1) return "Tomorrow";
+  const d = new Date();
+  d.setDate(d.getDate() + i);
+  return d.toLocaleDateString("en-US", { weekday: "long" });
 }
 
 function PlanStep({ slug, answers, onNext }: { slug: string; answers: Answers; onNext: () => void }) {
@@ -460,10 +509,11 @@ function PlanStep({ slug, answers, onNext }: { slug: string; answers: Answers; o
 
       <h3>Your 7-day prayer path</h3>
       <ol className="fn-days">
-        {plan.map((d) => (
-          <li key={d.day}>
-            <span className="n">{d.day}</span>
+        {plan.map((d, i) => (
+          <li key={d.day} className={i === 0 ? "today" : undefined}>
+            <Scene name={WEEK_SCENES[i % WEEK_SCENES.length]} seed={i} noBigTrees className="thumb" />
             <span>
+              <em>{dayLabel(i)}</em>
               <b>{d.title}</b>
               <small>{d.focus}</small>
             </span>
@@ -472,6 +522,73 @@ function PlanStep({ slug, answers, onNext }: { slug: string; answers: Answers; o
       </ol>
       <ContinueButton onClick={onNext} label="Save my path" />
     </div>
+  );
+}
+
+// The email already has an account: we've emailed it a 6-digit code (and a link), so sign in right here and carry on
+// with the funnel, without retyping the email on the sign-in page.
+function WelcomeBack({ email, onSignedIn }: { email: string; onSignedIn: (userId: string) => void }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
+
+  async function verify(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const { user } = await post<{ user: { id: string } }>("/api/auth/email/verify", { email, code, platform: "web" });
+      track("login_code_used", { success: true, placement: "funnel" });
+      onSignedIn(user.id);
+    } catch (err) {
+      track("login_code_used", { success: false, placement: "funnel" });
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setBusy(false);
+    }
+  }
+
+  async function resend() {
+    setError(null);
+    await post("/api/auth/email/start", { email }).catch(() => {});
+    setResent(true);
+    setCode("");
+  }
+
+  return (
+    <Question title="Welcome back" subtitle={`You already have a ${SITE.name} account with ${email}.`}>
+      <form onSubmit={verify}>
+        <p className="fn-note">
+          {resent ? "We sent a new code." : "We emailed you a 6-digit code."} Enter it to sign in, or tap the link in the
+          same email. The code works for 15 minutes.
+        </p>
+        <input
+          className="fn-input code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="\d{6}"
+          maxLength={6}
+          required
+          autoFocus
+          placeholder="123456"
+          aria-label="6-digit code"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+        />
+        {error && <p className="fn-error">{error}</p>}
+        <div className="fn-sticky">
+          <button type="submit" className="btn-ink full" disabled={busy || code.length !== 6}>
+            {busy ? "One moment…" : "Sign in"}
+            <span className="dot">
+              <ArrowIcon />
+            </span>
+          </button>
+        </div>
+        <button type="button" className="pw-free" onClick={resend}>
+          Send a new code
+        </button>
+      </form>
+    </Question>
   );
 }
 
@@ -508,16 +625,7 @@ function EmailStep({ slug, answers, onDone }: { slug: string; answers: Answers; 
     }
   }
 
-  if (exists) {
-    return (
-      <Question title="Welcome back" subtitle={`You already have a ${SITE.name} account with ${email}.`}>
-        <p className="fn-note">We just emailed you a sign-in link. Open it on this device to see your prayer path and plan.</p>
-        <Link href="/app/login" className="btn-line full">
-          Sign in with a code instead
-        </Link>
-      </Question>
-    );
-  }
+  if (exists) return <WelcomeBack email={email.trim()} onSignedIn={(id) => (identify(id), onDone(email.trim()))} />;
 
   return (
     <Question title="Where should we send your prayer path?" subtitle="Your account keeps your path, your prayers and your answers. No password needed.">

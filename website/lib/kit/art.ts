@@ -243,3 +243,73 @@ const ink = 'fill="none" stroke="#26301F" stroke-width="2.4" stroke-linecap="rou
 export const DOODLES = {
   dove: `<svg viewBox="0 0 170 120" ${ink} aria-hidden="true"><path d="M30 70c20-2 34-14 46-32 6 22 2 40-12 52 26 4 52-6 70-26-2 30-30 50-64 48-18 0-30-8-40-18z" fill="#FAF8F1"/><path d="M76 38c8-14 22-20 36-18-8 8-12 18-12 30"/><circle cx="48" cy="66" r="2.2" fill="#26301F"/><path d="M26 72l-10 2 8 4"/><path d="M120 92c8 8 18 12 30 12M128 84c10 2 18 0 26-6" stroke-width="2"/></svg>`,
 };
+
+// Picture pills for the landing headlines: small scenes where the Light acts out the words around it
+// ("Share [a heart rising to the Light] what's on your heart"). Drawn in a 160×100 box; `bg` sits behind the
+// Light and `fg` in front of it. `light` places the sphere's centre in % and sizes it as a share of the height.
+const heart = (x: number, y: number, s: number, c: string) =>
+  `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 9C-13 0-11-10-5-11-2-11.5 0-9 0-7 0-9 2-11.5 5-11 11-10 13 0 0 9Z" fill="${c}"/>` +
+  `<ellipse cx="-5.5" cy="-5" rx="2.6" ry="1.6" fill="#fff" opacity=".55" transform="rotate(-30 -5.5 -5)"/></g>`;
+const spark = (x: number, y: number, s: number, c = "#FFFFFF", o = 0.9) =>
+  `<path transform="translate(${x} ${y}) scale(${s})" d="M0-5C.6-1.2 1.2-.6 5 0 1.2.6.6 1.2 0 5-.6 1.2-1.2.6-5 0-1.2-.6-.6-1.2 0-5Z" fill="${c}" opacity="${o}"/>`;
+const grad = (id: string, a: string, b: string) =>
+  `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="160" height="100" fill="url(#${id})"/>`;
+
+export type PillArt = { bg: string; fg: string; light: { x: number; y: number; size: number; state: LightState } };
+
+export const PILLS: Record<string, PillArt> = {
+  // "A daily [the Light rising like the morning sun] prayer"
+  daily: {
+    bg:
+      grad("pd", "#FCF1D6", "#F5D59C") +
+      `<g stroke="#FFF6DE" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M80 18V8M52 30l-7-7M108 30l7-7M40 52H30M120 52h10"/></g>`,
+    fg:
+      `<path d="M0 64C26 52 50 56 74 64S124 52 160 60V100H0Z" fill="#C8B27C"/>` +
+      `<path d="M0 78C34 68 64 74 96 80S140 72 160 76V100H0Z" fill="#9A8551"/>` +
+      `<path d="M0 90C40 84 90 92 160 86V100H0Z" fill="#6F5F38"/>`,
+    light: { x: 50, y: 56, size: 0.56, state: "idle" },
+  },
+  // "Share [a heart floating up to the listening Light] what's on your heart"
+  share: {
+    bg: grad("ps", "#FDE7DE", "#F2B8B2"),
+    fg:
+      `<path d="M36 74C42 56 58 44 92 42" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 6" opacity=".9"/>` +
+      heart(32, 80, 1.25, "#E0646E") + heart(58, 50, 0.7, "#EE8B92") +
+      `<path d="M0 92C40 86 100 94 160 88V100H0Z" fill="#D9908C" opacity=".6"/>`,
+    light: { x: 67, y: 42, size: 0.58, state: "listening" },
+  },
+  // "Pray [the Light going ahead on the path, a guide] with a guide"
+  pray: {
+    bg:
+      grad("pp", "#F1F7E2", "#D3E8BF") +
+      `<path d="M0 58C30 46 60 50 86 56S136 44 160 50V100H0Z" fill="#B6D69C"/>` +
+      `<path d="M0 72C34 62 72 66 100 72S144 64 160 68V100H0Z" fill="#8DBE78"/>`,
+    fg:
+      `<path d="M58 100C64 90 92 86 86 76S68 68 80 60" fill="none" stroke="#F4EBCB" stroke-width="9" stroke-linecap="round"/>` +
+      `<path d="M58 100C64 90 92 86 86 76S68 68 80 60" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="3 5" stroke-linecap="round" opacity=".8"/>` +
+      `<path d="M0 88C30 82 50 86 64 92V100H0ZM160 84C140 82 118 86 104 94V100H160Z" fill="#5E9A5F"/>`,
+    light: { x: 52, y: 34, size: 0.48, state: "speaking" },
+  },
+  // "Talk [the Light chatting, two speech bubbles] it through"
+  talk: {
+    bg:
+      grad("pt", "#2E3160", "#4D4683") +
+      spark(16, 18, 0.5, "#FFF7DE", 0.8) + spark(146, 88, 0.45, "#FFF7DE", 0.7) + spark(70, 12, 0.4, "#FFF7DE", 0.7),
+    fg:
+      `<rect x="78" y="16" width="66" height="30" rx="12" fill="#FFFFFF"/><path d="M86 44l-6 9 14-7Z" fill="#FFFFFF"/>` +
+      `<rect x="88" y="25" width="44" height="3.6" rx="1.8" fill="#BDB6D9"/><rect x="88" y="33" width="30" height="3.6" rx="1.8" fill="#BDB6D9"/>` +
+      `<rect x="92" y="58" width="48" height="24" rx="10" fill="#8F86C8"/><path d="M132 80l6 8-12-6Z" fill="#8F86C8"/>` +
+      `<circle cx="106" cy="70" r="2.6" fill="#fff"/><circle cx="116" cy="70" r="2.6" fill="#fff" opacity=".8"/><circle cx="126" cy="70" r="2.6" fill="#fff" opacity=".6"/>`,
+    light: { x: 33, y: 58, size: 0.58, state: "speaking" },
+  },
+  // "Your first [an open prayer book, the Light celebrating over it] prayer"
+  first: {
+    bg: grad("pr", "#FDE2A0", "#F4A65A") + spark(22, 22, 0.9, "#FFF6D8") + spark(138, 24, 1, "#FFF6D8") + spark(124, 52, 0.55, "#FFF6D8"),
+    fg:
+      `<path d="M80 74C66 66 46 66 30 70V96C46 92 66 92 80 100Z" fill="#FFF8EA"/>` +
+      `<path d="M80 74C94 66 114 66 130 70V96C114 92 94 92 80 100Z" fill="#FFFDF6"/>` +
+      `<path d="M80 74V100" stroke="#E2C9A0" stroke-width="1.4"/>` +
+      `<g fill="none" stroke="#E6B97A" stroke-width="2" stroke-linecap="round"><path d="M40 78c10-2 20-2 30 1M40 85c10-2 20-2 30 1M90 79c10-3 20-3 30-1M90 86c10-3 18-3 26-1"/></g>`,
+    light: { x: 50, y: 36, size: 0.52, state: "celebrating" },
+  },
+};
