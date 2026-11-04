@@ -108,7 +108,7 @@ export function ReminderControls({ save, setError }: { save: (p: ProfilePatch) =
 
   const toggle = async (next: boolean) => {
     if (next && !(await requestPermission())) {
-      setError("Notifications are off for Lumen. Allow them in your phone’s settings, then try again.");
+      setError("Notifications are off for Holy Hush. Allow them in your phone’s settings, then try again.");
       return;
     }
     save({ remindersEnabled: next, ...(next && !user.reminderTime && { reminderTime: DEFAULT_REMINDER }) });

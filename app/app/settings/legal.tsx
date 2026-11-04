@@ -21,7 +21,7 @@ export default function LegalSettings() {
         {showCopyright && (
           <Text className="mx-5 font-sans text-sm leading-6 text-muted">
             Scripture quotations are from the World English Bible, the King James Version and the Douay-Rheims Bible, all in the public domain. Prayers,
-            recordings and artwork © Lumen.
+            recordings and artwork © Holy Hush.
           </Text>
         )}
       </ScrollView>

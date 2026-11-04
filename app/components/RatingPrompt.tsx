@@ -9,7 +9,7 @@ import { InkButton } from "./ui/Button";
 import { StarIcon } from "./ui/icons";
 import { useColors } from "./ui/theme";
 
-// "How is Lumen helping you?" (lib/review.ts decides when). The stars are saved to the account; 4–5 then open the
+// "How is Holy Hush helping you?" (lib/review.ts decides when). The stars are saved to the account; 4–5 then open the
 // store's review prompt, 1–3 ask what could be better.
 
 const QUESTION: Record<Moment, string> = {
@@ -59,7 +59,7 @@ function Card({ moment }: { moment: Moment }) {
         <View className="items-center rounded-t-[28px] bg-card px-6 pt-6" style={{ paddingBottom: insets.bottom + 20 }}>
           <Light size={56} state={thanked ? "speaking" : "idle"} />
           {thanked ? (
-            <Text className="mt-4 mb-6 text-center font-display text-2xl text-ink">Thank you. It helps us make Lumen better.</Text>
+            <Text className="mt-4 mb-6 text-center font-display text-2xl text-ink">Thank you. It helps us make Holy Hush better.</Text>
           ) : (
             <>
               <Text className="mt-4 text-center font-display text-2xl leading-8 text-ink">{QUESTION[moment]}</Text>

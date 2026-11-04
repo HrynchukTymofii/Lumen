@@ -22,7 +22,18 @@ export const categoryTitle = (key: string) => CATEGORY_TITLES[key] ?? key.charAt
 /** "1 · 3 · 5 min" */
 export const trackMinutes = (t: Track) => `${t.variants.map((v) => v.minutes).join(" · ")} min`;
 
+// A quick double tap (or a slow phone that takes a moment to open the screen) would push the screen twice and,
+// for the player, start two copies of the audio at once. Taps within a second of an opening are ignored.
+let lastOpen = 0;
+function once() {
+  const now = Date.now();
+  if (now - lastOpen < 1000) return false;
+  lastOpen = now;
+  return true;
+}
+
 export function openTrack(track: Track) {
+  if (!once()) return;
   router.push({ pathname: "/prayer/[slug]", params: { slug: track.slug } });
 }
 
@@ -31,12 +42,18 @@ export function playTrack(track: Track) {
   if (track.locked) return openPaywall("library");
   const variant = track.variants.find((v) => v.minutes === 3 && v.url) ?? track.variants.find((v) => v.url);
   if (!variant) return openTrack(track);
-  router.push({ pathname: "/player/[slug]", params: { slug: track.slug, minutes: String(variant.minutes) } });
+  openPlayer(track.slug, variant.minutes);
+}
+
+/** The player for one length of a prayer, opened once however many times it's tapped */
+export function openPlayer(slug: string, minutes: number) {
+  if (!once()) return;
+  router.push({ pathname: "/player/[slug]", params: { slug, minutes: String(minutes) } });
 }
 
 /** The system share sheet with a link to the app's website */
 export function shareApp() {
   Share.share({
-    message: `I’ve been praying with Lumen: guided prayers, the Bible and a companion to talk things through. ${SITE_URL}`,
+    message: `I’ve been praying with Holy Hush: guided prayers, the Bible and a companion to talk things through. ${SITE_URL}`,
   }).catch(reportError);
 }

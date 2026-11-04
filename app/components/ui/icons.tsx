@@ -353,3 +353,21 @@ export function TrashIcon({ size = 20, color }: IconProps) {
   );
 }
 
+
+export function SparkleIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M12 3c.6 4.6 3.4 7.4 9 9-5.6 1.6-8.4 4.4-9 9-.6-4.6-3.4-7.4-9-9 5.6-1.6 8.4-4.4 9-9z" stroke={color} {...line} />
+    </Svg>
+  );
+}
+
+// A closed Bible: a book with a cross on the cover (the Bible tab)
+export function BibleIcon({ size = 22, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M5 5.5A2.5 2.5 0 017.5 3H19v15H7.5A2.5 2.5 0 005 20.5zM5 20.5A2.5 2.5 0 007.5 23H19v-5" stroke={color} {...line} />
+      <Path d="M12 6.5v8M9.25 9.25h5.5" stroke={color} {...line} />
+    </Svg>
+  );
+}

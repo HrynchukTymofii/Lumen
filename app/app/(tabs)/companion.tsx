@@ -8,14 +8,14 @@ import { ArrowIcon, PlusIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { askToSignIn } from "@/lib/account";
+import { companionTopic } from "@/lib/companionTopics";
 import { createConversation, getQuota, listConversations } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
 import type { ConversationSummary, Quota } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
 
-// Companion (SPEC §10.2): quick prompts, "New conversation", earlier conversations and today's allowance.
-
-const QUICK_PROMPTS = ["Pray for me", "Explain this verse", "I'm struggling with…", "Give me a verse for…", "Help me forgive"];
+// Companion (SPEC §10.2): what the companion can do (said for what they're carrying, lib/companionTopics.ts),
+// suggestions to start with, "New conversation", earlier conversations and today's allowance.
 
 function when(iso: string) {
   const d = new Date(iso);
@@ -90,12 +90,14 @@ function Companion() {
     }, [load]),
   );
 
-  // Starts a conversation; a quick prompt is put in the input box, ready to finish or send
+  // Starts a conversation. A finished suggestion is sent straight away; one ending in "…" is put in the input box to finish.
   const start = async (prompt?: string) => {
+    if (starting) return;
     setStarting(true);
     try {
       const id = await createConversation();
-      router.push({ pathname: "/companion/[id]", params: { id, ...(prompt && { prompt }) } });
+      const send = prompt && !prompt.endsWith("…") ? { send: "1" } : {};
+      router.push({ pathname: "/companion/[id]", params: { id, ...(prompt && { prompt }), ...send } });
     } catch (err) {
       reportError(err);
       setError(errorMessage(err));
@@ -118,6 +120,7 @@ function Companion() {
   }
 
   const left = quota && !quota.premium ? Math.max(0, quota.limit - quota.used) : null;
+  const topic = companionTopic(user);
 
   return (
     <ScrollView
@@ -134,16 +137,36 @@ function Companion() {
         />
       }
     >
-      <View className="flex-row items-center justify-between px-5">
-        <View className="flex-1">
-          <Text className="font-display text-[30px] leading-9 text-ink">Companion</Text>
-          <Text className="mt-1 font-sans text-base text-muted">Ask about the Bible, or ask for a prayer.</Text>
+      <Text className="px-4 font-display text-[32px] text-ink" style={{ lineHeight: 38, letterSpacing: -1.1 }}>
+        Companion
+      </Text>
+
+      {/* What the companion can do, for what they told us they're carrying */}
+      <View className="mx-4 mt-4 rounded-[28px] bg-card p-5">
+        <View className="flex-row items-center gap-3">
+          <Light size={44} state={starting ? "thinking" : "idle"} />
+          <Text className="flex-1 font-display text-[20px] leading-6 text-ink">{topic.hint}</Text>
         </View>
-        <Light size={56} />
+        <Text className="mt-3 font-sans text-[15px] leading-6 text-muted">{topic.invite}</Text>
+        <Text className="mt-4 font-sans text-sm text-muted">Try one of these</Text>
+        <View className="mt-2 gap-2">
+          {topic.prompts.map((p) => (
+            <Pressable
+              key={p}
+              onPress={() => start(p)}
+              disabled={starting}
+              accessibilityRole="button"
+              className="flex-row items-center justify-between rounded-2xl bg-bg px-4 py-3.5 active:opacity-75"
+            >
+              <Text className="flex-1 font-sans text-[15px] text-ink">{p}</Text>
+              <ArrowIcon size={16} color={c.muted} />
+            </Pressable>
+          ))}
+        </View>
       </View>
 
-      <View className="mt-5 px-4">
-        <InkButton label="New conversation" onPress={() => start()} loading={starting} icon={<PlusIcon color={c.onPastel} />} />
+      <View className="mt-4 px-4">
+        <InkButton label="New conversation" onPress={() => start()} loading={starting} icon={<PlusIcon color={c.bg} />} />
         {left !== null && (
           <Text className="mt-2.5 text-center font-sans text-sm text-muted">
             {left} of {quota!.limit} messages left today
@@ -151,25 +174,11 @@ function Companion() {
         )}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }} className="mt-4">
-        {QUICK_PROMPTS.map((p) => (
-          <Pressable
-            key={p}
-            onPress={() => start(p)}
-            disabled={starting}
-            accessibilityRole="button"
-            className="rounded-full bg-sage px-4 py-2.5 active:opacity-80"
-          >
-            <Text className="font-sans-bold text-sm text-on-pastel">{p}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
       {error && <Text className="mx-5 mt-4 font-sans text-sm text-danger">{error}</Text>}
 
       {conversations && conversations.length > 0 && (
         <View className="mx-4 mt-6 overflow-hidden rounded-[24px] bg-card">
-          <Text className="px-5 pb-1 pt-4 font-sans-bold text-xs uppercase tracking-[2px] text-muted">Earlier</Text>
+          <Text className="px-5 pb-1 pt-4 font-sans text-sm text-muted">Earlier conversations</Text>
           {conversations.map((conv, i) => (
             <Pressable
               key={conv.id}
@@ -178,7 +187,7 @@ function Companion() {
               className={`flex-row items-center gap-3 px-5 py-4 active:opacity-70 ${i > 0 ? "border-t border-line" : ""}`}
             >
               <View className="flex-1">
-                <Text className="font-sans-bold text-base text-ink" numberOfLines={1}>
+                <Text className="font-sans-semibold text-base text-ink" numberOfLines={1}>
                   {conv.title ?? "New conversation"}
                 </Text>
                 <Text className="mt-0.5 font-sans text-sm text-muted">{when(conv.updatedAt)}</Text>

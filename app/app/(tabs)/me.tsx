@@ -127,7 +127,7 @@ export default function MeScreen() {
       {user && !premium.active && (
         <Pressable onPress={() => openPaywall("me")} accessibilityRole="button" className="mx-4 mt-4 flex-row items-center gap-3 rounded-[24px] bg-butter px-5 py-4 active:opacity-85">
           <Light size={28} />
-          <Text className="flex-1 font-sans-bold text-[15px] text-on-pastel">Unlock Lumen Premium</Text>
+          <Text className="flex-1 font-sans-bold text-[15px] text-on-pastel">Unlock Holy Hush Premium</Text>
           <ChevronIcon color={c.onPastel} />
         </Pressable>
       )}

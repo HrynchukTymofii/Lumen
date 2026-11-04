@@ -14,6 +14,8 @@ export interface User {
   streakHidden: boolean;
   reminderTime: string | null; // "07:30"
   remindersEnabled: boolean;
+  // Quiz answers to "What are you carrying?" (website/funnels/options.ts STRUGGLES); missing from older servers
+  struggles?: string[];
 }
 
 export type Premium =

@@ -1,15 +1,13 @@
-import { router, useFocusEffect } from "expo-router";
-import { setStatusBarStyle } from "expo-status-bar";
+import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import { BottomShade } from "@/components/ArtTile";
 import { Light } from "@/components/Light";
-import { StreakWeek } from "@/components/StreakWeek";
-import { Shelf, SectionTitle, TrackCard } from "@/components/TrackCard";
+import { SectionTitle, Shelf } from "@/components/TrackCard";
 import { TrackArt } from "@/components/TrackArt";
-import { LineButton, OliveButton } from "@/components/ui/Button";
-import { BellIcon, CheckIcon, ChevronIcon, PlayIcon, SearchIcon, ShareIcon } from "@/components/ui/icons";
+import { InkButton, OliveButton } from "@/components/ui/Button";
+import { BellIcon, CheckIcon, LockIcon, PlayIcon, SearchIcon, SendIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { askToSignIn, hasAccount } from "@/lib/account";
@@ -19,13 +17,16 @@ import { cachedLibrary, getLibrary, getTrending } from "@/lib/api/library";
 import { applyGrace, getToday, markPrayed } from "@/lib/api/today";
 import type { Library, Streak, Today, Track } from "@/lib/api/types";
 import { track as trackEvent } from "@/lib/analytics";
+import { companionTopic, type CompanionTopic } from "@/lib/companionTopics";
+import { APP_NAME } from "@/lib/config";
 import { reportError } from "@/lib/errorReporting";
 import { requestPermission, scheduleReminders } from "@/lib/notifications";
-import { categoryTitle, playTrack, shareApp } from "@/lib/play";
+import { categoryTitle, openTrack, playTrack, shareApp, trackMinutes } from "@/lib/play";
 import { pick, useRecent } from "@/lib/userLibrary";
 
-// Today (SPEC §10.2, reworked after the Hallow screens in /assets): a full-bleed carousel of prayers you can start with
-// one tap, quick links, the verse of the day as a quote, today's prayer and the week, then shelves of prayers.
+// Home (the "Home · Option B (Expressive style)" frames, light and dark · warm): a big greeting (no logo: it's the app), picture
+// cards of prayers to start with one tap, topic chips, the week and the verse of the day side by side, "Talk it
+// through" with the companion, today's written prayer, then shelves of prayers.
 // Loading it also re-schedules the daily reminders (lib/notifications.ts).
 
 const DEFAULT_REMINDER = "07:30";
@@ -39,7 +40,7 @@ function categoryOrder(hour: number) {
 
 const dayNumber = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60_000) / 86_400_000);
 
-// Up to five prayers for the carousel: ones with audio first, the time of day's category first, rotating daily
+// Up to five prayers for the cards: ones with audio first, the time of day's category first, rotating daily
 function featured(tracks: Track[], hour: number) {
   const order = categoryOrder(hour);
   const playable = tracks.filter((t) => t.variants.some((v) => v.url) || t.locked);
@@ -48,6 +49,14 @@ function featured(tracks: Track[], hour: number) {
   const rotated = [...pool.slice(shift), ...pool.slice(0, shift)];
   return rotated.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category)).slice(0, 5);
 }
+
+const greeting = (hour: number) => (hour >= 4 && hour < 12 ? "Good morning" : hour >= 12 && hour < 17 ? "Good afternoon" : "Good evening");
+const momentLabel = (hour: number) =>
+  hour >= 4 && hour < 12 ? "For this morning" : hour >= 12 && hour < 17 ? "For this afternoon" : hour >= 17 && hour < 21 ? "For this evening" : "For tonight";
+
+// Short chip names: "Peace & calm" → "Peace"
+const CHIP_TITLES: Record<string, string> = { morning: "Morning", evening: "Evening", peace: "Peace", psalms: "Scripture", grief: "Grief", family: "Family", sleep: "Sleep" };
+const chipTitle = (k: string) => CHIP_TITLES[k] ?? categoryTitle(k);
 
 export default function HomeScreen() {
   const { user, updateProfile } = useAuth();
@@ -61,7 +70,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [marking, setMarking] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
-  const [slide, setSlide] = useState(0);
+  // The topic chip: null is "For you"
+  const [chip, setChip] = useState<string | null>(null);
   const recent = useRecent();
 
   const load = useCallback(
@@ -84,14 +94,6 @@ export default function HomeScreen() {
   useEffect(() => {
     load();
   }, [load]);
-
-  // Light status bar text over the carousel art; back to the theme's default elsewhere
-  useFocusEffect(
-    useCallback(() => {
-      setStatusBarStyle("light");
-      return () => setStatusBarStyle("auto");
-    }, []),
-  );
 
   // Keeps the next week of reminders scheduled, without today's once it's prayed
   const prayedToday = today?.streak?.prayedToday;
@@ -129,7 +131,7 @@ export default function HomeScreen() {
 
   const turnOnReminders = async () => {
     if (!(await requestPermission())) {
-      setError("Notifications are off for Lumen. You can allow them in your phone’s settings.");
+      setError(`Notifications are off for ${APP_NAME}. You can allow them in your phone’s settings.`);
       return;
     }
     updateProfile({ reminderTime: DEFAULT_REMINDER, remindersEnabled: true }).catch((err) => setError(errorMessage(err)));
@@ -137,7 +139,6 @@ export default function HomeScreen() {
 
   const hour = new Date().getHours();
   const tracks = useMemo(() => library?.tracks ?? [], [library]);
-  const hero = useMemo(() => featured(tracks, hour), [tracks, hour]);
   const recentTracks = useMemo(() => pick(tracks, recent.map((r) => r.id)), [tracks, recent]);
   const trending = useMemo(() => pick(tracks, trendingIds), [tracks, trendingIds]);
   const shelves = useMemo(
@@ -147,23 +148,33 @@ export default function HomeScreen() {
         .filter((s) => s.tracks.length),
     [tracks, hour],
   );
-  // Short, free prayers for someone new
-  const starters = useMemo(
-    () => tracks.filter((t) => !t.locked).sort((a, b) => Math.min(...a.variants.map((v) => v.minutes)) - Math.min(...b.variants.map((v) => v.minutes))).slice(0, 3),
-    [tracks],
+  const categories = shelves.map((s) => s.key);
+  // The chip picks what the big cards and "Pray anytime" show
+  const chipTracks = useMemo(() => (chip ? tracks.filter((t) => t.category === chip) : null), [tracks, chip]);
+  const cards = useMemo(() => featured(chipTracks ?? tracks, hour), [chipTracks, tracks, hour]);
+  // Without a chip: short, free prayers first, good for someone new
+  const anytime = useMemo(
+    () =>
+      chipTracks ??
+      tracks
+        .filter((t) => !t.locked)
+        .sort((a, b) => Math.min(...a.variants.map((v) => v.minutes)) - Math.min(...b.variants.map((v) => v.minutes)))
+        .slice(0, 10),
+    [chipTracks, tracks],
   );
   const streak = today?.streak;
-  const heroHeight = Math.min(Math.round(height * 0.62), 580);
+  const cardWidth = width - 32;
+  const cardHeight = Math.min(Math.round(cardWidth * 1.14), Math.round(height * 0.56));
+  const name = user?.firstName?.trim();
 
   return (
     <ScrollView
       className="flex-1 bg-bg"
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: 28 }}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          tintColor="#fff"
-          progressViewOffset={insets.top}
+          tintColor={c.muted}
           onRefresh={() => {
             setRefreshing(true);
             load().finally(() => setRefreshing(false));
@@ -171,92 +182,162 @@ export default function HomeScreen() {
         />
       }
     >
-      {/* Carousel: tap anywhere on a slide to start praying */}
-      <View style={{ height: heroHeight, backgroundColor: "#1D2518" }}>
-        {hero.length ? (
+      {/* Header: the greeting, with search and reminders next to it */}
+      <View className="mt-2 flex-row items-start justify-between gap-3 px-4">
+        <Text accessibilityRole="header" className="flex-1 font-display text-[32px] text-ink" style={{ lineHeight: 37, letterSpacing: -1.1 }}>
+          {greeting(hour)}
+          {name ? `,\n${name}.` : "."}
+        </Text>
+        <View className="mt-1 flex-row gap-2">
+          <RoundButton label="Search" onPress={() => router.push("/search")}>
+            <SearchIcon size={19} color={c.ink} />
+          </RoundButton>
+          <RoundButton label="Notifications and reminders" onPress={() => router.push("/notifications")}>
+            <BellIcon size={19} color={c.ink} />
+          </RoundButton>
+        </View>
+      </View>
+
+      {/* Prayers to start with one tap: big picture cards */}
+      <View className="mt-6" style={{ height: cardHeight }}>
+        {cards.length ? (
           <ScrollView
             horizontal
-            pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(e) => setSlide(Math.round(e.nativeEvent.contentOffset.x / width))}
+            snapToInterval={cardWidth + 12}
+            decelerationRate="fast"
+            contentContainerStyle={{ gap: 12, paddingHorizontal: 16 }}
           >
-            {hero.map((t, i) => (
+            {cards.map((t, i) => (
               <Pressable
                 key={t.id}
                 onPress={() => playTrack(t)}
                 accessibilityRole="button"
                 accessibilityLabel={`Play ${t.title}`}
-                style={{ width, height: heroHeight }}
+                className="overflow-hidden rounded-[32px] bg-card active:opacity-90"
+                style={{ width: cardWidth, height: cardHeight }}
               >
                 <TrackArt imageUrl={t.imageUrl} scene={t.scene} options={{ seed: i + 7 }} />
-                <Shade height={heroHeight} />
-                <View className="absolute inset-0 items-center justify-center">
-                  <View className="h-[88px] w-[88px] items-center justify-center rounded-full bg-white/85">
-                    <PlayIcon size={34} color="#141A10" />
-                  </View>
+                <BottomShade strength={0.7} />
+                <View className="absolute left-4 top-4 rounded-full bg-black/45 px-3.5 py-1.5">
+                  <Text className="font-sans text-[13px] text-white">{i === 0 && !chip ? momentLabel(hour) : categoryTitle(t.category)}</Text>
                 </View>
-                <View className="absolute bottom-0 left-0 right-0 px-6 pb-11">
-                  <View className="self-start rounded-lg bg-white/20 px-2.5 py-1">
-                    <Text className="font-sans-semibold text-[13px] text-white">{categoryTitle(t.category)}</Text>
+                <View className="absolute bottom-0 left-0 right-0 flex-row items-end gap-3 px-6 pb-6">
+                  <View className="flex-1">
+                    <Text className="font-display text-[31px] text-white" style={{ lineHeight: 34, letterSpacing: -1 }} numberOfLines={3}>
+                      {t.title}
+                    </Text>
+                    <Text className="mt-2 font-sans text-sm text-white/85" numberOfLines={1}>
+                      {t.locked ? "Premium" : trackMinutes(t)} · {chipTitle(t.category)}
+                      {t.subtitle ? ` · ${t.subtitle}` : ""}
+                    </Text>
                   </View>
-                  <Text className="mt-2.5 font-display text-[30px] leading-9 text-white" numberOfLines={2}>
-                    {t.title}
-                  </Text>
-                  <Text className="mt-1 font-sans text-base text-white/85" numberOfLines={1}>
-                    {t.locked ? "Premium" : `${t.variants.map((v) => v.minutes).join(" · ")} min`}
-                    {t.subtitle ? ` · ${t.subtitle}` : ""}
-                  </Text>
+                  <View className="h-14 w-14 items-center justify-center rounded-full bg-white">
+                    <PlayIcon size={22} color="#0E0E10" />
+                  </View>
                 </View>
               </Pressable>
             ))}
           </ScrollView>
         ) : (
-          <View className="flex-1 items-center justify-center">
-            <Light size={110} state={library ? "idle" : "thinking"} />
+          <View className="mx-4 flex-1 items-center justify-center rounded-[32px] bg-card">
+            <Light size={96} state={library ? "idle" : "thinking"} />
           </View>
         )}
-        {hero.length > 1 && (
-          <View className="absolute bottom-4 left-0 right-0 flex-row justify-center gap-1.5" pointerEvents="none">
-            {hero.map((t, i) => (
-              <View key={t.id} className={`h-1.5 rounded-full ${i === slide ? "w-4 bg-white" : "w-1.5 bg-white/45"}`} />
-            ))}
-          </View>
-        )}
-
-        {/* Header over the art */}
-        <View className="absolute left-0 right-0 flex-row items-center justify-between px-5" style={{ top: insets.top + 8 }} pointerEvents="box-none">
-          <Text className="font-display text-[34px] leading-10 text-white">Today</Text>
-          <View className="flex-row gap-2.5">
-            <GlassButton label="Search" onPress={() => router.push("/search")}>
-              <SearchIcon size={20} color="#fff" />
-            </GlassButton>
-            <GlassButton label="Notifications and reminders" onPress={() => router.push("/notifications")}>
-              <BellIcon size={20} color="#fff" />
-            </GlassButton>
-          </View>
-        </View>
       </View>
 
+      {/* What you're praying about */}
+      {categories.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-5" contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
+          {[null, ...categories].map((k) => {
+            const on = chip === k;
+            return (
+              <Pressable
+                key={k ?? "for-you"}
+                onPress={() => setChip(k)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                className={`h-10 justify-center rounded-full px-4 active:opacity-80 ${on ? "bg-ink" : "bg-card"}`}
+              >
+                <Text className={`font-sans text-[15px] ${on ? "text-bg" : "text-ink"}`}>{k ? chipTitle(k) : "For you"}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {error && <Text className="mx-4 mt-4 font-sans text-sm text-danger">{error}</Text>}
+
+      {/* The week, then the verse of the day */}
+      <Pressable
+        onPress={() => (streak ? router.push("/streak") : askToSignIn("streak"))}
+        accessibilityRole="button"
+        accessibilityLabel="Your prayer week"
+        className="mx-4 mt-5 rounded-[28px] bg-ink p-5 active:opacity-90"
+      >
+        <Text className="font-sans text-sm text-bg/70">This week</Text>
+        {streak && !streak.hidden ? (
+          <View className="mt-1 flex-row items-end justify-between">
+            <View>
+              <Text className="font-display text-[50px] text-bg" style={{ lineHeight: 54, letterSpacing: -2 }}>
+                {streak.doneThisWeek.filter(Boolean).length}/{streak.goal}
+              </Text>
+              <Text className="font-sans text-sm text-bg/70">days prayed</Text>
+            </View>
+            <View className="mb-1 flex-row gap-1.5">
+              {streak.doneThisWeek.map((d, i) => (
+                <View key={streak.weekDays[i]} className={`h-3.5 w-3.5 rounded-full ${d ? (streak.graceDays[i] ? "bg-gold" : "bg-bg") : "bg-bg/25"}`} />
+              ))}
+            </View>
+          </View>
+        ) : (
+          <View className="mt-2 flex-row items-center gap-3">
+            <Light size={46} />
+            <Text className="flex-1 font-display text-[20px] leading-6 text-bg">Start your week of prayer</Text>
+          </View>
+        )}
+      </Pressable>
+      <Pressable
+        onPress={() => today && Share.share({ message: `“${today.verse.text.trim()}” ${today.verse.ref} (${today.verse.translation})` }).catch(reportError)}
+        accessibilityRole="button"
+        accessibilityLabel="Share the verse of the day"
+        className="mx-4 mt-4 rounded-[28px] bg-card p-5 active:opacity-90"
+      >
+        <Text className="font-sans text-sm text-muted">Verse of the day</Text>
+        {today ? (
+          <>
+            <Text className="mt-2 font-display text-[20px] text-ink" style={{ lineHeight: 26, letterSpacing: -0.4 }}>
+              “{today.verse.text.trim()}”
+            </Text>
+            <Text className="mt-3 font-sans text-sm text-muted">{today.verse.ref}</Text>
+          </>
+        ) : (
+          <View className="py-4">
+            <ActivityIndicator color={c.muted} />
+          </View>
+        )}
+      </Pressable>
+
       {/* The companion, one tap away */}
-      {(!user || user.aiEnabled) && <AskCard />}
+      {(!user || user.aiEnabled) && <TalkCard topic={companionTopic(user)} />}
 
-      {error && <Text className="mx-5 mt-4 font-sans text-sm text-danger">{error}</Text>}
-
-      {/* Today's prayer and the week */}
-      <View className="mx-4 mt-6 rounded-[28px] bg-card px-6 pb-6 pt-5">
+      {/* Today's written prayer and the grace day */}
+      <View className="mx-4 mt-4 rounded-[28px] bg-card p-5">
         <View className="flex-row items-center justify-between">
-          <Text className="font-sans-bold text-xs uppercase tracking-[2px] text-olive-deep">Today’s prayer</Text>
-          <Light size={34} state={celebrating ? "speaking" : today ? "idle" : "thinking"} />
+          <Text className="font-sans text-sm text-muted">Written for you today</Text>
+          <Light size={30} state={celebrating ? "speaking" : today ? "idle" : "thinking"} />
         </View>
         {today ? (
           <>
-            <Text className="mt-1 font-display text-[24px] leading-8 text-ink">{today.prayer.title}</Text>
+            <Text className="mt-1 font-display text-[24px] text-ink" style={{ lineHeight: 29, letterSpacing: -0.6 }}>
+              {today.prayer.title}
+            </Text>
             <Text className="mt-2.5 font-serif text-[17px] leading-7 text-ink">{today.prayer.text}</Text>
-            <View className="mt-5 items-center">
+            <View className="mt-5 items-start">
               {today.streak?.prayedToday ? (
-                <View className="flex-row items-center gap-2 rounded-full bg-sage px-5 py-3">
-                  <CheckIcon size={16} color={c.onPastel} />
-                  <Text className="font-sans-bold text-base text-on-pastel">Prayed today</Text>
+                <View className="flex-row items-center gap-2 rounded-full bg-bg px-5 py-3">
+                  <CheckIcon size={16} color={c.ink} />
+                  <Text className="font-sans-semibold text-base text-ink">Prayed today</Text>
                 </View>
               ) : (
                 <OliveButton label="Mark as prayed" onPress={pray} loading={marking} />
@@ -267,33 +348,43 @@ export default function HomeScreen() {
           <Text className="mt-2 font-sans text-base text-muted">Getting today’s prayer…</Text>
         ) : (
           <View className="mt-3">
-            <LineButton label="Try again" onPress={load} />
+            <InkButton label="Try again" onPress={load} />
           </View>
-        )}
-        {streak && !streak.hidden && (
-          <Pressable onPress={() => router.push("/streak")} accessibilityRole="button" className="mt-6 border-t border-line pt-5 active:opacity-80">
-            <StreakWeek streak={streak} />
-          </Pressable>
         )}
         {/* Only for someone already praying this week, so a brand-new account isn't offered a grace day */}
         {streak && !streak.hidden && streak.graceAvailable && streak.doneThisWeek.some(Boolean) && (
           <Pressable onPress={grace} accessibilityRole="button" className="mt-4 active:opacity-70">
             <Text className="font-sans text-sm leading-5 text-muted">
-              Missed yesterday? <Text className="font-sans-bold text-olive-deep">Use this week’s grace day</Text>
+              Missed yesterday? <Text className="font-sans-semibold text-ink underline">Use this week’s grace day</Text>
             </Text>
           </Pressable>
         )}
       </View>
 
       {user && !user.reminderTime && (
-        <View className="mx-4 mt-4 rounded-[28px] bg-sky px-6 py-5">
-          <Text className="font-display text-[20px] leading-7 text-on-pastel">Want a gentle daily reminder?</Text>
-          <Text className="mt-1 font-sans text-[15px] leading-6 text-on-pastel/80">
+        <View className="mx-4 mt-4 rounded-[28px] bg-card p-5">
+          <Text className="font-display text-[20px] leading-7 text-ink">Want a gentle daily reminder?</Text>
+          <Text className="mt-1 font-sans text-[15px] leading-6 text-muted">
             One a day at {DEFAULT_REMINDER}, skipped once you’ve prayed. Change the time from the bell at the top.
           </Text>
           <Pressable onPress={turnOnReminders} accessibilityRole="button" className="mt-3 self-start rounded-full bg-ink px-5 py-2.5 active:opacity-80">
-            <Text className="font-sans-bold text-sm text-bg">Remind me</Text>
+            <Text className="font-sans-semibold text-sm text-bg">Remind me</Text>
           </Pressable>
+        </View>
+      )}
+
+      {/* Pray anytime: tall picture cards with the title over the art */}
+      {anytime.length > 0 && (
+        <View className="mt-9">
+          <SectionTitle
+            title={chip ? chipTitle(chip) : "Pray anytime"}
+            onPress={chip ? () => router.push({ pathname: "/list/[key]", params: { key: `c-${chip}` } }) : undefined}
+          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 16 }}>
+            {anytime.map((t, i) => (
+              <PosterCard key={t.id} track={t} seed={i + 3} />
+            ))}
+          </ScrollView>
         </View>
       )}
 
@@ -303,99 +394,73 @@ export default function HomeScreen() {
         <Shelf title="Trending" tracks={trending} onMore={() => router.push({ pathname: "/list/[key]", params: { key: "trending" } })} />
       )}
 
-      {shelves.slice(0, 2).map((s) => (
-        <Shelf key={s.key} title={categoryTitle(s.key)} tracks={s.tracks} onMore={() => router.push({ pathname: "/list/[key]", params: { key: `c-${s.key}` } })} />
-      ))}
+      {!chip &&
+        shelves.map((s) => (
+          <Shelf key={s.key} title={categoryTitle(s.key)} tracks={s.tracks} onMore={() => router.push({ pathname: "/list/[key]", params: { key: `c-${s.key}` } })} />
+        ))}
 
-      {/* Verse of the day as a quote */}
-      {today && (
-        <View className="mt-12 items-center px-8">
-          <Text className="font-sans-semibold text-sm uppercase tracking-[2px] text-muted">
-            {today.verse.ref} · {today.verse.translation}
-          </Text>
-          <Text className="mt-3 text-center font-serif text-[25px] leading-[36px] text-ink">“{today.verse.text.trim()}”</Text>
-          <Pressable
-            onPress={() => Share.share({ message: `“${today.verse.text.trim()}” ${today.verse.ref} (${today.verse.translation})` }).catch(reportError)}
-            accessibilityRole="button"
-            className="mt-5 items-center gap-1.5 active:opacity-70"
-          >
-            <View className="h-12 w-12 items-center justify-center rounded-full border-[1.5px] border-line2">
-              <ShareIcon size={20} color={c.ink} />
-            </View>
-            <Text className="font-sans text-xs text-muted">Share verse</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {shelves.slice(2).map((s) => (
-        <Shelf key={s.key} title={categoryTitle(s.key)} tracks={s.tracks} onMore={() => router.push({ pathname: "/list/[key]", params: { key: `c-${s.key}` } })} />
-      ))}
-
-      {starters.length > 0 && (
-        <View className="mt-8">
-          <SectionTitle title="Not sure where to start?" />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={width - 40 + 14}
-            decelerationRate="fast"
-            contentContainerStyle={{ gap: 14, paddingHorizontal: 20 }}
-          >
-            {starters.map((t, i) => (
-              <TrackCard key={t.id} track={t} width={width - 40} aspect={1.45} seed={i + 11} />
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      <View className="mx-4 mt-12 items-center">
+      <View className="mx-4 mt-10 items-center rounded-[28px] bg-card px-5 pb-5 pt-6">
         <Light size={44} />
         <Text className="mt-3 text-center font-display text-[20px] leading-7 text-ink">Know someone who’d pray with you?</Text>
         <View className="mt-4 w-full">
-          <LineButton label="Share Lumen" onPress={shareApp} icon={<ShareIcon size={18} color={c.ink} />} />
+          <InkButton label={`Share ${APP_NAME}`} onPress={shareApp} />
         </View>
       </View>
     </ScrollView>
   );
 }
 
-// Darkens the top (for the header) and the bottom (for the title) of the carousel art
-function Shade({ height }: { height: number }) {
+function RoundButton({ label, onPress, children }: { label: string; onPress: () => void; children: ReactNode }) {
   return (
-    <Svg style={{ position: "absolute", top: 0, left: 0 }} width="100%" height={height} pointerEvents="none">
-      <Defs>
-        <LinearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#000" stopOpacity="0.45" />
-          <Stop offset="0.22" stopColor="#000" stopOpacity="0" />
-          <Stop offset="0.55" stopColor="#000" stopOpacity="0" />
-          <Stop offset="1" stopColor="#000" stopOpacity="0.65" />
-        </LinearGradient>
-      </Defs>
-      <Rect x="0" y="0" width="100%" height="100%" fill="url(#shade)" />
-    </Svg>
-  );
-}
-
-function GlassButton({ label, onPress, children }: { label: string; onPress: () => void; children: ReactNode }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} className="h-11 w-11 items-center justify-center rounded-full bg-white/25 active:opacity-70">
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={6} className="h-10 w-10 items-center justify-center rounded-full bg-card active:opacity-70">
       {children}
     </Pressable>
   );
 }
 
-// The companion, one tap away: a single card that opens a new conversation (or sign-in, without an account)
-function AskCard() {
+// "Pray anytime": a tall picture card, title and length in white over the art
+function PosterCard({ track, seed }: { track: Track; seed: number }) {
+  return (
+    <Pressable
+      onPress={() => openTrack(track)}
+      accessibilityRole="button"
+      accessibilityLabel={`${track.title}${track.locked ? ", Premium" : ""}`}
+      className="overflow-hidden rounded-[26px] bg-card active:opacity-85"
+      style={{ width: 150, height: 200 }}
+    >
+      <TrackArt imageUrl={track.imageUrl} scene={track.scene} options={{ seed, noBigTrees: true }} />
+      <BottomShade strength={0.65} />
+      {track.locked && (
+        <View className="absolute right-2.5 top-2.5 h-7 w-7 items-center justify-center rounded-full bg-black/45">
+          <LockIcon size={13} color="#fff" />
+        </View>
+      )}
+      <View className="absolute bottom-0 left-0 right-0 px-3.5 pb-3.5">
+        <Text className="font-display text-[16px] leading-5 text-white" numberOfLines={2}>
+          {track.title}
+        </Text>
+        <Text className="mt-0.5 font-sans text-[13px] text-white/80">{trackMinutes(track)}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+// "Talk it through": what's on your heart goes straight into a new conversation with the companion
+// (or to sign-in, without an account)
+function TalkCard({ topic }: { topic: CompanionTopic }) {
   const c = useColors();
+  const [text, setText] = useState("");
   const [starting, setStarting] = useState(false);
 
-  const start = async () => {
+  const start = async (suggestion?: string) => {
     if (starting) return;
     if (!hasAccount()) return askToSignIn("companion");
     setStarting(true);
     try {
       const id = await createConversation();
-      router.push({ pathname: "/companion/[id]", params: { id } });
+      const prompt = (suggestion ?? text).trim();
+      router.push({ pathname: "/companion/[id]", params: prompt ? { id, prompt, send: "1" } : { id } });
+      setText("");
     } catch (err) {
       reportError(err);
       router.navigate("/companion");
@@ -405,18 +470,41 @@ function AskCard() {
   };
 
   return (
-    <Pressable
-      onPress={start}
-      accessibilityRole="button"
-      accessibilityLabel="Ask the companion"
-      className="mx-4 mt-5 flex-row items-center gap-4 rounded-[28px] bg-lav px-5 py-5 active:opacity-85"
-    >
-      <Light size={48} state={starting ? "thinking" : "idle"} />
-      <View className="flex-1">
-        <Text className="font-display text-[20px] leading-7 text-on-pastel">Ask the companion</Text>
-        <Text className="mt-0.5 font-sans text-[15px] leading-5 text-on-pastel/75">Questions on faith, answered from Scripture</Text>
+    <View className="mx-4 mt-4 rounded-[28px] bg-card p-4">
+      <View className="flex-row items-center gap-2.5 px-1">
+        <Light size={34} state={starting ? "thinking" : "idle"} />
+        <View className="flex-1">
+          <Text className="font-display text-[20px] text-ink" style={{ letterSpacing: -0.5 }}>
+            Talk it through
+          </Text>
+          <Text className="font-sans text-sm text-muted">{topic.hint}</Text>
+        </View>
       </View>
-      {starting ? <ActivityIndicator color={c.onPastel} /> : <ChevronIcon size={20} color={c.onPastel} />}
-    </Pressable>
+      <View className="mt-3 h-14 flex-row items-center rounded-full bg-ink pl-5 pr-1.5">
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          onSubmitEditing={() => start()}
+          placeholder="What’s on your heart?"
+          placeholderTextColor={c.dim}
+          returnKeyType="send"
+          accessibilityLabel="Ask the companion"
+          className="flex-1 font-sans text-base text-bg"
+        />
+        <Pressable onPress={() => start()} accessibilityRole="button" accessibilityLabel="Send" className="h-11 w-11 items-center justify-center rounded-full bg-bg active:opacity-80">
+          {starting ? <ActivityIndicator color={c.ink} /> : <SendIcon size={18} color={c.ink} />}
+        </Pressable>
+      </View>
+      {/* Ready-made first messages, for someone not sure what to say */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3" contentContainerStyle={{ gap: 8 }}>
+        {topic.prompts
+          .filter((p) => !p.endsWith("…"))
+          .map((p) => (
+            <Pressable key={p} onPress={() => start(p)} disabled={starting} accessibilityRole="button" className="h-9 justify-center rounded-full bg-bg px-3.5 active:opacity-75">
+              <Text className="font-sans text-sm text-ink">{p}</Text>
+            </Pressable>
+          ))}
+      </ScrollView>
+    </View>
   );
 }

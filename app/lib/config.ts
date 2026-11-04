@@ -8,7 +8,7 @@ export const SITE_URL = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:30
 export const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? "";
 export const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com";
 
-export const APP_NAME = "Lumen";
+export const APP_NAME = "Holy Hush";
 
 // Google sign-in: empty = the button is hidden
 export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";

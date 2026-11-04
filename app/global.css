@@ -2,42 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Olive palette (SPEC §3, design/kit/kit.css), as RGB channels for Tailwind's alpha syntax */
+/* Holy Hush palette ("Style exploration B · Expressive type", same as website/app/(site)/hh.css), as RGB channels for
+   Tailwind's alpha syntax. Light: white and near-black ink. Dark: the "dark · warm" frame.
+   The token names are older than the palette: olive is now the Light's warm glow (accents, done days) and
+   olive-deep is plain ink (accent text and icons). The pastels stay for prayer art and highlights. */
 :root {
-  --page: 236 234 223;
-  --bg: 250 248 241;
-  --card: 255 255 255;
-  --ink: 38 48 31;
-  --muted: 113 120 102;
-  --dim: 170 174 158;
-  --line: 233 230 217;
-  --line2: 216 212 194;
-  --olive: 197 209 158;
-  --olive-deep: 95 115 52;
-  --gold: 227 199 113;
-  --butter: 242 228 180;
-  --sage: 216 227 196;
-  --sky: 214 227 224;
-  --lav: 227 224 234;
-  --rose: 239 218 207;
-  --on-pastel: 38 48 31;
+  --page: 243 243 245;
+  --bg: 255 255 255;
+  --card: 243 243 245;
+  --ink: 14 14 16;
+  --muted: 85 85 92;
+  --dim: 138 138 145;
+  --line: 233 233 236;
+  --line2: 214 214 219;
+  --olive: 245 199 126;
+  --olive-deep: 14 14 16;
+  --gold: 245 199 126;
+  --butter: 246 232 196;
+  --sage: 223 232 211;
+  --sky: 216 228 236;
+  --lav: 230 226 240;
+  --rose: 244 222 212;
+  --on-pastel: 14 14 16;
   --danger: 192 69 63;
 }
 
 .dark:root {
-  --page: 12 15 9;
-  --bg: 20 26 16;
-  --card: 29 37 24;
-  --ink: 238 240 228;
-  --muted: 156 163 142;
-  --dim: 95 104 82;
-  --line: 38 47 31;
-  --line2: 53 65 44;
-  --olive-deep: 195 211 141;
-  --butter: 232 219 172;
-  --sage: 207 219 187;
-  --sky: 206 220 217;
-  --lav: 218 215 226;
-  --rose: 229 209 198;
+  --page: 21 19 16;
+  --bg: 28 25 21;
+  --card: 44 39 33;
+  --ink: 244 238 228;
+  --muted: 182 176 166;
+  --dim: 141 137 130;
+  --line: 50 45 38;
+  --line2: 67 61 54;
+  --olive-deep: 244 238 228;
+  --butter: 236 222 186;
+  --sage: 214 223 202;
+  --sky: 208 220 228;
+  --lav: 222 218 232;
+  --rose: 236 214 204;
+  --on-pastel: 28 25 21;
   --danger: 232 122 112;
 }

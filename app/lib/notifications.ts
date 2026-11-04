@@ -42,7 +42,7 @@ export async function requestPermission() {
 function message(day: number, name: string | null) {
   const lines = [
     { title: "Your prayer for today is ready", body: "Take a quiet minute with God." },
-    { title: "A verse for today", body: "Open Lumen for today’s verse and prayer." },
+    { title: "A verse for today", body: "Open Holy Hush for today’s verse and prayer." },
     { title: name ? `${name}, take a quiet minute with God` : "Take a quiet minute with God", body: "Your daily prayer is waiting." },
   ];
   return lines[day % lines.length];
