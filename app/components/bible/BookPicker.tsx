@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
 import { LineButton } from "@/components/ui/Button";
@@ -52,8 +52,16 @@ export function BookPicker({
   const sections = useMemo(() => SECTIONS.map((s) => ({ ...s, books: (books ?? []).filter((b) => b.testament === s.key) })), [books]);
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">
-      <View className="flex-1 bg-bg" style={{ paddingTop: 12 }}>
+    // iOS shows a page sheet that already starts below the status bar. Android has no page sheet and opens it full
+    // screen, so there it draws behind the status bar on purpose and moves the content down by the bar's height.
+    <Modal
+      animationType="slide"
+      onRequestClose={onClose}
+      presentationStyle="pageSheet"
+      statusBarTranslucent={Platform.OS === "android"}
+      navigationBarTranslucent={Platform.OS === "android"}
+    >
+      <View className="flex-1 bg-bg" style={{ paddingTop: Platform.OS === "android" ? insets.top + 8 : 12 }}>
         <View className="flex-row items-center justify-between px-5 pb-3 pt-2">
           <Text className="font-display text-[26px] leading-8 text-ink">Books</Text>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} className="h-10 w-10 items-center justify-center rounded-full bg-card">
