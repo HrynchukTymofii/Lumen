@@ -7,9 +7,12 @@ export const SCENES = ["dawn", "golden", "lake", "meadow", "dusk", "evening", "n
 export const CATEGORIES = ["morning", "evening", "peace", "psalms", "grief", "family", "sleep"] as const;
 export const LENGTHS = [1, 3, 5] as const;
 
+export const MAX_LINE = 2000;
+
 export const lineSchema = z.object({
   t: z.number().min(0).nullable(), // seconds from start; null until audio exists
-  text: z.string().min(1).max(400),
+  // A whole paragraph fits: the app's player breaks long lines into short phrases itself
+  text: z.string().min(1).max(MAX_LINE),
   // A new paragraph starts at this line (a blank line in the admin editor). When no line has it, every line is its
   // own paragraph, as before.
   p: z.boolean().optional(),
