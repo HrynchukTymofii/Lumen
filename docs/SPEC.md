@@ -1315,3 +1315,37 @@ a **development build** (not Expo Go).
 3. Prices final? (`$59.99/yr` with 7-day trial, `$9.99/mo`).
 4. ~~Stripe live by ~10.11 or test mode for the demo.~~ Stripe won't work (no legal entity, Ukraine not supported). Pick a web payment provider: Paddle, WayForPay or monobank (not urgent).
 5. Who records the 10–20 audio prayers and who reviews generated prayer texts theologically (ideally one Catholic + one Protestant reviewer).
+
+---
+
+## 15. Future features (not scheduled)
+
+### 15.1 Challenges anyone can create and join
+*Noted 2026-11-04 after a team meeting. Not built yet.*
+
+**Idea:** a person (a creator, a church leader, or any user) creates a challenge, and other people join it and do it together, e.g. "Pray every day for 30 days", "Read the Gospel of John in 21 days", "Pray for our church every evening this Lent". Shared goals with other people keep users coming back, and each challenge brings its creator's audience into the app.
+
+**What a challenge is**
+- Title, short description, cover (one of the scenes or an uploaded picture), creator, start date, length in days.
+- A daily task, of one of three kinds:
+  - **Pray**: any prayer counts, or a set prayer (track) for each day.
+  - **Read**: a Bible reading per day, reusing the reading-plan engine (`app/lib/readingPlans.ts`), or the creator lists the chapters.
+  - **Custom**: a short text the creator writes per day ("Call someone you haven't spoken to in a while"), ticked off by hand.
+- Open (anyone with the link) or invite-only. A join link / QR code to share in a church group, on Instagram, etc.
+
+**For people who join**
+- A Home card like today's reading: "Day 5 of 30 · Pray for your family", with a tick.
+- A daily reminder at the time they choose (same mechanism as plan reminders, `plan-*` ids in `lib/notifications.ts`).
+- Group progress: how many joined, how many did today's task ("128 people prayed today"). Kept gentle: no public leaderboard of individuals, no streak shaming, a missed day can be caught up.
+- Optional: a short note or prayer request on each day that others in the challenge can "pray for".
+
+**For creators**
+- Create and edit in the app (or the web app), then share the link.
+- See joins and daily completion.
+- Moderation: reports, admin can hide a challenge. Creating may need an account in good standing (or Premium) to limit spam. Notes from participants need the same safety checks as the companion.
+
+**Build notes**
+- Needs server tables (Challenge, ChallengeDay, ChallengeMember, ChallengeCheckIn) and a Prisma migration applied to production before the app sends anything (the shared sync queue fails as a whole on a missing table).
+- Do it together with moving reading-plan progress to the server, since challenges reuse plans for "Read" tasks.
+- Deep links (`/c/<code>`) open the app if installed, otherwise the website with an App Store / Google Play link.
+- A finished challenge day counts for the prayer week, like a finished reading day.
