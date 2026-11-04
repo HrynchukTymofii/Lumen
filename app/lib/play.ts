@@ -57,7 +57,8 @@ export function playTrack(track: Track) {
 /** The player for one length of a prayer, opened once however many times it's tapped */
 export function openPlayer(slug: string, minutes: number) {
   if (!once()) return;
-  router.push({ pathname: "/player/[slug]", params: { slug, minutes: String(minutes) } });
+  // navigate, not push: the same player already open is brought back instead of stacking a second one
+  router.navigate({ pathname: "/player/[slug]", params: { slug, minutes: String(minutes) } });
 }
 
 /** The system share sheet with a link to the app's website */

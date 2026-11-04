@@ -104,7 +104,7 @@ function Stat({ icon, tint, value, label }: { icon: React.ReactNode; tint: strin
         {icon}
       </View>
       <Text className="mt-2 font-display text-[40px] leading-[46px] text-ink">{value}</Text>
-      <View className="mt-1 self-start rounded-md px-2 py-1" style={{ backgroundColor: tint }}>
+      <View className="mt-1 self-start rounded-full px-3 py-1" style={{ backgroundColor: tint }}>
         <Text className="font-sans-semibold text-xs uppercase tracking-[1px] text-on-pastel">{label}</Text>
       </View>
     </View>

@@ -24,6 +24,7 @@ import type { TrackVariant } from "@/lib/api/types";
 import { askToSignIn, hasAccount } from "@/lib/account";
 import { track as trackEvent } from "@/lib/analytics";
 import { markPrayed } from "@/lib/api/today";
+import { errorMessage } from "@/lib/api/client";
 import { reportError } from "@/lib/errorReporting";
 import { reviewMoment } from "@/lib/review";
 import { downloadKey, downloadsSupported, downloadTrack, localAudio, recordPlayed, removeDownload, toggleFavorite, useDownloads, useFavorites } from "@/lib/userLibrary";
@@ -126,16 +127,28 @@ export default function PlayerScreen() {
   const favorites = useFavorites();
   const downloads = useDownloads();
   const [downloading, setDownloading] = useState(false);
+  // "Saved for offline" or what went wrong, shown for a few seconds under the top bar
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (!note) return;
+    const t = setTimeout(() => setNote(null), 3500);
+    return () => clearTimeout(t);
+  }, [note]);
   const downloaded = Boolean(track && variant && downloads[downloadKey(track.id, variant.minutes)]);
   const toggleDownload = async () => {
     if (!track || !variant) return;
-    if (downloaded) return removeDownload(track.id, variant.minutes);
+    if (downloaded) {
+      await removeDownload(track.id, variant.minutes);
+      return setNote("Download removed");
+    }
     if (!hasAccount()) return askToSignIn("downloads");
     setDownloading(true);
     try {
       await downloadTrack(track, variant);
+      setNote("Saved for offline · find it in Me → Downloads");
     } catch (err) {
       reportError(err);
+      setNote(`Couldn’t download: ${errorMessage(err)}`);
     } finally {
       setDownloading(false);
     }
@@ -247,6 +260,11 @@ export default function PlayerScreen() {
 
       <View className="flex-1 items-center justify-center">
         <Light size={110} state={status.playing ? "speaking" : "idle"} />
+        {note && (
+          <View className="absolute top-3 rounded-full bg-ink px-4 py-2.5">
+            <Text className="font-sans text-sm text-bg">{note}</Text>
+          </View>
+        )}
       </View>
 
       {/* The text and controls take the bottom half */}

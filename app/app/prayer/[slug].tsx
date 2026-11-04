@@ -25,6 +25,8 @@ export default function PrayerScreen() {
   const c = useColors();
   const [track, setTrack] = useState<Track | null | undefined>(() => cachedLibrary()?.tracks.find((t) => t.slug === slug));
   const [error, setError] = useState<string | null>(null);
+  // "Saved for offline" after a download
+  const [saved, setSaved] = useState(false);
   const [minutes, setMinutes] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
   const favorites = useFavorites();
@@ -104,6 +106,8 @@ export default function PrayerScreen() {
                       setDownloading(true);
                       try {
                         await downloadTrack(track, variant);
+                        setError(null);
+                        setSaved(true);
                       } catch (err) {
                         reportError(err);
                         setError(errorMessage(err));
@@ -123,6 +127,7 @@ export default function PrayerScreen() {
                 )}
               </View>
               {error && track && <Text className="mt-3 font-sans text-sm text-danger">{error}</Text>}
+              {saved && !error && <Text className="mt-3 font-sans text-sm text-muted">Saved for offline · find it in Me → Downloads</Text>}
 
               {variant ? (
                 <View className="mt-5 gap-4">
