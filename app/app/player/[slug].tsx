@@ -119,7 +119,9 @@ export default function PlayerScreen() {
   const variant = track?.variants.find((v) => v.minutes === Number(minutes)) ?? track?.variants.find((v) => v.url);
 
   // A downloaded copy plays without a connection
-  const source = variant?.url ? (localAudio(track!.id, variant.minutes) ?? variant.url) : null;
+  // Picked once when the player opens: downloading this prayer while it plays would otherwise swap the source to
+  // the new file and restart the audio from the beginning. The downloaded copy is used from the next opening.
+  const [source] = useState(() => (variant?.url ? (localAudio(track!.id, variant.minutes) ?? variant.url) : null));
   const player = useAudioPlayer(source, { updateInterval: 250 });
   const status = useAudioPlayerStatus(player);
   const [finished, setFinished] = useState(false);
