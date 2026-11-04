@@ -1,4 +1,4 @@
-// Lumen illustration kit, ported from design/kit/kit.js: flat landscape scenes and the Light.
+// Holy Hush illustration kit, ported from design/kit/kit.js: flat landscape scenes and the Light.
 // Pure functions returning SVG strings (our own markup, no user input), rendered on the server.
 // The app (Expo) will reuse the same scene definitions.
 

@@ -4,7 +4,7 @@ import { handle, readJson } from "@/lib/api";
 import { requireUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 
-// POST /api/me/rating { stars, moment, comment?, platform, appVersion }: the in-app "How is Lumen helping you?"
+// POST /api/me/rating { stars, moment, comment?, platform, appVersion }: the in-app "How is Holy Hush helping you?"
 const body = z.object({
   stars: z.number().int().min(1).max(5),
   moment: z.enum(["prayer", "companion"]),
