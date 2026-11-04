@@ -1,22 +1,32 @@
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
-import { Pressable, ScrollView, Text, useWindowDimensions, View } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, Text, useWindowDimensions, View } from "react-native";
+import Animated, {
+  cancelAnimation,
+  Easing,
+  scrollTo,
+  useAnimatedRef,
+  useAnimatedStyle,
+  useDerivedValue,
+  useScrollOffset,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
 import { TrackArt } from "@/components/TrackArt";
 import { IconButton } from "@/components/ui/Button";
-import { CloseIcon, PauseIcon, PlayIcon, SkipIcon } from "@/components/ui/icons";
+import { CheckIcon, CloseIcon, DownloadIcon, HeartIcon, PauseIcon, PlayIcon, SkipIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { cachedLibrary } from "@/lib/api/library";
 import type { TrackVariant } from "@/lib/api/types";
-import { hasAccount } from "@/lib/account";
+import { askToSignIn, hasAccount } from "@/lib/account";
 import { track as trackEvent } from "@/lib/analytics";
 import { markPrayed } from "@/lib/api/today";
 import { reportError } from "@/lib/errorReporting";
 import { reviewMoment } from "@/lib/review";
-import { localAudio, recordPlayed } from "@/lib/userLibrary";
+import { downloadKey, downloadsSupported, downloadTrack, localAudio, recordPlayed, removeDownload, toggleFavorite, useDownloads, useFavorites } from "@/lib/userLibrary";
 
 // Guided player (SPEC §10.2): the scene and the Light speaking on the top half, and on the bottom half the whole
 // prayer as a scrolling text that follows the audio: the phrase being spoken fades up, the ones around it fade
@@ -34,13 +44,27 @@ function clock(seconds: number) {
 
 type Phrase = { text: string; start: number; paragraph: boolean };
 
-// Splits a line into sentences, so a long line (or a prayer stored as one block) still moves along phrase by phrase.
-// Very short pieces ("Amen.") stay their own phrase only at the end of a line.
+// A phrase longer than this is broken at its commas, so the highlight moves along in small, easy steps
+const LONG = 80;
+const TARGET = 60;
+
+// Splits a line into sentences, and long sentences at commas and dashes, so a long line (or a prayer stored as one
+// block) moves along phrase by phrase. Very short pieces ("Amen.", "Lord,") join the next one.
 function sentences(text: string) {
   const parts = text.match(/[^.!?…;:]+[.!?…;:]+["”’)]*\s*|[^.!?…;:]+$/g)?.map((p) => p.trim()).filter(Boolean) ?? [text];
+  const pieces = parts.flatMap((p) => {
+    if (p.length <= LONG) return [p];
+    const clauses = p.split(/(?<=[,–—])\s+/);
+    const out: string[] = [];
+    for (const c of clauses) {
+      if (out.length && out[out.length - 1].length + c.length < TARGET) out[out.length - 1] += ` ${c}`;
+      else out.push(c);
+    }
+    return out;
+  });
   const out: string[] = [];
-  for (const p of parts) {
-    if (out.length && out[out.length - 1].length < 28) out[out.length - 1] += ` ${p}`;
+  for (const p of pieces) {
+    if (out.length && out[out.length - 1].length < 24) out[out.length - 1] += ` ${p}`;
     else out.push(p);
   }
   return out;
@@ -99,6 +123,23 @@ export default function PlayerScreen() {
   const status = useAudioPlayerStatus(player);
   const [finished, setFinished] = useState(false);
   const counted = useRef(false);
+  const favorites = useFavorites();
+  const downloads = useDownloads();
+  const [downloading, setDownloading] = useState(false);
+  const downloaded = Boolean(track && variant && downloads[downloadKey(track.id, variant.minutes)]);
+  const toggleDownload = async () => {
+    if (!track || !variant) return;
+    if (downloaded) return removeDownload(track.id, variant.minutes);
+    if (!hasAccount()) return askToSignIn("downloads");
+    setDownloading(true);
+    try {
+      await downloadTrack(track, variant);
+    } catch (err) {
+      reportError(err);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   // Plays in silent mode and with the screen locked (lock screen controls need doNotMix)
   useEffect(() => {
@@ -140,15 +181,28 @@ export default function PlayerScreen() {
   for (let i = 0; i < list.length; i++) if (list[i].start <= time + 0.2) current = i;
   if (finished) current = list.length - 1;
 
-  // Follows the audio, unless the text was just scrolled by hand
-  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  // Follows the audio with a slow glide (scrollTo's own animation is quick and abrupt), unless the text was just
+  // scrolled by hand
+  const scroll = useAnimatedRef<Animated.ScrollView>();
+  const offset = useScrollOffset(scroll);
+  const glide = useSharedValue(-1);
+  useDerivedValue(() => {
+    if (glide.get() >= 0) scrollTo(scroll, 0, glide.get(), false);
+  });
   const tops = useRef<number[]>([]);
   const handScrolledAt = useRef(0);
   useEffect(() => {
     if (Date.now() - handScrolledAt.current < HAND_SCROLL_MS) return;
     const y = tops.current[current];
-    if (y !== undefined) scroll.current?.scrollTo({ y: Math.max(0, y - 48), animated: true });
-  }, [current]);
+    if (y === undefined) return;
+    glide.set(offset.get());
+    glide.set(withTiming(Math.max(0, y - 56), { duration: 1400, easing: Easing.inOut(Easing.cubic) }));
+  }, [current, glide, offset]);
+  const handScroll = () => {
+    cancelAnimation(glide);
+    glide.set(-1);
+    handScrolledAt.current = Date.now();
+  };
 
   const close = () => (router.canGoBack() ? router.back() : router.replace("/discover"));
 
@@ -176,8 +230,18 @@ export default function PlayerScreen() {
         <IconButton label="Close" onPress={close}>
           <CloseIcon color={c.ink} />
         </IconButton>
-        <View className="h-10 min-w-10 items-center justify-center rounded-full bg-black/35 px-3">
-          <Text className="font-sans-semibold text-sm text-white">{variant.minutes} min</Text>
+        <View className="flex-row items-center gap-2">
+          <IconButton label={favorites.includes(track.id) ? "Remove from favorites" : "Add to favorites"} onPress={() => toggleFavorite(track.id)}>
+            <HeartIcon size={20} color={c.ink} filled={favorites.includes(track.id)} />
+          </IconButton>
+          {downloadsSupported && (
+            <IconButton label={downloaded ? "Remove download" : `Download ${variant.minutes} min for offline`} onPress={toggleDownload}>
+              {downloading ? <ActivityIndicator color={c.ink} /> : downloaded ? <CheckIcon size={18} color={c.ink} /> : <DownloadIcon size={20} color={c.ink} />}
+            </IconButton>
+          )}
+          <View className="h-10 min-w-10 items-center justify-center rounded-full bg-black/35 px-3">
+            <Text className="font-sans-semibold text-sm text-white">{variant.minutes} min</Text>
+          </View>
         </View>
       </View>
 
@@ -194,12 +258,12 @@ export default function PlayerScreen() {
         <View className="flex-1">
           {/* The whole prayer, following the audio */}
           <FadeView visible={!finished} style={{ flex: 1 }}>
-            <ScrollView
+            <Animated.ScrollView
               ref={scroll}
-              className="flex-1"
-              contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 96 }}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 140 }}
               showsVerticalScrollIndicator={false}
-              onScrollBeginDrag={() => (handScrolledAt.current = Date.now())}
+              onScrollBeginDrag={handScroll}
               onMomentumScrollEnd={() => (handScrolledAt.current = Date.now())}
             >
               {list.map((p, i) => (
@@ -208,17 +272,18 @@ export default function PlayerScreen() {
                   onLayout={(e) => (tops.current[i] = e.nativeEvent.layout.y)}
                   onPress={() => {
                     handScrolledAt.current = 0;
+                    glide.set(offset.get());
                     player.seekTo(p.start);
                     player.play();
                   }}
                   accessibilityRole="button"
                   accessibilityHint="Plays from here"
-                  style={{ marginTop: p.paragraph && i > 0 ? 18 : 4 }}
+                  style={{ marginTop: p.paragraph && i > 0 ? 20 : 6 }}
                 >
-                  <FadeText text={p.text} opacity={i === current ? 1 : i < current ? 0.5 : 0.22} />
+                  <FadeText text={p.text} opacity={i === current ? 1 : i < current ? 0.42 : 0.2} />
                 </Pressable>
               ))}
-            </ScrollView>
+            </Animated.ScrollView>
           </FadeView>
 
           {/* The end: just "Amen." */}
@@ -279,7 +344,7 @@ export default function PlayerScreen() {
 function FadeText({ text, opacity }: { text: string; opacity: number }) {
   const value = useSharedValue(opacity);
   useEffect(() => {
-    value.value = withTiming(opacity, { duration: 600, easing: Easing.out(Easing.quad) });
+    value.set(withTiming(opacity, { duration: 1100, easing: Easing.inOut(Easing.cubic) }));
   }, [opacity, value]);
   const style = useAnimatedStyle(() => ({ opacity: value.value }));
   return (
@@ -306,7 +371,7 @@ function FadeView({
 }) {
   const value = useSharedValue(visible ? 1 : 0);
   useEffect(() => {
-    value.value = withTiming(visible ? 1 : 0, { duration: 700, easing: Easing.inOut(Easing.quad) });
+    value.set(withTiming(visible ? 1 : 0, { duration: 1200, easing: Easing.inOut(Easing.cubic) }));
   }, [visible, value]);
   const animated = useAnimatedStyle(() => ({ opacity: value.value, transform: [{ translateY: (1 - value.value) * 8 }] }));
   return (
