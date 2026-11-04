@@ -349,6 +349,11 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
                   placeholder={"One sentence per row; the player highlights one row at a time.\nLeave an empty row between paragraphs.\n\nLord, …"}
                 />
                 <p className="mt-2 text-xs text-muted">
+                  {toLines(form.scripts[tab]).some((l) => l.text.length > 2000) && (
+                    <span className="font-bold text-danger">
+                      A row is over 2000 characters: split it with “One sentence per row”.{" "}
+                    </span>
+                  )}
                   {toLines(form.scripts[tab]).filter((l, i) => i === 0 || l.p).length} paragraphs ·{" "}
                   {form.scripts[tab].split("\n").filter((l) => l.trim()).length} lines · about{" "}
                   {Math.round(form.scripts[tab].split(/\s+/).filter(Boolean).length / 130 * 10) / 10} min spoken. Changing the words
