@@ -37,6 +37,7 @@ import {
   type Mark,
 } from "@/lib/bibleMarks";
 import { reportError } from "@/lib/errorReporting";
+import { chapterOpened } from "@/lib/planActions";
 import { BookPicker } from "./BookPicker";
 
 // The Bible reader (SPEC §10.1), used by the Bible tab and by /bible/[book]/[chapter]. One long scroll: reaching the
@@ -118,7 +119,11 @@ export function BibleReader({ start, pointed, tab }: { start: Loc; pointed?: { f
   }, [loadOrigin]);
 
   useEffect(() => {
-    if (current) setLastRead({ osis: current.book.osis, book: current.book.name, chapter: current.chapter });
+    if (current) {
+      setLastRead({ osis: current.book.osis, book: current.book.name, chapter: current.chapter });
+      // Ticks the chapter in today's reading-plan reading, if it's part of it
+      chapterOpened(current.book.osis, current.chapter);
+    }
   }, [current]);
 
   const loadNext = () => {

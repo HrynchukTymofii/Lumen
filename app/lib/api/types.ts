@@ -121,7 +121,7 @@ export interface TrackVariant {
   minutes: 1 | 3 | 5;
   durationSec: number | null;
   url: string | null;
-  lines: { t: number | null; text: string }[];
+  lines: { t: number | null; text: string; p?: boolean }[]; // p: a new paragraph starts at this line
 }
 
 export interface Track {

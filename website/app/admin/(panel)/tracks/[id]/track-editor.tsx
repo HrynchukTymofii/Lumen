@@ -18,7 +18,7 @@ type Form = {
   isPremium: boolean;
   publishAt: string;
   order: number;
-  scripts: Record<number, string>; // minutes → one line per row
+  scripts: Record<number, string>; // minutes → one line per row, a blank row between paragraphs
 };
 
 const LENGTHS = [1, 3, 5] as const;
@@ -36,16 +36,52 @@ function toForm(t: Track): Form {
     isPremium: t.isPremium,
     publishAt: t.publishAt ? t.publishAt.slice(0, 16) : "",
     order: t.order,
-    scripts: Object.fromEntries(t.variants.map((v) => [v.minutes, v.lines.map((l) => l.text).join("\n")])),
+    scripts: Object.fromEntries(t.variants.map((v) => [v.minutes, toScript(v.lines)])),
   };
+}
+
+// The textarea: one line per row, a blank row where a paragraph starts
+function toScript(lines: Line[]) {
+  return lines.map((l, i) => (l.p && i > 0 ? `\n${l.text}` : l.text)).join("\n");
+}
+
+// Rows back into lines: a blank row (or several) starts a new paragraph
+function toLines(script: string) {
+  const lines: { text: string; p?: boolean }[] = [];
+  let paragraph = false;
+  for (const row of script.split("\n")) {
+    const text = row.trim();
+    if (!text) {
+      paragraph = true;
+      continue;
+    }
+    lines.push(paragraph && lines.length ? { text, p: true } : { text });
+    paragraph = false;
+  }
+  return lines;
+}
+
+// "One sentence per row": splits long rows at sentence ends, keeping the paragraphs
+function tidy(script: string) {
+  return script
+    .split(/\n\s*\n/)
+    .map((para) =>
+      para
+        .split("\n")
+        .flatMap((row) => row.match(/[^.!?…]+[.!?…]+["”’)]*|[^.!?…]+$/g) ?? [row])
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join("\n"),
+    )
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 // Rebuild variants from the textareas, keeping timings/audio for lines whose text didn't change.
 function toVariants(track: Track, scripts: Form["scripts"]): Variant[] {
   return LENGTHS.filter((m) => scripts[m] !== undefined).map((minutes) => {
     const old = track.variants.find((v) => v.minutes === minutes);
-    const texts = scripts[minutes].split("\n").map((l) => l.trim()).filter(Boolean);
-    const lines: Line[] = texts.map((text, i) => ({ text, t: old?.lines[i]?.text === text ? old.lines[i].t : null }));
+    const lines: Line[] = toLines(scripts[minutes]).map((l, i) => ({ ...l, t: old?.lines[i]?.text === l.text ? old.lines[i].t : null }));
     return { minutes, url: old?.url ?? null, durationSec: old?.durationSec ?? null, lines };
   });
 }
@@ -207,7 +243,7 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
 
       {live && (
         <p className="rounded-2xl bg-olive/40 px-4 py-3 text-sm">
-          This prayer is live. You can change details like title or premium, but to change the words, unpublish it first
+          This prayer is live. You can change details like title or premium, and split the text into rows and paragraphs, but to change the words, unpublish it first
           (the audio has to match the text).
         </p>
       )}
@@ -295,15 +331,25 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
             </div>
             {form.scripts[tab] !== undefined ? (
               <>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => set("scripts", { ...form.scripts, [tab]: tidy(form.scripts[tab]) })}
+                    className="rounded-full bg-bg px-3.5 py-1.5 text-sm font-bold hover:bg-line"
+                  >
+                    One sentence per row
+                  </button>
+                  <span className="text-xs text-muted">Leave an empty row to start a new paragraph.</span>
+                </div>
                 <textarea
                   value={form.scripts[tab]}
                   onChange={(e) => set("scripts", { ...form.scripts, [tab]: e.target.value })}
-                  readOnly={live}
-                  rows={14}
-                  className={`${inputClass} mt-4 font-serif text-base leading-relaxed`}
-                  placeholder={"One line per row. Each row is shown on its own in the player.\nLord, …"}
+                  rows={18}
+                  className={`${inputClass} mt-3 font-serif text-base leading-relaxed`}
+                  placeholder={"One sentence per row; the player highlights one row at a time.\nLeave an empty row between paragraphs.\n\nLord, …"}
                 />
                 <p className="mt-2 text-xs text-muted">
+                  {toLines(form.scripts[tab]).filter((l, i) => i === 0 || l.p).length} paragraphs ·{" "}
                   {form.scripts[tab].split("\n").filter((l) => l.trim()).length} lines · about{" "}
                   {Math.round(form.scripts[tab].split(/\s+/).filter(Boolean).length / 130 * 10) / 10} min spoken. Changing the words
                   removes the old audio and the review.

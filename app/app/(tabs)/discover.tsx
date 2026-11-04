@@ -109,6 +109,7 @@ export default function DiscoverScreen() {
             ))}
             {quick.length >= 2 && <ArtTile label="Quick prayers" onPress={() => list("quick")} art={<Scene name="golden" options={{ seed: 21, noBigTrees: true }} />} />}
             <ArtTile label="The Bible" onPress={() => router.navigate("/bible")} art={<Scene name="meadow" options={{ seed: 5 }} />} />
+            <ArtTile label="Reading plans" onPress={() => router.push("/plans")} art={<Scene name="golden" options={{ seed: 31, noBigTrees: true }} />} />
             {user?.aiEnabled && (
               <ArtTile
                 label="Ask the companion"

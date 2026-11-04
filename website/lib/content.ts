@@ -10,6 +10,9 @@ export const LENGTHS = [1, 3, 5] as const;
 export const lineSchema = z.object({
   t: z.number().min(0).nullable(), // seconds from start; null until audio exists
   text: z.string().min(1).max(400),
+  // A new paragraph starts at this line (a blank line in the admin editor). When no line has it, every line is its
+  // own paragraph, as before.
+  p: z.boolean().optional(),
 });
 
 export const variantSchema = z.object({
@@ -175,4 +178,13 @@ export async function getLibrary(unlocked: boolean) {
       days: p.days.filter((d) => isLive(d.track, now)).map((d) => ({ day: d.day, trackId: d.trackId })),
     })),
   };
+}
+
+/** A prayer's lines as paragraphs: lines flow together until one starts a new paragraph (p, set in the admin
+ *  editor). Prayers without paragraph marks keep one paragraph per line. Same as paragraphs() in app/lib/play.ts. */
+export function paragraphs(lines: { text: string; p?: boolean }[]) {
+  if (!lines.some((l) => l.p)) return lines.map((l) => l.text);
+  const out: string[] = [];
+  lines.forEach((l, i) => (l.p || i === 0 ? out.push(l.text) : (out[out.length - 1] += ` ${l.text}`)));
+  return out;
 }

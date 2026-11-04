@@ -12,7 +12,7 @@ import { cachedLibrary, getLibrary } from "@/lib/api/library";
 import type { Track } from "@/lib/api/types";
 import { track as trackEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/errorReporting";
-import { openPlayer } from "@/lib/play";
+import { openPlayer, paragraphs } from "@/lib/play";
 import { downloadKey, downloadsSupported, downloadTrack, removeDownload, toggleFavorite, useDownloads, useFavorites } from "@/lib/userLibrary";
 import { askToSignIn, hasAccount, openPaywall } from "@/lib/account";
 
@@ -126,9 +126,9 @@ export default function PrayerScreen() {
 
               {variant ? (
                 <View className="mt-5 gap-4">
-                  {variant.lines.map((l, i) => (
+                  {paragraphs(variant.lines).map((p, i) => (
                     <Text key={i} className="font-serif text-[17px] leading-7 text-ink">
-                      {l.text}
+                      {p}
                     </Text>
                   ))}
                 </View>
