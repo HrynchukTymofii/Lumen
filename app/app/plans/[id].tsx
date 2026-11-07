@@ -7,7 +7,7 @@ import { Scene } from "@/components/Scene";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { InkButton } from "@/components/ui/Button";
 import { beginPlan } from "@/lib/planActions";
-import { dayChapters, nextDay, planById, readingLabel, readingMinutes, usePlanProgress } from "@/lib/readingPlans";
+import { dayChapters, dayLabel, nextDay, planById, readingLabel, readingMinutes, seasonalChallenge, usePlanProgress } from "@/lib/readingPlans";
 
 // One reading plan before starting it: what it is, the first days' readings, a reminder time, "Start plan".
 
@@ -31,6 +31,9 @@ export default function PlanScreen() {
   const currentPlan = current ? planById(current.planId) : undefined;
   const currentDay = current && currentPlan ? nextDay(currentPlan, current) : null;
   const typical = dayChapters(plan, 0);
+  // A challenge starts on its feast's date (this year's or next year's)
+  const season = plan.challenge ? seasonalChallenge() : null;
+  const startsOn = season?.plan.id === plan.id ? season.startsOn : undefined;
 
   return (
     <View className="flex-1 bg-bg">
@@ -46,6 +49,7 @@ export default function PlanScreen() {
           </Text>
           <Text className="mt-1 font-sans text-[15px] text-muted">
             {plan.days} days · about {readingMinutes(plan, typical)} min a day
+            {startsOn ? ` · starts ${dayLabel(startsOn)}` : ""}
           </Text>
           <Text className="mt-4 font-sans text-base leading-6 text-ink">{plan.description}</Text>
 
@@ -66,16 +70,17 @@ export default function PlanScreen() {
 
           {currentPlan && currentPlan.id !== plan.id && (
             <Text className="mt-6 font-sans text-sm leading-5 text-muted">
-              This replaces {currentPlan.title.charAt(0).toLowerCase() + currentPlan.title.slice(1)}
-              {currentDay !== null ? `, where you’re on day ${currentDay + 1}` : ""}.
+              {plan.challenge && !currentPlan.challenge && currentDay !== null
+                ? `${currentPlan.title} waits for you and picks up at day ${currentDay + 1} after the challenge.`
+                : `This replaces ${currentPlan.title.charAt(0).toLowerCase() + currentPlan.title.slice(1)}${currentDay !== null ? `, where you’re on day ${currentDay + 1}` : ""}.`}
             </Text>
           )}
 
           <View className="mt-4">
             <InkButton
-              label={currentPlan?.id === plan.id ? "Continue this plan" : "Start plan"}
+              label={currentPlan?.id === plan.id ? "Continue" : plan.challenge ? "Join the challenge" : "Start plan"}
               onPress={() => {
-                if (currentPlan?.id !== plan.id) beginPlan(plan.id, reminder);
+                if (currentPlan?.id !== plan.id) beginPlan(plan.id, reminder, startsOn);
                 router.replace("/plans");
               }}
             />

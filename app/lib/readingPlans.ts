@@ -5,6 +5,9 @@ import { createLocalStore } from "./localStore";
 // Progress is kept on this phone for now (one plan at a time); reminders are scheduled on the phone too
 // (lib/notifications.ts schedulePlanReminders). Opening a chapter of today's reading in the Bible ticks it
 // (noteChapterRead, called by the reader); once every chapter is ticked, or "Mark as read" is tapped, the day is done.
+// Challenges are short plans for a feast (Christmas, Easter...): one chosen chapter a day, offered on Home a few weeks
+// before they start. Joining one sets the plan in progress aside; it picks up again when the challenge ends.
+// Finishing days back to back builds a reading streak ("3 days in a row"); missing a day only restarts the count.
 
 // The 66 books with their chapter counts, in order (OSIS ids as the Bible API uses them)
 const BOOKS: [osis: string, name: string, chapters: number][] = [
@@ -43,7 +46,93 @@ export type Plan = {
   perChapter: number;
   scene: string;
   chapters: () => Chapter[];
+  /** A challenge: its own reading for each day, and when it starts in a given year */
+  challenge?: { readings: [osis: string, chapter: number][]; starts: (year: number) => Date };
 };
+
+const ch = (osis: string, chapter: number): Chapter => ({ osis, book: BOOKS.find((b) => b[0] === osis)![1], chapter });
+
+// Western Easter Sunday (Anonymous Gregorian algorithm)
+function easter(year: number) {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100, d = Math.floor(b / 4), e = b % 4;
+  const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  return new Date(year, month - 1, ((h + l - 7 * m + 114) % 31) + 1);
+}
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+
+function challenge(c: Omit<Plan, "days" | "chapters" | "challenge"> & { readings: [string, number][]; starts: (year: number) => Date }): Plan {
+  const { readings, starts, ...rest } = c;
+  return { ...rest, days: readings.length, chapters: () => readings.map(([o, n]) => ch(o, n)), challenge: { readings, starts } };
+}
+
+export const CHALLENGES: Plan[] = [
+  challenge({
+    id: "new-year-7",
+    title: "A new year with God",
+    blurb: "Seven days to begin the year in Scripture",
+    description: "Start the year with one chapter a day: time, new beginnings and the hope of all things made new.",
+    perChapter: 4,
+    scene: "dawn",
+    readings: [["Ps", 90], ["Lam", 3], ["Isa", 43], ["Eccl", 3], ["Phil", 3], ["Ps", 1], ["Rev", 21]],
+    starts: (y) => new Date(y, 0, 1),
+  }),
+  challenge({
+    id: "holy-week-8",
+    title: "Holy Week: walk to Easter",
+    blurb: "Palm Sunday to Easter morning, a chapter a day",
+    description: "Follow Jesus through his last week, from the entry into Jerusalem to the empty tomb, one chapter a day.",
+    perChapter: 4,
+    scene: "golden",
+    readings: [["Luke", 19], ["Mark", 11], ["Matt", 26], ["John", 13], ["John", 17], ["John", 19], ["Isa", 53], ["John", 20]],
+    starts: (y) => addDays(easter(y), -7),
+  }),
+  challenge({
+    id: "pentecost-7",
+    title: "Seven days to Pentecost",
+    blurb: "The promise of the Holy Spirit, day by day",
+    description: "A week of readings on the Spirit, ending on Pentecost Sunday with the coming of the Spirit in Acts 2.",
+    perChapter: 4,
+    scene: "sky",
+    readings: [["John", 14], ["John", 16], ["Acts", 1], ["Ezek", 37], ["Joel", 2], ["Rom", 8], ["Acts", 2]],
+    starts: (y) => addDays(easter(y), 43),
+  }),
+  challenge({
+    id: "christmas-10",
+    title: "Countdown to Christmas",
+    blurb: "Ten days of the Christmas story, one chapter a day",
+    description: "From Isaiah’s promises to the shepherds in Bethlehem: ten short readings that end on Christmas Eve.",
+    perChapter: 4,
+    scene: "night",
+    readings: [["Isa", 7], ["Isa", 9], ["Isa", 11], ["Isa", 40], ["Mic", 5], ["Matt", 1], ["Luke", 1], ["Ps", 98], ["John", 1], ["Luke", 2]],
+    starts: (y) => new Date(y, 11, 15),
+  }),
+];
+
+const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** Days before its start that a challenge is offered */
+const OFFER_DAYS = 28;
+
+/**
+ * The challenge to offer now: one starting within four weeks or still running, the soonest first.
+ * `startsOn` is "YYYY-MM-DD"; `started` is whether that day has come.
+ */
+export function seasonalChallenge(now = new Date()) {
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const options = CHALLENGES.flatMap((plan) =>
+    [now.getFullYear(), now.getFullYear() + 1].map((year) => ({ plan, start: plan.challenge!.starts(year) })),
+  )
+    .filter(({ plan, start }) => addDays(start, plan.days) > todayStart && addDays(start, -OFFER_DAYS) <= todayStart)
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+  const next = options[0];
+  return next ? { plan: next.plan, startsOn: dateKey(next.start), started: next.start <= todayStart } : null;
+}
+
+/** "Mon, Dec 15" */
+export const dayLabel = (key: string) =>
+  new Date(`${key}T00:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 
 export const PLANS: Plan[] = [
   {
@@ -98,11 +187,12 @@ export const PLANS: Plan[] = [
   },
 ];
 
-export const planById = (id: string) => PLANS.find((p) => p.id === id);
+export const planById = (id: string) => PLANS.find((p) => p.id === id) ?? CHALLENGES.find((p) => p.id === id);
 
 /** The chapters of one day (0-based), the plan's chapters shared evenly across its days */
 export function dayChapters(plan: Plan, day: number): Chapter[] {
   const all = plan.chapters();
+  if (plan.challenge) return all.slice(day, day + 1);
   return all.slice(Math.floor((day * all.length) / plan.days), Math.floor(((day + 1) * all.length) / plan.days));
 }
 
@@ -130,6 +220,8 @@ export type PlanProgress = {
   read: string[]; // chapters opened of the day being read ("Gen.34")
   reminder: string | null; // "HH:MM"
   lastDoneOn: string | null; // YYYY-MM-DD the last day was finished, so the reminder skips that day
+  streak?: number; // days finished back to back, ending on lastDoneOn
+  paused?: PlanProgress | null; // a challenge: the plan set aside while it runs, picked up again after
 };
 
 const store = createLocalStore<PlanProgress | null>("reading-plan", null);
@@ -137,10 +229,7 @@ export const usePlanProgress = store.use;
 export const planProgress = store.get;
 export const planReady = store.ready;
 
-export const today = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+export const today = () => dateKey(new Date());
 
 /** The day to read next (0-based), or null once the plan is finished */
 export function nextDay(plan: Plan, progress: PlanProgress) {
@@ -148,12 +237,43 @@ export function nextDay(plan: Plan, progress: PlanProgress) {
   return null;
 }
 
-export function startPlan(planId: string, reminder: string | null) {
-  store.set({ planId, startedAt: today(), done: [], read: [], reminder, lastDoneOn: null });
+/** Days read in a row (0 once a day was missed) */
+export function readingStreak(p: PlanProgress) {
+  if (!p.lastDoneOn || !p.streak) return 0;
+  return p.lastDoneOn === today() || p.lastDoneOn === yesterday() ? p.streak : 0;
 }
 
+const yesterday = () => {
+  const d = new Date();
+  return dateKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1));
+};
+
+/** `startsOn`: a challenge's first day ("YYYY-MM-DD"), when it's still ahead */
+export function startPlan(planId: string, reminder: string | null, startsOn?: string) {
+  const current = store.get();
+  const plan = planById(planId);
+  // A challenge sets the plan in progress aside (not another challenge, and not a finished plan)
+  const currentPlan = current && planById(current.planId);
+  const keep = plan?.challenge && current && currentPlan && !currentPlan.challenge && nextDay(currentPlan, current) !== null;
+  const start = startsOn && startsOn > today() ? startsOn : today();
+  store.set({
+    planId,
+    startedAt: start,
+    done: [],
+    read: [],
+    reminder,
+    // The reading streak carries over to the next plan
+    streak: current?.streak,
+    lastDoneOn: current?.lastDoneOn ?? null,
+    // Switching between challenges keeps the plan already set aside
+    paused: !plan?.challenge ? null : keep ? { ...current, paused: null } : (current?.paused ?? null),
+  });
+}
+
+/** Stops the plan; after a challenge, the plan it set aside comes back */
 export function stopPlan() {
-  store.set(null);
+  const p = store.get();
+  store.set(p?.paused ? { ...p.paused, streak: p.streak, lastDoneOn: p.lastDoneOn ?? p.paused.lastDoneOn } : null);
 }
 
 export function setPlanReminder(reminder: string | null) {
@@ -164,7 +284,8 @@ export function setPlanReminder(reminder: string | null) {
 export function finishDay(day: number) {
   const p = store.get();
   if (!p || p.done.includes(day)) return false;
-  store.set({ ...p, done: [...p.done, day].sort((a, b) => a - b), read: [], lastDoneOn: today() });
+  const streak = p.lastDoneOn === today() ? (p.streak ?? 1) : p.lastDoneOn === yesterday() ? (p.streak ?? 0) + 1 : 1;
+  store.set({ ...p, done: [...p.done, day].sort((a, b) => a - b), read: [], lastDoneOn: today(), streak });
   return true;
 }
 

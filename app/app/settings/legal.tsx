@@ -20,7 +20,7 @@ export default function LegalSettings() {
         <MenuRow label="Copyright Info" onPress={() => setShowCopyright((s) => !s)} />
         {showCopyright && (
           <Text className="mx-5 font-sans text-sm leading-6 text-muted">
-            Scripture quotations are from the World English Bible, the King James Version and the Douay-Rheims Bible, all in the public domain. Prayers,
+            Scripture quotations are from the World English Bible, the King James Version, the Berean Standard Bible and the Douay-Rheims Bible, all in the public domain. Prayers,
             recordings and artwork © Holy Hush.
           </Text>
         )}
