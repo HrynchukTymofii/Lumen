@@ -1,16 +1,26 @@
 "use client";
 
-import { useEffect } from "react";
-import { CheckIcon } from "@/components/kit";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { ArrowIcon, CheckIcon } from "@/components/kit";
 import { track } from "@/lib/analytics/client";
-import { FREE_FEATURES, PREMIUM_FEATURES, plansFor, priceLine } from "@/lib/plans";
-import { StoreButtons } from "./store-buttons";
+import { CHECKOUT } from "@/lib/checkout";
+import { plansFor, type PlanId } from "@/lib/plans";
+import { SITE } from "@/lib/site";
+import { PaywallArt } from "./paywall-art";
+import { StoreSheet } from "./store-sheet";
 import { usePrices } from "./use-prices";
 
 // Paywall used by the funnel and by /app/upgrade (SPEC §8.4). There is no web checkout: Premium is bought in the
-// App Store / Google Play, so this shows the plans and sends people to the app, where they sign in with the same
-// email and subscribe. Variant A: Free vs Premium first. Variant B: the three steps first.
+// App Store / Google Play, so picking a plan here only chooses what the button says; the button opens the store,
+// where they sign in with the same email and subscribe. What the button does is switchable (lib/checkout.ts): a
+// drawer explaining that, or a checkout mock-up page. Kept short on purpose: three reasons, two plans, one button.
 // No countdowns, no fake discounts; "continue free" is always visible.
+// `variant` is still recorded for analytics, but both variants now show the same paywall.
+const REASONS = ["Your full 7-day prayer path", "A personal prayer every day, with audio", "Unlimited companion chat"];
+
+const noop = () => () => {};
+
 export function Paywall({
   variant,
   name,
@@ -25,87 +35,102 @@ export function Paywall({
   onFree: () => void;
 }) {
   const prices = usePrices();
-  const PLANS = plansFor(prices);
-  const intro = PLANS.yearly.intro;
+  const plans = plansFor(prices);
+  const [plan, setPlan] = useState<PlanId>("yearly");
+  const [sheet, setSheet] = useState(false);
+  const closeSheet = useCallback(() => setSheet(false), []);
+  const router = useRouter();
   useEffect(() => {
     track("paywall_viewed", { variant, placement });
   }, [variant, placement]);
 
-  const compare = (
-    <div className="pw-compare">
-      <div>
-        <b>Free, forever</b>
-        <ul>
-          {FREE_FEATURES.map((f) => (
-            <li key={f}>{f}</li>
-          ))}
-        </ul>
-      </div>
-      <div className="bg-butter">
-        <b>Premium</b>
-        <ul>
-          {PREMIUM_FEATURES.map((f) => (
-            <li key={f}>
-              <CheckIcon size={13} />
-              {f}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+  // Android visitors go to Google Play when it has a link, everyone else to the App Store
+  const android = useSyncExternalStore(
+    noop,
+    () => /android/i.test(navigator.userAgent),
+    () => false,
   );
-  const steps = (
-    <ol className="pw-timeline">
-      <li>
-        <b>Get the app</b>Free to download
-      </li>
-      <li>
-        <b>Sign in</b>
-        {email ? `With ${email}: your answers and prayer path are already there` : "Your prayer path is saved to your account"}
-      </li>
-      <li>
-        <b>Choose Premium</b>
-        {intro ? `${intro} for your first month, then ${PLANS.yearly.price} a year` : `${PLANS.yearly.price} a year`}
-      </li>
-    </ol>
-  );
+  const store =
+    android && SITE.stores.googlePlay
+      ? { id: "play_store", href: SITE.stores.googlePlay, name: "Google Play" }
+      : { id: "app_store", href: SITE.stores.appStore, name: "App Store" };
+  const chosen = plans[plan];
+  const today = chosen.intro ?? chosen.price;
 
   return (
     <div className="pw">
-      <h2>{name ? `${name}, your 7-day prayer path is ready` : "Your 7-day prayer path is ready"}</h2>
-      <p className="sub">
-        Open it in the app. {intro ? `Start Premium for ${intro} for the first month` : "Start Premium"}, or keep the free plan.
-      </p>
+      <PaywallArt />
+      <h2>{name ? `${name}, keep your path going` : "Keep your path going"}</h2>
 
-      {variant === "A" ? compare : steps}
+      <ul className="pw-reasons">
+        {REASONS.map((r) => (
+          <li key={r}>
+            <CheckIcon size={14} />
+            {r}
+          </li>
+        ))}
+      </ul>
 
-      <div className="pw-plans">
-        {Object.values(PLANS).map((p) => (
-          <div key={p.id} className="pw-plan">
+      <div className="pw-plans" role="radiogroup" aria-label="Plan">
+        {Object.values(plans).map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            role="radio"
+            aria-checked={plan === p.id}
+            className={`pw-plan ${plan === p.id ? "on" : ""}`}
+            onClick={() => {
+              setPlan(p.id);
+              track("plan_selected", { product_id: p.id });
+            }}
+          >
+            <i className="radio" aria-hidden />
             <span className="what">
               <b>{p.label}</b>
-              <small>{p.note}</small>
+              <small>{p.intro ? `${p.intro} for the first month` : p.note}</small>
             </span>
             <span className="amt">
               {p.price}
               <small>/{p.period}</small>
             </span>
-            {p.intro && <span className="badge">First month {p.intro}</span>}
-          </div>
+            {p.intro && <span className="badge">Best value</span>}
+          </button>
         ))}
       </div>
 
-      <StoreButtons placement={placement === "funnel" ? "funnel_paywall" : "web_upgrade"} />
+      <button
+        type="button"
+        className="btn-ink full pw-cta"
+        onClick={() => {
+          const where = placement === "funnel" ? "funnel_paywall" : "web_upgrade";
+          track("app_download_clicked", { placement: `${where}:${CHECKOUT.storeSheet ? "sheet_opened" : "checkout"}:${plan}` });
+          if (CHECKOUT.storeSheet) setSheet(true);
+          else router.push(`/checkout?plan=${plan}`);
+        }}
+      >
+        Start for {today}
+        <span className="dot">
+          <ArrowIcon />
+        </span>
+      </button>
       <p className="fine pw-renew">
-        {email ? `Sign in with ${email} and subscribe in the app. ` : "Subscribe in the app. "}
-        {priceLine(prices)}
+        {email ? `Subscribe in the app with ${email}. ` : "Subscribe in the app. "}
+        Renews automatically, cancel anytime.
       </p>
-
-      {variant === "B" && compare}
 
       <button type="button" className="pw-free" onClick={onFree}>
         Continue with the free plan
       </button>
+
+      {sheet && (
+        <StoreSheet
+          plan={{ label: chosen.label, today, price: chosen.price, period: chosen.period, intro: Boolean(chosen.intro) }}
+          email={email}
+          store={store}
+          placement={placement === "funnel" ? "funnel_paywall" : "web_upgrade"}
+          onClose={closeSheet}
+        />
+      )}
     </div>
   );
 }

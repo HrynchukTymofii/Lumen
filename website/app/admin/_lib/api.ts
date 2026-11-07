@@ -26,7 +26,8 @@ export async function api<T>(path: string, init?: { method?: string; body?: unkn
 }
 
 export const SCENES = ["dawn", "golden", "lake", "meadow", "dusk", "evening", "night", "sky"] as const;
-export const CATEGORIES = ["morning", "evening", "peace", "psalms", "grief", "family", "sleep"] as const;
+// "funnel": the first prayer on the website quiz (tags = the struggles it fits). Never shown in the library.
+export const CATEGORIES = ["morning", "evening", "peace", "psalms", "grief", "family", "sleep", "funnel"] as const;
 
 export type Status = "draft" | "review" | "published" | "archived";
 export type Line = { t: number | null; text: string; p?: boolean }; // p: a new paragraph starts here

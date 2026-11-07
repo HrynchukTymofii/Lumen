@@ -34,7 +34,7 @@ export function planOf(productId: string): { label: string } | null {
 }
 
 export const FREE_FEATURES = [
-  "Full Bible: WEB, KJV, Douay-Rheims",
+  "Full Bible: WEB, KJV, BSB, Douay-Rheims",
   "Verse of the day",
   "One daily prayer",
   "Companion: 3 messages a day",

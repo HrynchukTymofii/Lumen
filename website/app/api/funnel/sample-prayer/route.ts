@@ -4,7 +4,7 @@ import { z } from "zod";
 import { HttpError } from "@/lib/admin-auth";
 import { handle, readJson } from "@/lib/api";
 import { answersSchema } from "@/funnels/answers";
-import { DENOMINATIONS, STRUGGLES, labelOf } from "@/funnels/options";
+import { CARRYING_SINCE, DENOMINATIONS, STRUGGLES, labelOf } from "@/funnels/options";
 import { fallbackPrayer } from "@/funnels/plan";
 import { versesFor } from "@/funnels/verses";
 
@@ -54,6 +54,7 @@ export const POST = handle(async (req: NextRequest) => {
   const allowed = versesFor(answers.struggles);
   const user = [
     `Carrying: ${(answers.struggles ?? []).map((s) => labelOf(STRUGGLES, s)).join(", ") || "not said"}`,
+    `Carrying it for: ${labelOf(CARRYING_SINCE, answers.carryingSince) || "not said"}`,
     `How heavy (1–5): ${answers.burden ?? "not said"}`,
     `Tradition: ${labelOf(DENOMINATIONS, answers.denomination) || "not said"}`,
     `First name: ${answers.firstName || "not given (don't use a name)"}`,

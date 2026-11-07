@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { handle, readJson } from "@/lib/api";
 import { emailSignInCode } from "@/lib/auth/email-code";
-import { LINK_TTL_MS, hashToken, loginResponse, newLinkToken, normalizeEmail } from "@/lib/auth/users";
+import { LINK_TTL_MS, hashToken, loginResponse, newLinkToken, normalizeEmail, remindersFor } from "@/lib/auth/users";
 import { sendWelcomeEmail } from "@/lib/email";
 import type { AiComfort, Denomination } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -44,6 +44,8 @@ export const POST = handle(async (req: NextRequest) => {
     prayerFrequency: a.prayerFrequency ?? null,
     obstacles: a.obstacles ?? [],
     prayerTime: a.prayerTime ?? null,
+    // The phone reminds them at the time of day they picked
+    ...remindersFor(a.prayerTime),
     aiComfort: (a.aiComfort as AiComfort | undefined) ?? null,
     sensitiveConsentAt: new Date(),
     marketingOptIn: input.marketingOptIn,

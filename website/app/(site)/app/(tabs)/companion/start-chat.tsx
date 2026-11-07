@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createConversation } from "./chat-api";
 
-const QUICK_PROMPTS = ["Pray for me", "Explain this verse", "I'm struggling with…", "Give me a verse for…", "Help me forgive"];
-
-/** "New conversation" and the quick prompts; a prompt is put in the chat's input box, ready to finish or send. */
-export function StartChat() {
+/**
+ * "New conversation" and the suggestions for what this person is carrying (funnels/companion-topics.ts, the same as
+ * the phone app); a suggestion is put in the chat's input box, ready to finish or send.
+ */
+export function StartChat({ prompts }: { prompts: string[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +34,7 @@ export function StartChat() {
         </span>
       </button>
       <div className="wa-chips">
-        {QUICK_PROMPTS.map((p) => (
+        {prompts.map((p) => (
           <button key={p} type="button" className="wa-chip" onClick={() => start(p)} disabled={busy}>
             {p}
           </button>

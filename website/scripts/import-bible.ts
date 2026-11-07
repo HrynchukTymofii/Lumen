@@ -1,7 +1,7 @@
-// Loads the Bible into Postgres (SPEC §2.4, §6.8): World English Bible, King James and Douay-Rheims, all public
-// domain. Downloads the sources, maps them to our 73 books, replaces each translation's verses, rebuilds the
+// Loads the Bible into Postgres (SPEC §2.4, §6.8): World English Bible, King James, Douay-Rheims and Berean
+// Standard Bible, all public domain. Downloads the sources, maps them to our 73 books, replaces each translation's verses, rebuilds the
 // keyword index (search.verse_text) and the topic map. Safe to run again.
-//   npm run bible:import                 all three
+//   npm run bible:import                 all four
 //   npm run bible:import -- --only KJV   one translation
 import "dotenv/config";
 import { unzipSync, strFromU8 } from "fflate";
@@ -20,6 +20,8 @@ const SOURCES: Record<Translation, string> = {
   // scrollmapper/bible_databases: { books: [{ name, chapters: [{ chapter, verses: [{ verse, text }] }] }] }
   KJV: "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/KJV.json",
   DRA: "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/DRC.json",
+  // eBible.org, same "vpl" format as the WEB; public domain since 2023, 66 books (no deuterocanon)
+  BSB: "https://ebible.org/Scriptures/engbsb_vpl.zip",
 };
 
 const clean = (text: string) =>
@@ -34,10 +36,10 @@ async function download(url: string) {
   return new Uint8Array(await res.arrayBuffer());
 }
 
-async function loadWeb(): Promise<Verse[]> {
-  const files = unzipSync(await download(SOURCES.WEB));
+async function loadVpl(url: string): Promise<Verse[]> {
+  const files = unzipSync(await download(url));
   const name = Object.keys(files).find((f) => f.endsWith("_vpl.txt"));
-  if (!name) throw new Error("WEB zip has no *_vpl.txt");
+  if (!name) throw new Error(`${url} has no *_vpl.txt`);
   const byCode = new Map(BOOKS.map((b) => [b.web, b]));
   const verses: Verse[] = [];
   for (const line of strFromU8(files[name]).split(/\r?\n/)) {
@@ -67,7 +69,8 @@ async function loadScroll(url: string): Promise<Verse[]> {
 
 async function importTranslation(translation: Translation) {
   const started = Date.now();
-  const verses = translation === "WEB" ? await loadWeb() : await loadScroll(SOURCES[translation]);
+  const url = SOURCES[translation];
+  const verses = url.endsWith("_vpl.zip") ? await loadVpl(url) : await loadScroll(url);
   // A source occasionally repeats a verse number; keep the first
   const unique = [...new Map(verses.map((v) => [`${v.bookId}:${v.chapter}:${v.verse}`, v])).values()];
 

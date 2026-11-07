@@ -279,7 +279,14 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
                   ))}
                 </select>
               </Field>
-              <Field label="Tags" hint="Comma separated">
+              <Field
+                label="Tags"
+                hint={
+                  form.category === "funnel"
+                    ? "Which website-quiz answers it plays for: anxiety, grief, family, work, health, loneliness, doubt, guilt, gratitude"
+                    : "Comma separated"
+                }
+              >
                 <input value={form.tags} onChange={(e) => set("tags", e.target.value)} className={inputClass} />
               </Field>
               <Field label="Scripture" hint="e.g. Phil.4.6-7, Ps.23.1">

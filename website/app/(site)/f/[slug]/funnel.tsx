@@ -6,18 +6,22 @@ import { ArrowIcon, BookIcon, CheckIcon, Light, Scene } from "@/components/kit";
 import { identify, track } from "@/lib/analytics/client";
 import { SITE } from "@/lib/site";
 import { funnels } from "@/funnels";
-import { buildPlan } from "@/funnels/plan";
+import { buildPlan, topicOf } from "@/funnels/plan";
 import type { Answers, Option, Step } from "@/funnels/types";
 import type { Citation } from "@/funnels/verses";
+import { clock, phrases, type Line } from "@/lib/phrases";
 import { Paywall } from "../../_components/paywall";
 import { prefetchPrices } from "../../_components/use-prices";
 import { PostError, post } from "../../_components/post";
+import { SocialSignIn } from "../../app/login/social-sign-in";
 
 // The quiz funnel state machine (SPEC §8.2): one question per screen, answers kept in sessionStorage
 // so a refresh resumes, analytics on every step. Faith answers never go to analytics, only "hidden".
 
 type Saved = { index: number; answers: Answers; startedAt?: number; signedUp?: boolean; email?: string };
 type Prayer = { title: string; text: string; citations: Citation[]; source?: string };
+/** Client ids for Sign in with Google / Apple (lib/auth/web-sign-in.ts); null hides that button */
+type SignInConfig = { google: string | null; apple: string | null };
 
 const UTM_KEYS = ["source", "medium", "campaign", "content", "term"] as const;
 
@@ -58,7 +62,7 @@ const vibrate = () => {
   } catch {}
 };
 
-export function Funnel({ slug }: { slug: string }) {
+export function Funnel({ slug, signIn }: { slug: string; signIn: SignInConfig }) {
   const config = funnels[slug];
   const key = `pc_funnel_${slug}`;
   // Client-only component (see funnel-loader.tsx), so sessionStorage can be read while initialising
@@ -100,7 +104,8 @@ export function Funnel({ slug }: { slug: string }) {
     go(1, patch);
   }
 
-  const canGoBack = state.index > 0 && step.type !== "paywall" && !(step.type === "email" && state.signedUp);
+  // Once the email is in, the quiz is saved: no walking back into it from the prayer
+  const canGoBack = state.index > 0 && step.type !== "paywall" && !((step.type === "email" || step.type === "prayer") && state.signedUp);
 
   return (
     <div className="fn-shell">
@@ -119,6 +124,7 @@ export function Funnel({ slug }: { slug: string }) {
         <StepView
           step={step}
           slug={slug}
+          signIn={signIn}
           answers={state.answers}
           onStart={() => {
             track("quiz_started", { funnel_slug: slug });
@@ -144,6 +150,7 @@ export function Funnel({ slug }: { slug: string }) {
 type StepProps = {
   step: Step;
   slug: string;
+  signIn: SignInConfig;
   answers: Answers;
   onStart: () => void;
   onAnswer: (step: Step, value: string | string[] | number, patch: Partial<Answers>) => void;
@@ -153,7 +160,7 @@ type StepProps = {
   onSignedUp: (email: string) => void;
 };
 
-function StepView({ step, slug, answers, email, onStart, onAnswer, onNext, onLoaded, onSignedUp }: StepProps) {
+function StepView({ step, slug, signIn, answers, email, onStart, onAnswer, onNext, onLoaded, onSignedUp }: StepProps) {
   switch (step.type) {
     case "landing":
       return (
@@ -169,7 +176,7 @@ function StepView({ step, slug, answers, email, onStart, onAnswer, onNext, onLoa
                 <ArrowIcon />
               </span>
             </button>
-            <p className="fine center">2 minutes · The Bible, daily verse and a daily prayer are free forever.</p>
+            <p className="fine center">About 3 minutes · The Bible, daily verse and a daily prayer are free forever.</p>
           </div>
         </div>
       );
@@ -192,7 +199,7 @@ function StepView({ step, slug, answers, email, onStart, onAnswer, onNext, onLoa
       );
 
     case "multi":
-      return <MultiStep step={step} value={(answers[step.answerKey] as string[] | undefined) ?? []} onDone={(v) => onAnswer(step, v, { [step.answerKey]: v })} />;
+      return <MultiStep step={step} answers={answers} onDone={(v) => onAnswer(step, v, { [step.answerKey]: v })} />;
 
     case "scale":
       return (
@@ -233,14 +240,29 @@ function StepView({ step, slug, answers, email, onStart, onAnswer, onNext, onLoa
         </div>
       );
 
+    case "insight": {
+      const title = step.named && answers.firstName ? `${answers.firstName}, ${step.title[0].toLowerCase()}${step.title.slice(1)}` : step.title;
+      return <InsightCard scene={step.scene} title={title} body={step.body} verse={step.verse} onNext={() => onNext()} />;
+    }
+
+    case "obstacle-insight": {
+      // The prototype's rule: "I don't know what to say" wins when picked, else the first obstacle picked
+      const picked = (answers.obstacles ?? []).filter((o) => step.insights[o]);
+      const [title, body] = step.insights[picked.includes(step.prefer) ? step.prefer : (picked[0] ?? step.prefer)];
+      return <InsightCard scene={step.scene} title={title} body={body} onNext={() => onNext()} />;
+    }
+
     case "loading":
       return <LoadingStep step={step} answers={answers} onDone={onLoaded} />;
 
-    case "plan":
-      return <PlanStep slug={slug} answers={answers} onNext={() => onNext()} />;
+    case "prayer":
+      return <PrayerStep slug={slug} answers={answers} onNext={() => onNext()} />;
+
+    case "path":
+      return <PathStep slug={slug} answers={answers} onNext={() => onNext()} />;
 
     case "email":
-      return <EmailStep slug={slug} answers={answers} onDone={onSignedUp} />;
+      return <EmailStep slug={slug} signIn={signIn} answers={answers} onDone={onSignedUp} />;
 
     case "paywall":
       return (
@@ -283,6 +305,26 @@ function OptionButton({ option, index, selected, onClick, multi }: { option: Opt
   );
 }
 
+function InsightCard({ scene, title, body, verse, onNext }: { scene: string; title: string; body: string; verse?: Citation; onNext: () => void }) {
+  return (
+    <div className="fn-fact fn-insight">
+      <Scene name={scene} />
+      <div className="fn-card">
+        <Light size={56} />
+        <h2>{title}</h2>
+        <p>{body}</p>
+        {verse && (
+          <blockquote className="fn-verse">
+            {verse.text}
+            <cite>{verse.ref}</cite>
+          </blockquote>
+        )}
+        <ContinueButton onClick={onNext} />
+      </div>
+    </div>
+  );
+}
+
 function ContinueButton({ onClick, disabled, label = "Continue" }: { onClick: () => void; disabled?: boolean; label?: string }) {
   return (
     <div className="fn-sticky">
@@ -296,15 +338,29 @@ function ContinueButton({ onClick, disabled, label = "Continue" }: { onClick: ()
   );
 }
 
-function MultiStep({ step, value, onDone }: { step: Extract<Step, { type: "multi" }>; value: string[]; onDone: (v: string[]) => void }) {
-  const [picked, setPicked] = useState(value);
-  const max = step.maxSelect ?? step.options.length;
+function MultiStep({ step, answers, onDone }: { step: Extract<Step, { type: "multi" }>; answers: Answers; onDone: (v: string[]) => void }) {
+  const earlier = step.follows ? answers[step.follows.answerKey] : undefined;
+  const variant = step.follows && typeof earlier === "string" ? step.follows.variants[earlier] : undefined;
+  const title = variant?.title ?? step.title;
+  const subtitle = variant ? variant.subtitle : step.subtitle;
+  const options = [...step.options, ...(variant?.extra ?? [])];
+  const exclusive = new Set(options.filter((o) => o.exclusive).map((o) => o.value));
+  // Only what's on screen counts (an earlier pick may belong to options this wording doesn't offer)
+  const [picked, setPicked] = useState(() =>
+    ((answers[step.answerKey] as string[] | undefined) ?? []).filter((v) => options.some((o) => o.value === v)),
+  );
+  const max = step.maxSelect ?? options.length;
   const toggle = (v: string) =>
-    setPicked((p) => (p.includes(v) ? p.filter((x) => x !== v) : p.length >= max ? [...p.slice(1), v] : [...p, v]));
+    setPicked((p) => {
+      if (p.includes(v)) return p.filter((x) => x !== v);
+      if (exclusive.has(v)) return [v];
+      const rest = p.filter((x) => !exclusive.has(x));
+      return rest.length >= max ? [...rest.slice(1), v] : [...rest, v];
+    });
   return (
-    <Question title={step.title} subtitle={step.subtitle}>
+    <Question title={title} subtitle={subtitle}>
       <div className="fn-options">
-        {step.options.map((o, i) => (
+        {options.map((o, i) => (
           <OptionButton key={o.value} option={o} index={i} multi selected={picked.includes(o.value)} onClick={() => toggle(o.value)} />
         ))}
       </div>
@@ -432,6 +488,288 @@ function LoadingStep({ step, answers, onDone }: { step: Extract<Step, { type: "l
   );
 }
 
+// The written prayer (AI, with a template fallback): only used while no recording fits (see firstPrayer)
+const prayerRequests = new Map<string, Promise<Prayer>>();
+function requestPrayer(slug: string, answers: Answers): Promise<Prayer> {
+  const saved = load<Prayer>(`pc_prayer_${slug}`);
+  if (saved) return Promise.resolve(saved);
+  let request = prayerRequests.get(slug);
+  if (!request) {
+    const started = performance.now();
+    request = post<Prayer>("/api/funnel/sample-prayer", { answers })
+      .then((p) => {
+        save(`pc_prayer_${slug}`, p);
+        track("sample_prayer_generated", { latency_ms: Math.round(performance.now() - started) });
+        return p;
+      })
+      .catch(() => {
+        prayerRequests.delete(slug);
+        return { title: "Your prayer", text: "We couldn't write your prayer just now. It will be waiting in your account.", citations: [] };
+      });
+    prayerRequests.set(slug, request);
+  }
+  return request;
+}
+
+// The first prayer is a recording from the admin library (category "funnel", tagged with the struggles it fits;
+// one of several is picked at random). Until a recording fits, the written prayer stands in. Asked for on the
+// email step, so it's usually ready when the prayer screen opens.
+type Recording = { slug: string; title: string; scene: string; imageUrl: string | null; url: string; durationSec: number | null; lines: Line[] };
+type FirstPrayer = { recording: Recording } | { prayer: Prayer };
+const firstRequests = new Map<string, Promise<FirstPrayer>>();
+function firstPrayer(slug: string, answers: Answers): Promise<FirstPrayer> {
+  let request = firstRequests.get(slug);
+  if (!request) {
+    request = fetch(`/api/funnel/recording?s=${encodeURIComponent((answers.struggles ?? []).join(","))}`)
+      .then((r) => (r.ok ? (r.json() as Promise<{ recording: Recording | null }>) : { recording: null }))
+      .catch(() => ({ recording: null }))
+      .then(({ recording }) => (recording ? { recording } : requestPrayer(slug, answers).then((prayer) => ({ prayer }))));
+    firstRequests.set(slug, request);
+  }
+  return request;
+}
+
+function PrayerStep({ slug, answers, onNext }: { slug: string; answers: Answers; onNext: () => void }) {
+  const [first, setFirst] = useState<FirstPrayer | null>(null);
+  useEffect(() => {
+    let live = true;
+    firstPrayer(slug, answers).then((f) => live && setFirst(f));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per visit
+  }, []);
+
+  return (
+    <div className="fn-plan">
+      <h2>{answers.firstName ? `${answers.firstName}, here is your first prayer` : "Here is your first prayer"}</h2>
+      <p className="sub">
+        A prayer for {topicOf(answers)}.{first && "recording" in first && " Press play and listen."}
+      </p>
+      {!first ? (
+        <div className="fn-prayer">
+          <div className="skeleton" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </div>
+        </div>
+      ) : "recording" in first ? (
+        <RecordedPrayer slug={slug} recording={first.recording} />
+      ) : (
+        <WrittenPrayer prayer={first.prayer} />
+      )}
+      <ContinueButton onClick={onNext} label="See my 7-day path" disabled={!first} />
+    </div>
+  );
+}
+
+function WrittenPrayer({ prayer }: { prayer: Prayer }) {
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <div className="fn-prayer">
+      <div className="who">
+        <Light size={40} />
+        <span>
+          {prayer.title}
+          <small>Written for what you&apos;re carrying</small>
+        </span>
+      </div>
+      <div className="text">
+        {prayer.text.split(/\n{2,}/).map((p, i) => (
+          <p key={i}>{p}</p>
+        ))}
+      </div>
+      <div className="chips">
+        {prayer.citations.map((c) => (
+          <button key={c.ref} type="button" className="vchip" aria-expanded={open === c.ref} onClick={() => setOpen(open === c.ref ? null : c.ref)}>
+            <BookIcon />
+            {c.ref}
+          </button>
+        ))}
+      </div>
+      {prayer.citations.map(
+        (c) =>
+          open === c.ref && (
+            <p key={c.ref} className="verse-pop">
+              {c.text}
+              <small>{c.ref} · World English Bible</small>
+            </p>
+          ),
+      )}
+    </div>
+  );
+}
+
+// The app's guided player on the web (app/app/player/[slug].tsx): the picture and the Light on top, and below it the
+// whole prayer as text that follows the audio. The phrase being spoken is bright, the ones around it fade back, the
+// text scrolls with it (unless it was just scrolled by hand), and a phrase can be tapped to play from there.
+// At the end the text gives way to "Amen."
+const SKIP = 15;
+const HAND_SCROLL_MS = 5000;
+
+function SkipIcon({ forward }: { forward?: boolean }) {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <g transform={forward ? "matrix(-1 0 0 1 24 0)" : undefined}>
+        <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" />
+        <path d="M4.5 4.2v3.6h3.6" />
+      </g>
+      <text x="12" y="15" fontSize="7" textAnchor="middle" fill="currentColor" stroke="none" fontWeight="600">
+        15
+      </text>
+    </svg>
+  );
+}
+
+function RecordedPrayer({ slug, recording }: { slug: string; recording: Recording }) {
+  const audio = useRef<HTMLAudioElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const handAt = useRef(0);
+  const started = useRef(false);
+  const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(recording.durationSec ?? 0);
+  const [playing, setPlaying] = useState(false);
+  const [finished, setFinished] = useState(false);
+
+  const list = useMemo(() => phrases(recording.lines, duration), [recording.lines, duration]);
+  // The phrase being spoken: the last one that has started
+  let current = 0;
+  for (let i = 0; i < list.length; i++) if (list[i].start <= time + 0.2) current = i;
+
+  // Follow the voice, unless the text was just scrolled by hand
+  useEffect(() => {
+    if (Date.now() - handAt.current < HAND_SCROLL_MS) return;
+    const box = scroller.current;
+    const el = box?.children[current] as HTMLElement | undefined;
+    if (box && el) box.scrollTo({ top: Math.max(0, el.offsetTop - 48), behavior: "smooth" });
+  }, [current]);
+
+  // Starts on its own like the app when the browser allows it; otherwise the play button does. Stops on leaving.
+  useEffect(() => {
+    const a = audio.current;
+    a?.play().catch(() => {});
+    return () => a?.pause();
+  }, []);
+
+  const seek = (t: number) => {
+    const a = audio.current;
+    if (!a) return;
+    a.currentTime = Math.min(Math.max(0, t), duration || t);
+    setTime(a.currentTime);
+    setFinished(false);
+  };
+  const toggle = () => {
+    const a = audio.current;
+    if (!a) return;
+    if (!a.paused) return a.pause();
+    if (finished) {
+      handAt.current = 0;
+      seek(0);
+    }
+    a.play().catch(() => {});
+  };
+  const hand = () => (handAt.current = Date.now());
+  const pct = duration ? Math.min(100, (time / duration) * 100) : 0;
+
+  return (
+    <div className="fn-rec">
+      <audio
+        ref={audio}
+        src={recording.url}
+        preload="auto"
+        onPlay={() => {
+          setPlaying(true);
+          if (started.current) return;
+          started.current = true;
+          track("prayer_audio_played", { prayer_type: "funnel", prayer_slug: recording.slug });
+        }}
+        onPause={() => setPlaying(false)}
+        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
+        onEnded={() => {
+          setPlaying(false);
+          setFinished(true);
+          track("prayer_audio_finished", { prayer_type: "funnel", prayer_slug: recording.slug });
+        }}
+      />
+      <div className="top">
+        {recording.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- a cover on R2, any size
+          <img src={recording.imageUrl} alt="" />
+        ) : (
+          <Scene name={recording.scene} seed={slug.length} />
+        )}
+        <Light size={96} state={playing ? "speaking" : "idle"} />
+      </div>
+
+      <div className="sheet">
+        <span className="title">{recording.title}</span>
+        <div className="words">
+          <div className={`scroll ${finished ? "gone" : ""}`} ref={scroller} onWheel={hand} onTouchMove={hand}>
+            {list.map((p, i) => (
+              <button
+                key={i}
+                type="button"
+                title="Play from here"
+                className={`ph ${p.paragraph && i > 0 ? "para" : ""} ${i === current ? "now" : i < current ? "said" : ""}`}
+                onClick={() => {
+                  handAt.current = 0;
+                  seek(p.start);
+                  audio.current?.play().catch(() => {});
+                }}
+              >
+                {p.text}
+              </button>
+            ))}
+          </div>
+          <div className={`amen ${finished ? "on" : ""}`} aria-hidden={!finished}>
+            Amen.
+          </div>
+        </div>
+
+        <div className="controls">
+          <input
+            type="range"
+            className="bar"
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={Math.min(time, duration || 0)}
+            onChange={(e) => seek(Number(e.target.value))}
+            aria-label="Position in the prayer"
+            style={{ "--p": `${pct}%` } as React.CSSProperties}
+          />
+          <div className="times">
+            <span>{clock(time)}</span>
+            <span>{clock(duration)}</span>
+          </div>
+          <div className="row">
+            <button type="button" aria-label="Back 15 seconds" onClick={() => seek(time - SKIP)}>
+              <SkipIcon />
+            </button>
+            <button type="button" className="play" aria-label={playing ? "Pause" : "Play"} onClick={toggle}>
+              {playing ? (
+                <svg width="22" height="22" viewBox="0 0 16 16" aria-hidden>
+                  <rect x="3" y="2" width="3.5" height="12" rx="1" fill="currentColor" />
+                  <rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="currentColor" />
+                </svg>
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 16 16" aria-hidden style={{ marginLeft: 2 }}>
+                  <path d="M4 2.5v11a1 1 0 0 0 1.5.86l9-5.5a1 1 0 0 0 0-1.72l-9-5.5A1 1 0 0 0 4 2.5Z" fill="currentColor" />
+                </svg>
+              )}
+            </button>
+            <button type="button" aria-label="Forward 15 seconds" onClick={() => seek(time + SKIP)}>
+              <SkipIcon forward />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // The 7-day path reads like a week, not a numbered list: real day names from today, and a small scene per day that
 // moves from sunrise to night over the week.
 const WEEK_SCENES = ["dawn", "sky", "meadow", "lake", "golden", "dusk", "evening"];
@@ -442,85 +780,35 @@ function dayLabel(i: number) {
   d.setDate(d.getDate() + i);
   return d.toLocaleDateString("en-US", { weekday: "long" });
 }
+const REMIND: Record<string, string> = {
+  morning: "We'll remind you in the morning.",
+  evening: "We'll remind you in the evening.",
+  both: "We'll remind you in the morning and evening.",
+};
 
-function PlanStep({ slug, answers, onNext }: { slug: string; answers: Answers; onNext: () => void }) {
+function PathStep({ slug, answers, onNext }: { slug: string; answers: Answers; onNext: () => void }) {
   const plan = useMemo(() => buildPlan(answers), [answers]);
-  const [prayer, setPrayer] = useState<Prayer | null>(() => load<Prayer>(`pc_prayer_${slug}`));
-  const [open, setOpen] = useState<string | null>(null);
-
-  useEffect(() => {
-    track("plan_viewed", { funnel_slug: slug });
-    if (prayer) return;
-    const started = performance.now();
-    post<Prayer>("/api/funnel/sample-prayer", { answers })
-      .then((p) => {
-        setPrayer(p);
-        save(`pc_prayer_${slug}`, p);
-        track("sample_prayer_generated", { latency_ms: Math.round(performance.now() - started) });
-      })
-      .catch(() => setPrayer({ title: "Your prayer", text: "We couldn't write your prayer just now. It will be waiting in your account.", citations: [] }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once per visit
-  }, []);
+  useEffect(() => track("plan_viewed", { funnel_slug: slug }), [slug]);
 
   return (
     <div className="fn-plan">
-      <h2>{answers.firstName ? `${answers.firstName}, here's your first prayer` : "Here's your first prayer"}</h2>
-      <div className="fn-prayer">
-        <div className="who">
-          <Light size={40} state={prayer ? "idle" : "speaking"} />
-          <span>
-            {prayer?.title ?? "Writing your prayer…"}
-            <small>Written for what you&apos;re carrying</small>
-          </span>
-        </div>
-        {prayer ? (
-          <>
-            <div className="text">
-              {prayer.text.split(/\n{2,}/).map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </div>
-            <div className="chips">
-              {prayer.citations.map((c) => (
-                <button key={c.ref} type="button" className="vchip" aria-expanded={open === c.ref} onClick={() => setOpen(open === c.ref ? null : c.ref)}>
-                  <BookIcon />
-                  {c.ref}
-                </button>
-              ))}
-            </div>
-            {prayer.citations.map(
-              (c) =>
-                open === c.ref && (
-                  <p key={c.ref} className="verse-pop">
-                    {c.text}
-                    <small>{c.ref} · World English Bible</small>
-                  </p>
-                ),
-            )}
-          </>
-        ) : (
-          <div className="skeleton" aria-hidden>
-            <i />
-            <i />
-            <i />
-          </div>
-        )}
-      </div>
-
-      <h3>Your 7-day prayer path</h3>
+      <h2>{answers.firstName ? `${answers.firstName}, your 7-day prayer path is ready` : "Your 7-day prayer path is ready"}</h2>
+      <p className="sub">
+        Built around {topicOf(answers)}. A few minutes a day. {REMIND[answers.prayerTime ?? ""] ?? "We'll remind you at the time you pick."}
+      </p>
       <ol className="fn-days">
         {plan.map((d, i) => (
           <li key={d.day} className={i === 0 ? "today" : undefined}>
             <Scene name={WEEK_SCENES[i % WEEK_SCENES.length]} seed={i} noBigTrees className="thumb" />
             <span>
               <em>{dayLabel(i)}</em>
-              <b>{d.title}</b>
-              <small>{d.focus}</small>
+              <b>{i === 0 ? "Your first prayer" : d.title}</b>
+              <small>{i === 0 ? "The prayer written for you" : d.focus}</small>
             </span>
           </li>
         ))}
       </ol>
-      <ContinueButton onClick={onNext} label="Save my path" />
+      <ContinueButton onClick={onNext} />
     </div>
   );
 }
@@ -592,13 +880,36 @@ function WelcomeBack({ email, onSignedIn }: { email: string; onSignedIn: (userId
   );
 }
 
-function EmailStep({ slug, answers, onDone }: { slug: string; answers: Answers; onDone: (email: string) => void }) {
+// Saves the quiz to the signed-in account (Google/Apple here, or a sign-in before the quiz) with the funnel's
+// attribution, as the email route does for a new email
+async function saveToAccount(slug: string, answers: Answers, marketingOptIn: boolean) {
+  await post("/api/me/onboarding", {
+    answers,
+    sensitiveConsent: true,
+    funnelSlug: slug,
+    paywallVariant: paywallVariant(),
+    marketingOptIn,
+    utm: load("pc_utm") ?? undefined,
+  });
+}
+
+function EmailStep({ slug, signIn, answers, onDone }: { slug: string; signIn: SignInConfig; answers: Answers; onDone: (email: string) => void }) {
+  // Already signed in (sent here by the web app, ?account=1): we have the email, only consent is asked
+  const [account, setAccount] = useState<{ id: string; email: string } | null | undefined>(undefined);
+  useEffect(() => {
+    fetch("/api/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((me: { user: { id: string; email: string } } | null) => setAccount(me?.user ?? null))
+      .catch(() => setAccount(null));
+  }, []);
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [marketing, setMarketing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exists, setExists] = useState(false);
+  // Find the first prayer now, so it's ready right after this step
+  useEffect(() => void firstPrayer(slug, answers), [slug, answers]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -625,11 +936,88 @@ function EmailStep({ slug, answers, onDone }: { slug: string; answers: Answers; 
     }
   }
 
+  // Google / Apple: the account exists now (new or not), so the answers go to it
+  async function socialSignedIn(reply: { user: { id: string; email?: string }; isNew: boolean }) {
+    setBusy(true);
+    setError(null);
+    try {
+      identify(reply.user.id, { funnel_slug: slug, paywall_variant: paywallVariant() });
+      await saveToAccount(slug, answers, marketing);
+      track("email_submitted", { funnel_slug: slug });
+      onDone(reply.user.email ?? "");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setBusy(false);
+    }
+  }
+
+  async function continueSignedIn(e: React.FormEvent) {
+    e.preventDefault();
+    if (!account) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await saveToAccount(slug, answers, marketing);
+      identify(account.id, { funnel_slug: slug, paywall_variant: paywallVariant() });
+      track("email_submitted", { funnel_slug: slug });
+      onDone(account.email);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setBusy(false);
+    }
+  }
+
   if (exists) return <WelcomeBack email={email.trim()} onSignedIn={(id) => (identify(id), onDone(email.trim()))} />;
+  if (account === undefined) return <div className="fn-shell" aria-busy />;
+
+  const consentBoxes = (
+    <>
+      <label className="fn-check">
+        <input type="checkbox" required checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+        <span>
+          I agree that {SITE.name} stores my answers, including about my faith and what I&apos;m going through, to personalise my
+          prayers. See the{" "}
+          <Link href="/privacy" target="_blank">
+            Privacy Policy
+          </Link>
+          .
+        </span>
+      </label>
+      <label className="fn-check">
+        <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} />
+        <span>Send me occasional prayers and news by email (optional).</span>
+      </label>
+    </>
+  );
+
+  if (account) {
+    return (
+      <Question title="Save your prayer path" subtitle={`You're signed in as ${account.email}. Your answers will be kept with your account.`}>
+        <form onSubmit={continueSignedIn} className="fn-email">
+          {consentBoxes}
+          {error && <p className="fn-error">{error}</p>}
+          <div className="fn-sticky">
+            <button type="submit" className="btn-ink full" disabled={busy || !consent}>
+              {busy ? "Saving…" : "Continue"}
+              <span className="dot">
+                <ArrowIcon />
+              </span>
+            </button>
+          </div>
+        </form>
+      </Question>
+    );
+  }
 
   return (
     <Question title="Where should we send your prayer path?" subtitle="Your account keeps your path, your prayers and your answers. No password needed.">
       <form onSubmit={submit} className="fn-email">
+        {consentBoxes}
+        {/* Google / Apple work once consent is ticked, like the email button */}
+        <div className={`fn-social ${consent ? "" : "off"}`} aria-disabled={!consent}>
+          <SocialSignIn google={signIn.google} apple={signIn.apple} onSignedIn={socialSignedIn} onError={setError} />
+          {!consent && <p className="fine center">Tick the first box to continue with Google or Apple.</p>}
+        </div>
         <input
           className="fn-input"
           type="email"
@@ -639,21 +1027,6 @@ function EmailStep({ slug, answers, onDone }: { slug: string; answers: Answers; 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <label className="fn-check">
-          <input type="checkbox" required checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-          <span>
-            I agree that {SITE.name} stores my answers, including about my faith and what I&apos;m going through, to personalise my
-            prayers. See the{" "}
-            <Link href="/privacy" target="_blank">
-              Privacy Policy
-            </Link>
-            .
-          </span>
-        </label>
-        <label className="fn-check">
-          <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)} />
-          <span>Send me occasional prayers and news by email (optional).</span>
-        </label>
         {error && <p className="fn-error">{error}</p>}
         <div className="fn-sticky">
           <button type="submit" className="btn-ink full" disabled={busy || !consent}>

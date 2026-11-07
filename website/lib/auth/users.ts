@@ -54,6 +54,23 @@ export async function findOrCreateUser(input: {
   return { user, isNew: true };
 }
 
+// Reminder times for the quiz's "When would you like to pray?" (website/funnels/options.ts PRAYER_TIME), so the
+// phone reminds people when they said they pray. Local time; the app's settings change them later.
+export const MORNING_REMINDER = "07:30";
+export const EVENING_REMINDER = "21:00";
+export function remindersFor(prayerTime: string | null | undefined) {
+  if (!prayerTime) return null;
+  return {
+    reminderTime: prayerTime === "evening" ? null : MORNING_REMINDER,
+    eveningReminderTime: prayerTime === "morning" ? null : EVENING_REMINDER,
+  };
+}
+
+/** Whether the account has answered the quiz (the web funnel or the app's), so the web app can send it there first */
+export function isOnboarded(user: Pick<User, "sensitiveConsentAt" | "aiComfort" | "prayerFrequency" | "prayerTime" | "funnelSlug">) {
+  return Boolean(user.sensitiveConsentAt || user.aiComfort || user.prayerFrequency || user.prayerTime || user.funnelSlug);
+}
+
 export function publicUser(user: User) {
   return {
     id: user.id,
@@ -65,6 +82,7 @@ export function publicUser(user: User) {
     weeklyGoal: user.weeklyGoal,
     streakHidden: user.streakHidden,
     reminderTime: user.reminderTime,
+    eveningReminderTime: user.eveningReminderTime,
     remindersEnabled: user.remindersEnabled,
     // What they're carrying (quiz, stored only with consent): the app tailors the companion's suggestions to it
     struggles: user.struggles,

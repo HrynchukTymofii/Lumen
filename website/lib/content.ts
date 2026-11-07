@@ -4,7 +4,8 @@ import type { AudioTrack, PrayerPath, PrayerPathDay } from "@/lib/generated/pris
 
 // Scenes are drawn by the app (code), so only these keys render; anything else falls back to "dawn".
 export const SCENES = ["dawn", "golden", "lake", "meadow", "dusk", "evening", "night", "sky"] as const;
-export const CATEGORIES = ["morning", "evening", "peace", "psalms", "grief", "family", "sleep"] as const;
+// "funnel": the first prayer on the website quiz (tags = the struggles it fits). Never shown in the library.
+export const CATEGORIES = ["morning", "evening", "peace", "psalms", "grief", "family", "sleep", "funnel"] as const;
 export const LENGTHS = [1, 3, 5] as const;
 
 export const MAX_LINE = 2000;
@@ -155,7 +156,7 @@ export async function getLibrary(unlocked: boolean) {
   const now = new Date();
   const [tracks, paths, version] = await Promise.all([
     prisma.audioTrack.findMany({
-      where: { status: "published", OR: [{ publishAt: null }, { publishAt: { lte: now } }] },
+      where: { status: "published", category: { not: "funnel" }, OR: [{ publishAt: null }, { publishAt: { lte: now } }] },
       orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     }),
     prisma.prayerPath.findMany({

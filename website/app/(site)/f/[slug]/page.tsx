@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Wordmark } from "@/components/kit";
+import { webSignInConfig } from "@/lib/auth/web-sign-in";
 import { SITE } from "@/lib/site";
 import { funnels } from "@/funnels";
+import { AccountLink } from "./account-link";
 import { FunnelLoader } from "./funnel-loader";
 import "../../_components/flow.css";
 
@@ -23,6 +25,7 @@ export default function FunnelPage({ params }: PageProps<"/f/[slug]">) {
           <Link href="/" className="brand" aria-label={`${SITE.name} home`}>
             <Wordmark />
           </Link>
+          <AccountLink />
         </header>
         <Suspense fallback={<div className="fn-shell" aria-busy />}>
           <FunnelFor params={params} />
@@ -35,5 +38,6 @@ export default function FunnelPage({ params }: PageProps<"/f/[slug]">) {
 async function FunnelFor({ params }: Pick<PageProps<"/f/[slug]">, "params">) {
   const { slug } = await params;
   if (!funnels[slug]) notFound();
-  return <FunnelLoader slug={slug} />;
+  // Sign in with Google / Apple at the email step (public client ids, lib/auth/web-sign-in.ts)
+  return <FunnelLoader slug={slug} signIn={webSignInConfig()} />;
 }

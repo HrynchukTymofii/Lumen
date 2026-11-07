@@ -44,12 +44,13 @@ const patch = z
   .object({
     firstName: z.string().trim().max(40).nullable(),
     denomination: z.enum(["catholic", "protestant", "orthodox", "not_sure", "exploring"]).nullable(),
-    translation: z.enum(["WEB", "KJV", "DRA"]),
+    translation: z.enum(["WEB", "KJV", "DRA", "BSB"]),
     aiEnabled: z.boolean(),
     weeklyGoal: z.number().int().min(3).max(7),
     streakHidden: z.boolean(),
-    // "07:30", local time; the phone schedules the reminder
+    // "07:30", local time; the phone schedules the reminders (morning and evening)
     reminderTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
+    eveningReminderTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable(),
     remindersEnabled: z.boolean(),
     timezone: z.string().max(60).refine(validTimezone, "Unknown timezone"),
   })

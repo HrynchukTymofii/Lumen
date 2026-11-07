@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowIcon } from "@/components/kit";
 import { identify, track } from "@/lib/analytics/client";
+import { ONBOARDING_URL } from "@/funnels";
 import { post } from "../../_components/post";
 import { SocialSignIn } from "./social-sign-in";
 
@@ -22,9 +23,11 @@ export function LoginForm({ google, apple }: { google: string | null; apple: str
   const [error, setError] = useState<string | null>(null);
   const exchanged = useRef(false);
 
+  // A brand-new account answers the quiz first (no email step: we have it). The web app also sends any account
+  // without answers there, so an older one that skipped the quiz lands in the same place.
   function signedIn(reply: LoginReply) {
     identify(reply.user.id);
-    window.location.href = target;
+    window.location.href = reply.isNew ? ONBOARDING_URL : target;
   }
 
   // Emailed link: sign in without typing anything
