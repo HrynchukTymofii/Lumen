@@ -9,17 +9,32 @@ import { InkButton } from "@/components/ui/Button";
 import { CheckIcon, ChevronIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { completeDay, endPlan, refreshPlanReminders } from "@/lib/planActions";
-import { dayChapters, isChapterRead, nextDay, PLANS, planById, readingMinutes, setPlanReminder, usePlanProgress } from "@/lib/readingPlans";
+import {
+  dayChapters,
+  dayLabel,
+  isChapterRead,
+  nextDay,
+  PLANS,
+  planById,
+  readingMinutes,
+  readingStreak,
+  seasonalChallenge,
+  setPlanReminder,
+  today,
+  usePlanProgress,
+} from "@/lib/readingPlans";
 import { reportError } from "@/lib/errorReporting";
 
 // Reading plans: today's reading of the plan in progress (chapters to open, "Mark as read", the reminder),
-// then every plan to choose from. Reached from Home, Discover and the daily reading reminder.
+// the feast challenge coming up (lib/readingPlans.ts CHALLENGES), then every plan to choose from. Reached from Home, Discover and the daily reading reminder.
 
 export default function PlansScreen() {
   const insets = useSafeAreaInsets();
   const progress = usePlanProgress();
   const plan = progress ? planById(progress.planId) : undefined;
   const others = PLANS.filter((p) => p.id !== plan?.id);
+  const seasonal = seasonalChallenge();
+  const offer = seasonal && seasonal.plan.id !== plan?.id ? seasonal : null;
 
   return (
     <View className="flex-1 bg-bg">
@@ -38,6 +53,21 @@ export default function PlansScreen() {
               the plan simply waits for you.
             </Text>
           </View>
+        )}
+
+        {offer && (
+          <>
+            <Text className="mx-4 mt-8 font-display text-[22px] text-ink" style={{ letterSpacing: -0.6 }}>
+              Challenge
+            </Text>
+            <View className="mt-2 px-4">
+              <PlanRow
+                plan={offer.plan}
+                note={`${offer.plan.days} days · ${offer.started ? "started" : "starts"} ${dayLabel(offer.startsOn)}`}
+                onPress={() => router.push({ pathname: "/plans/[id]", params: { id: offer.plan.id } })}
+              />
+            </View>
+          </>
         )}
 
         <Text className="mx-4 mt-8 font-display text-[22px] text-ink" style={{ letterSpacing: -0.6 }}>
@@ -61,6 +91,9 @@ function Current() {
   const [error, setError] = useState<string | null>(null);
   const [stopping, setStopping] = useState(false);
   const day = nextDay(plan, progress);
+  const pausedPlan = progress.paused ? planById(progress.paused.planId) : undefined;
+  const streak = readingStreak(progress);
+  const notYet = progress.startedAt > today();
 
   if (day === null) {
     return (
@@ -73,7 +106,9 @@ function Current() {
           {plan.days} days of reading. Well done, and thank God for every one of them.
         </Text>
         <Pressable onPress={endPlan} accessibilityRole="button" className="mt-5 rounded-full bg-on-pastel px-5 py-3 active:opacity-80">
-          <Text className="font-sans-semibold text-[15px] text-gold">Choose another plan</Text>
+          <Text className="font-sans-semibold text-[15px] text-gold">
+            {pausedPlan ? `Back to ${pausedPlan.title.charAt(0).toLowerCase() + pausedPlan.title.slice(1)}` : "Choose another plan"}
+          </Text>
         </Pressable>
       </View>
     );
@@ -98,6 +133,17 @@ function Current() {
         <View className="mt-3">
           <Progress value={progress.done.length / plan.days} />
         </View>
+        {(streak > 1 || notYet || pausedPlan) && (
+          <Text className="mt-3 font-sans text-sm leading-5 text-muted">
+            {[
+              notYet && `Starts ${dayLabel(progress.startedAt)}. You can read ahead.`,
+              streak > 1 && `${streak} days in a row.`,
+              pausedPlan && `${pausedPlan.title} picks up after this.`,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          </Text>
+        )}
 
         <Text className="mt-5 font-sans text-sm text-muted">Today’s reading · about {readingMinutes(plan, chapters)} min</Text>
         <View className="mt-2 overflow-hidden rounded-2xl bg-bg">
@@ -150,7 +196,7 @@ function Current() {
         {stopping ? (
           <View className="flex-row gap-4">
             <Pressable onPress={endPlan} accessibilityRole="button" hitSlop={8}>
-              <Text className="font-sans-semibold text-[15px] text-danger">Yes, stop this plan</Text>
+              <Text className="font-sans-semibold text-[15px] text-danger">{plan.challenge ? "Yes, leave it" : "Yes, stop this plan"}</Text>
             </Pressable>
             <Pressable onPress={() => setStopping(false)} accessibilityRole="button" hitSlop={8}>
               <Text className="font-sans text-[15px] text-muted">Keep going</Text>
@@ -158,7 +204,7 @@ function Current() {
           </View>
         ) : (
           <Pressable onPress={() => setStopping(true)} accessibilityRole="button" hitSlop={8}>
-            <Text className="font-sans text-[15px] text-muted">Stop this plan</Text>
+            <Text className="font-sans text-[15px] text-muted">{plan.challenge ? "Leave this challenge" : "Stop this plan"}</Text>
           </Pressable>
         )}
       </View>

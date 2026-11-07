@@ -32,7 +32,8 @@ export async function refreshPlanReminders() {
   await schedulePlanReminders({
     time: p.reminder,
     doneToday: p.lastDoneOn === today(),
-    title: "Time for today’s Bible reading",
+    from: p.startedAt > today() ? p.startedAt : undefined,
+    title: plan.challenge ? `${plan.title}, day ${day + 1}` : "Time for today’s Bible reading",
     body: `${plan.title}, day ${day + 1}: ${readingLabel(chapters)} (about ${readingMinutes(plan, chapters)} min)`,
   });
 }
@@ -45,8 +46,9 @@ function dayFinished(day: number) {
   refreshPlanReminders().catch(reportError);
 }
 
-export function beginPlan(planId: string, reminder: string | null) {
-  startPlan(planId, reminder);
+/** `startsOn`: a challenge's first day ("YYYY-MM-DD"); reminders wait for it */
+export function beginPlan(planId: string, reminder: string | null, startsOn?: string) {
+  startPlan(planId, reminder, startsOn);
   track("reading_plan_started", { plan_id: planId, reminder: Boolean(reminder) });
   refreshPlanReminders().catch(reportError);
 }

@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, Text, 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomShade } from "@/components/ArtTile";
 import { Light } from "@/components/Light";
+import { DEFAULT_EVENING_REMINDER, DEFAULT_REMINDER, formatTime } from "@/components/SettingsParts";
 import { StreakWeek } from "@/components/StreakWeek";
 import { SectionTitle, Shelf } from "@/components/TrackCard";
 import { TrackArt } from "@/components/TrackArt";
@@ -16,14 +17,14 @@ import { createConversation } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
 import { cachedLibrary, getLibrary, getTrending } from "@/lib/api/library";
 import { applyGrace, getToday, markPrayed } from "@/lib/api/today";
-import type { Library, Streak, Today, Track } from "@/lib/api/types";
+import type { Library, Streak, Today, Track, User } from "@/lib/api/types";
 import { track as trackEvent } from "@/lib/analytics";
 import { companionTopic, type CompanionTopic } from "@/lib/companionTopics";
 import { refreshPlanReminders } from "@/lib/planActions";
-import { dayChapters, nextDay, planById, readingLabel, readingMinutes, usePlanProgress } from "@/lib/readingPlans";
+import { dayChapters, dayLabel, nextDay, planById, readingLabel, readingMinutes, readingStreak, seasonalChallenge, usePlanProgress } from "@/lib/readingPlans";
 import { APP_NAME } from "@/lib/config";
 import { reportError } from "@/lib/errorReporting";
-import { requestPermission, scheduleReminders } from "@/lib/notifications";
+import { hasPermission, requestPermission, scheduleReminders } from "@/lib/notifications";
 import { categoryTitle, openTrack, playTrack, shareApp, trackMinutes } from "@/lib/play";
 import { pick, useRecent } from "@/lib/userLibrary";
 
@@ -32,7 +33,6 @@ import { pick, useRecent } from "@/lib/userLibrary";
 // through" with the companion, today's written prayer, then shelves of prayers.
 // Loading it also re-schedules the daily reminders (lib/notifications.ts).
 
-const DEFAULT_REMINDER = "07:30";
 
 // Which categories lead, by time of day
 function categoryOrder(hour: number) {
@@ -104,8 +104,20 @@ export default function HomeScreen() {
   const prayedToday = today?.streak?.prayedToday;
   useEffect(() => {
     if (!user || prayedToday === undefined) return;
-    scheduleReminders({ time: user.reminderTime, enabled: user.remindersEnabled, prayedToday, name: user.firstName }).catch(reportError);
+    scheduleReminders({
+      morning: user.reminderTime,
+      evening: user.eveningReminderTime ?? null,
+      enabled: user.remindersEnabled,
+      prayedToday,
+      name: user.firstName,
+    }).catch(reportError);
   }, [user, prayedToday]);
+
+  // Reminders set on the website quiz still need the phone's permission before any can come
+  const [canNotify, setCanNotify] = useState<boolean | null>(null);
+  useEffect(() => {
+    hasPermission().then(setCanNotify, () => setCanNotify(false));
+  }, [user]);
 
   const setStreak = (streak: Streak) => setToday((t) => (t ? { ...t, streak } : t));
 
@@ -134,12 +146,18 @@ export default function HomeScreen() {
     }
   };
 
-  const turnOnReminders = async () => {
+  // "Morning", "Evening" or "Both" on the reminder card; null keeps the times already set (from the quiz)
+  const turnOnReminders = async (when: "morning" | "evening" | "both" | null) => {
     if (!(await requestPermission())) {
       setError(`Notifications are off for ${APP_NAME}. You can allow them in your phone’s settings.`);
       return;
     }
-    updateProfile({ reminderTime: DEFAULT_REMINDER, remindersEnabled: true }).catch((err) => setError(errorMessage(err)));
+    setCanNotify(true);
+    const times =
+      when === null
+        ? {}
+        : { reminderTime: when === "evening" ? null : DEFAULT_REMINDER, eveningReminderTime: when === "morning" ? null : DEFAULT_EVENING_REMINDER };
+    updateProfile({ ...times, remindersEnabled: true }).catch((err) => setError(errorMessage(err)));
   };
 
   const hour = new Date().getHours();
@@ -313,8 +331,9 @@ export default function HomeScreen() {
         )}
       </Pressable>
 
-      {/* Today's Bible reading, or an invitation to start a plan */}
+      {/* Today's Bible reading, or an invitation to start a plan; then the feast challenge coming up */}
       <ReadingCard />
+      <ChallengeCard />
 
       {/* The companion, one tap away */}
       {(!user || user.aiEnabled) && <TalkCard topic={companionTopic(user)} />}
@@ -359,16 +378,8 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {user && !user.reminderTime && (
-        <View className="mx-4 mt-4 rounded-[28px] bg-card p-5">
-          <Text className="font-display text-[20px] leading-7 text-ink">Want a gentle daily reminder?</Text>
-          <Text className="mt-1 font-sans text-[15px] leading-6 text-muted">
-            One a day at {DEFAULT_REMINDER}, skipped once you’ve prayed. Change the time from the bell at the top.
-          </Text>
-          <Pressable onPress={turnOnReminders} accessibilityRole="button" className="mt-3 self-start rounded-full bg-ink px-5 py-2.5 active:opacity-80">
-            <Text className="font-sans-semibold text-sm text-bg">Remind me</Text>
-          </Pressable>
-        </View>
+      {user && (!hasReminders(user) || (canNotify === false && user.remindersEnabled)) && (
+        <ReminderCard user={user} onTurnOn={turnOnReminders} />
       )}
 
       {/* Pray anytime: tall picture cards with the title over the art */}
@@ -405,6 +416,77 @@ export default function HomeScreen() {
         </View>
       </View>
     </ScrollView>
+  );
+}
+
+// A short challenge before a feast (Christmas, Holy Week...), offered from four weeks before it starts
+function ChallengeCard() {
+  const progress = usePlanProgress();
+  const season = seasonalChallenge();
+  if (!season || progress?.planId === season.plan.id) return null;
+  const { plan, startsOn, started } = season;
+  return (
+    <Pressable
+      onPress={() => router.push({ pathname: "/plans/[id]", params: { id: plan.id } })}
+      accessibilityRole="button"
+      className="mx-4 mt-4 overflow-hidden rounded-[28px] bg-butter p-5 active:opacity-90"
+    >
+      <Text className="font-sans text-sm text-on-pastel/70">
+        Challenge · {started ? "started" : "starts"} {dayLabel(startsOn)}
+      </Text>
+      <Text className="mt-1.5 font-display text-[22px] text-on-pastel" style={{ lineHeight: 27, letterSpacing: -0.5 }}>
+        {plan.title}
+      </Text>
+      <Text className="mt-1 font-sans text-sm leading-5 text-on-pastel/80">
+        {plan.days} days, one chapter a day, about {plan.perChapter} min. {plan.blurb}.
+      </Text>
+      <View className="mt-4 flex-row gap-1.5">
+        {Array.from({ length: plan.days }, (_, i) => (
+          <View key={i} className="h-2 flex-1 rounded-full bg-on-pastel/15" />
+        ))}
+      </View>
+      <View className="mt-4 self-start rounded-full bg-on-pastel px-5 py-2.5">
+        <Text className="font-sans-semibold text-sm text-butter">Join the challenge</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+const hasReminders = (u: User) => Boolean(u.reminderTime || u.eveningReminderTime);
+
+// Asks for reminders: morning, evening or both. When the website quiz already set the times, it only asks for the
+// phone's permission so they can actually come.
+function ReminderCard({ user, onTurnOn }: { user: User; onTurnOn: (when: "morning" | "evening" | "both" | null) => void }) {
+  const set = hasReminders(user);
+  const times = [user.reminderTime, user.eveningReminderTime].filter((t): t is string => Boolean(t)).map(formatTime);
+  return (
+    <View className="mx-4 mt-4 rounded-[28px] bg-card p-5">
+      <Text className="font-display text-[20px] leading-7 text-ink">{set ? "Allow your prayer reminders" : "When would you like a reminder?"}</Text>
+      <Text className="mt-1 font-sans text-[15px] leading-6 text-muted">
+        {set
+          ? `You asked to be reminded at ${times.join(" and ")}. Allow notifications so they can come.`
+          : `A gentle nudge in the morning (${formatTime(DEFAULT_REMINDER)}), the evening (${formatTime(DEFAULT_EVENING_REMINDER)}) or both. Change the times from the bell.`}
+      </Text>
+      <View className="mt-3 flex-row flex-wrap gap-2">
+        {set ? (
+          <ReminderChoice label="Allow notifications" strong onPress={() => onTurnOn(null)} />
+        ) : (
+          <>
+            <ReminderChoice label="Morning" strong onPress={() => onTurnOn("morning")} />
+            <ReminderChoice label="Evening" onPress={() => onTurnOn("evening")} />
+            <ReminderChoice label="Both" onPress={() => onTurnOn("both")} />
+          </>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function ReminderChoice({ label, strong, onPress }: { label: string; strong?: boolean; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" className={`rounded-full px-5 py-2.5 active:opacity-80 ${strong ? "bg-ink" : "bg-bg"}`}>
+      <Text className={`font-sans-semibold text-sm ${strong ? "text-bg" : "text-ink"}`}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -449,6 +531,7 @@ function ReadingCard() {
       </Text>
       <Text className="mt-1 font-sans text-sm text-muted">
         {plan.title} · about {readingMinutes(plan, chapters)} min
+        {readingStreak(progress) > 1 ? ` · ${readingStreak(progress)} days in a row` : ""}
       </Text>
       <View className="mt-4 h-1.5 overflow-hidden rounded-full bg-line">
         <View className="h-full rounded-full bg-gold" style={{ width: `${Math.max(2, (progress.done.length / plan.days) * 100)}%` }} />

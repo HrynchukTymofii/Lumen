@@ -3,7 +3,9 @@ import type { Streak } from "@/lib/api/types";
 import { CheckIcon } from "./ui/icons";
 import { useColors } from "./ui/theme";
 
-// Soft streak (SPEC §6.5): "Your week · 4 of 5 days", then Mon–Sun circles, glowing gold for days prayed. Nothing resets.
+// Soft streak (SPEC §6.5): "4 days prayed this week" with the weekly goal beside it, then Mon–Sun circles, glowing gold
+// for days prayed. The count is out of the week's 7 days; the goal (3–7, Settings) is shown apart so "4 of 5" never
+// sits next to seven circles. Nothing resets.
 const LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
 
 export function StreakWeek({ streak, dark }: { streak: Streak; dark?: boolean }) {
@@ -13,10 +15,10 @@ export function StreakWeek({ streak, dark }: { streak: Streak; dark?: boolean })
   return (
     <View>
       <View className="flex-row items-baseline justify-between">
-        <Text className={`font-display text-[18px] ${dark ? "text-bg" : "text-ink"}`}>{reached ? "Week complete" : "Your week"}</Text>
-        <Text className={`font-sans text-sm ${dark ? "text-bg/60" : "text-muted"}`}>
-          {done} of {streak.goal} days
+        <Text className={`font-display text-[18px] ${dark ? "text-bg" : "text-ink"}`}>
+          {done === 0 ? "Your week" : `${done} ${done === 1 ? "day" : "days"} prayed this week`}
         </Text>
+        <Text className={`font-sans text-sm ${dark ? "text-bg/60" : "text-muted"}`}>{reached ? "Goal reached" : `Goal: ${streak.goal} a week`}</Text>
       </View>
       <View className="mt-4 flex-row justify-between">
         {streak.weekDays.map((day, i) => {

@@ -57,7 +57,7 @@ export default function StreakScreen() {
         ) : (
           <>
             <View className="mt-5 flex-row flex-wrap gap-y-6 px-5">
-              <Stat icon={<BoltIcon size={18} color={c.onPastel} filled />} tint={c.lav} value={`${thisWeek!.done}/${thisWeek!.goal}`} label="This week" />
+              <Stat icon={<BoltIcon size={18} color={c.onPastel} filled />} tint={c.lav} value={`${thisWeek!.done}/7`} label={`This week · goal ${thisWeek!.goal}`} />
               <Stat icon={<StarIcon size={18} color={c.onPastel} filled />} tint={c.butter} value={String(weeksMet)} label="Goals met · 8 wks" />
               <Stat icon={<CheckIcon size={18} color={c.onPastel} />} tint={c.sage} value={String(journey.totals.daysPrayed)} label="Days prayed" />
               <Stat icon={<ClockIcon size={18} color={c.onPastel} />} tint={c.sky} value={String(journey.totals.prayers)} label="Guided prayers" />

@@ -1,7 +1,7 @@
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { Chips, ReminderControls, Section, Toggle, useSaveProfile } from "@/components/SettingsParts";
+import { Chips, PauseControls, ReminderControls, Section, Toggle, useSaveProfile } from "@/components/SettingsParts";
 import { useAuth } from "@/context/AuthContext";
 import type { Translation } from "@/lib/api/types";
 import { setThemePref, useThemePref, type ThemePref } from "@/lib/themePref";
@@ -18,6 +18,7 @@ const THEMES: { value: ThemePref; label: string }[] = [
 const TRANSLATIONS: { value: Translation; label: string }[] = [
   { value: "WEB", label: "World English" },
   { value: "KJV", label: "King James" },
+  { value: "BSB", label: "Berean Standard" },
   { value: "DRA", label: "Douay-Rheims" },
 ];
 
@@ -41,8 +42,11 @@ export default function GeneralSettings() {
 
         {user && (
           <>
-            <Section title="Daily reminder">
+            <Section title="Reminders">
               <ReminderControls save={save} setError={setError} />
+              <View className="mt-5 border-t border-line pt-5">
+                <PauseControls />
+              </View>
             </Section>
 
             <Section title="Weekly goal">

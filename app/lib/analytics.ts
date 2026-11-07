@@ -26,6 +26,7 @@ export type AnalyticsEvents = {
   login_link_used: { success: boolean };
   onboarding_completed: { path: "web" | "app_store" };
   push_permission_result: { granted: boolean };
+  reminders_paused: { hours: number };
   today_prayer_viewed: { prayer_type: string };
   prayer_viewed: { prayer_slug: string; locked: boolean };
   prayer_audio_played: { prayer_type: string; prayer_slug: string; minutes?: number };

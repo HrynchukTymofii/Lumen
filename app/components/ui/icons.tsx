@@ -371,3 +371,12 @@ export function BibleIcon({ size = 22, color }: IconProps) {
     </Svg>
   );
 }
+
+// Bookshelf: two upright books and one leaning, on a shelf. Opens the "pick a book" list in the Bible picker.
+export function ShelfIcon({ size = 20, color }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M4 4h4v15H4zM10 6h4v13h-4zM15.5 7.2l3.4-.9 3.1 11.8-3.4.9zM2 21h20" stroke={color} {...line} strokeWidth={2} />
+    </Svg>
+  );
+}

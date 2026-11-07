@@ -115,9 +115,9 @@ export default function MeScreen() {
               {!streak
                 ? " "
                 : streak.prayedToday
-                  ? `${daysThisWeek} of ${streak.goal} days this week. Well done.`
+                  ? `${daysThisWeek} ${daysThisWeek === 1 ? "day" : "days"} this week (goal ${streak.goal}). Well done.`
                   : daysThisWeek
-                    ? `${daysThisWeek} of ${streak.goal} days this week. Pray today to keep going.`
+                    ? `${daysThisWeek} ${daysThisWeek === 1 ? "day" : "days"} this week (goal ${streak.goal}). Pray today to keep going.`
                     : "Pray today and start building a habit."}
             </Text>
           </Pressable>

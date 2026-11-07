@@ -1,14 +1,14 @@
-import { AI_COMFORT, DENOMINATIONS, PRAYER_TIME, STRUGGLES, type Option } from "@website/funnels/options";
+import { AI_COMFORT, DENOMINATIONS, STRUGGLES, type Option } from "@website/funnels/options";
 import type { Answers } from "@/lib/api/types";
 
-// The in-app quiz (SPEC §10.1): four of the web funnel's questions, with the funnel's own answer options
+// The in-app quiz (SPEC §10.1): three of the web funnel's questions, with the funnel's own answer options
 // (website/funnels/options.ts), so app and web answers land in the same profile fields.
 
 export type QuizStep = {
   id: string;
   title: string;
   subtitle: string;
-  answerKey: "struggles" | "denomination" | "prayerTime" | "aiComfort";
+  answerKey: "struggles" | "denomination" | "aiComfort";
   options: Option[];
   multi?: number; // max picks
   sensitive?: boolean; // stored only with consent; never sent to analytics
@@ -44,14 +44,6 @@ export const QUIZ: QuizStep[] = [
     options: DENOMINATIONS,
     sensitive: true,
     scenes: { catholic: "golden", protestant: "sky", orthodox: "evening", exploring: "dawn", not_sure: "meadow" },
-  },
-  {
-    id: "time",
-    title: "When would you like to pray?",
-    subtitle: "Your daily prayer will be ready by then.",
-    answerKey: "prayerTime",
-    options: PRAYER_TIME,
-    scenes: { morning: "dawn", evening: "evening" },
   },
   {
     id: "ai",

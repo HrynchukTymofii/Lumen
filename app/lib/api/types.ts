@@ -1,7 +1,7 @@
 // Response shapes of the website API (website/lib/auth/users.ts publicUser, app/api/me/route.ts).
 
 export type Denomination = "catholic" | "protestant" | "orthodox" | "not_sure" | "exploring";
-export type Translation = "WEB" | "KJV" | "DRA";
+export type Translation = "WEB" | "KJV" | "DRA" | "BSB";
 
 export interface User {
   id: string;
@@ -12,7 +12,8 @@ export interface User {
   aiEnabled: boolean;
   weeklyGoal: number;
   streakHidden: boolean;
-  reminderTime: string | null; // "07:30"
+  reminderTime: string | null; // "07:30", the morning reminder; null = off
+  eveningReminderTime?: string | null; // "21:00"; missing from older servers
   remindersEnabled: boolean;
   // Quiz answers to "What are you carrying?" (website/funnels/options.ts STRUGGLES); missing from older servers
   struggles?: string[];
@@ -40,7 +41,7 @@ export interface MeResponse {
 }
 
 export type ProfilePatch = Partial<
-  Pick<User, "firstName" | "denomination" | "translation" | "aiEnabled" | "weeklyGoal" | "streakHidden" | "reminderTime" | "remindersEnabled">
+  Pick<User, "firstName" | "denomination" | "translation" | "aiEnabled" | "weeklyGoal" | "streakHidden" | "reminderTime" | "eveningReminderTime" | "remindersEnabled">
 > & {
   timezone?: string;
 };
