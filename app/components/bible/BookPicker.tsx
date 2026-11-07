@@ -9,16 +9,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
+import { useSaveProfile } from "@/components/SettingsParts";
 import { LineButton } from "@/components/ui/Button";
-import { CloseIcon, ShelfIcon } from "@/components/ui/icons";
+import { CheckIcon, CloseIcon, TranslateIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { getBooks } from "@/lib/api/bible";
 import { errorMessage } from "@/lib/api/client";
 import type { BibleBook, Translation } from "@/lib/api/types";
+import { TRANSLATIONS } from "@/lib/translations";
 
-// Book and chapter picker, opened from the reader's "Genesis 2 ⌄" title. Books by testament; tapping one shows
-// its chapters; the book being read starts open. The shelf button next to the title lists just the book names, so a
-// book far down (Revelation) is one tap away; picking one shows only that book and its chapters.
+// Book and chapter picker, opened from the reader's "Genesis 2 ⌄" title. All books of the reader's translation by
+// testament; tapping one shows its chapters; the book being read starts open. The translation button next to the
+// title switches the translation (saved to the profile, like Settings → General), and the list reloads for it.
 
 const SECTIONS: { key: BibleBook["testament"]; title: string }[] = [
   { key: "OT", title: "Old Testament" },
@@ -39,11 +41,11 @@ export function BookPicker({
 }) {
   const insets = useSafeAreaInsets();
   const c = useColors();
+  const { save, error: saveError } = useSaveProfile();
   const [books, setBooks] = useState<BibleBook[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(current?.osis ?? null);
-  const [shelf, setShelf] = useState(false); // the names-only list
-  const [only, setOnly] = useState<string | null>(null); // the one book shown, when picked from the shelf
+  const [menu, setMenu] = useState(false); // the translation list
 
   const load = () =>
     getBooks(translation).then(
@@ -63,17 +65,14 @@ export function BookPicker({
     () =>
       SECTIONS.map((s) => ({
         ...s,
-        books: (books ?? []).filter(
-          (b) => b.testament === s.key && (!only || b.osis === only),
-        ),
+        books: (books ?? []).filter((b) => b.testament === s.key),
       })),
-    [books, only],
+    [books],
   );
 
-  const pickBook = (osis: string) => {
-    setOnly(osis);
-    setOpen(osis);
-    setShelf(false);
+  const pickTranslation = (value: Translation) => {
+    setMenu(false);
+    if (value !== translation) save({ translation: value });
   };
 
   return (
@@ -96,14 +95,19 @@ export function BookPicker({
               Books
             </Text>
             <Pressable
-              onPress={() => setShelf(!shelf)}
+              onPress={() => setMenu(!menu)}
               accessibilityRole="button"
-              accessibilityLabel="Choose a book"
-              accessibilityState={{ expanded: shelf }}
+              accessibilityLabel={`Bible translation: ${TRANSLATIONS.find((t) => t.value === translation)?.name ?? translation}`}
+              accessibilityState={{ expanded: menu }}
               hitSlop={8}
-              className={`h-10 w-10 items-center justify-center rounded-full ${shelf ? "bg-ink" : "bg-card"}`}
+              className={`h-10 flex-row items-center gap-1.5 rounded-full px-3.5 ${menu ? "bg-ink" : "bg-card"}`}
             >
-              <ShelfIcon size={20} color={shelf ? c.bg : c.ink} />
+              <TranslateIcon size={18} color={menu ? c.bg : c.ink} />
+              <Text
+                className={`font-sans-bold text-sm ${menu ? "text-bg" : "text-ink"}`}
+              >
+                {translation}
+              </Text>
             </Pressable>
           </View>
           <Pressable
@@ -116,6 +120,33 @@ export function BookPicker({
             <CloseIcon size={16} color={c.ink} />
           </Pressable>
         </View>
+
+        {menu && (
+          <View className="mx-4 mb-1 overflow-hidden rounded-[24px] bg-card">
+            {TRANSLATIONS.map((t, i) => (
+              <Pressable
+                key={t.value}
+                onPress={() => pickTranslation(t.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: t.value === translation }}
+                className={`flex-row items-center px-5 py-3.5 active:opacity-70 ${i > 0 ? "border-t border-line" : ""}`}
+              >
+                <Text className="flex-1 font-sans-bold text-base text-ink">
+                  {t.name}
+                </Text>
+                {t.value === translation && (
+                  <CheckIcon size={16} color={c.ink} />
+                )}
+              </Pressable>
+            ))}
+          </View>
+        )}
+        {saveError && (
+          <Text className="mx-5 mt-1 font-sans text-sm text-danger">
+            {saveError}
+          </Text>
+        )}
+
         <ScrollView
           contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
         >
@@ -130,107 +161,69 @@ export function BookPicker({
                 <Light size={56} state="thinking" />
               </View>
             )
-          ) : shelf ? (
-            SECTIONS.map((section) => {
-              const list = books.filter((b) => b.testament === section.key);
-              if (!list.length) return null;
-              return (
+          ) : (
+            sections
+              .filter((s) => s.books.length)
+              .map((section) => (
                 <View key={section.key} className="mx-4 mt-4">
                   <Text className="mb-2 px-1 font-sans-bold text-xs uppercase tracking-[2px] text-muted">
                     {section.title}
                   </Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {list.map((b) => {
-                      const on = b.osis === (only ?? current?.osis);
-                      return (
+                  <View className="overflow-hidden rounded-[24px] bg-card">
+                    {section.books.map((b, i) => (
+                      <View
+                        key={b.id}
+                        className={i > 0 ? "border-t border-line" : ""}
+                      >
                         <Pressable
-                          key={b.id}
-                          onPress={() => pickBook(b.osis)}
+                          onPress={() =>
+                            setOpen(open === b.osis ? null : b.osis)
+                          }
                           accessibilityRole="button"
-                          className={`rounded-full px-4 py-2.5 active:opacity-70 ${on ? "bg-ink" : "bg-card"}`}
+                          accessibilityState={{ expanded: open === b.osis }}
+                          className="flex-row items-center px-5 py-3.5 active:opacity-70"
                         >
                           <Text
-                            className={`font-sans-bold text-sm ${on ? "text-bg" : "text-ink"}`}
+                            className={`flex-1 font-sans-bold text-base ${b.osis === current?.osis ? "text-olive-deep" : "text-ink"}`}
                           >
                             {b.name}
                           </Text>
+                          <Text className="font-sans text-sm text-muted">
+                            {b.chapters}
+                          </Text>
                         </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            })
-          ) : (
-            <>
-              {sections
-                .filter((s) => s.books.length)
-                .map((section) => (
-                  <View key={section.key} className="mx-4 mt-4">
-                    <Text className="mb-2 px-1 font-sans-bold text-xs uppercase tracking-[2px] text-muted">
-                      {section.title}
-                    </Text>
-                    <View className="overflow-hidden rounded-[24px] bg-card">
-                      {section.books.map((b, i) => (
-                        <View
-                          key={b.id}
-                          className={i > 0 ? "border-t border-line" : ""}
-                        >
-                          <Pressable
-                            onPress={() =>
-                              setOpen(open === b.osis ? null : b.osis)
-                            }
-                            accessibilityRole="button"
-                            accessibilityState={{ expanded: open === b.osis }}
-                            className="flex-row items-center px-5 py-3.5 active:opacity-70"
-                          >
-                            <Text
-                              className={`flex-1 font-sans-bold text-base ${b.osis === current?.osis ? "text-olive-deep" : "text-ink"}`}
-                            >
-                              {b.name}
-                            </Text>
-                            <Text className="font-sans text-sm text-muted">
-                              {b.chapters}
-                            </Text>
-                          </Pressable>
-                          {open === b.osis && (
-                            <View className="flex-row flex-wrap gap-2 px-4 pb-4">
-                              {Array.from(
-                                { length: b.chapters },
-                                (_, n) => n + 1,
-                              ).map((n) => {
-                                const here =
-                                  b.osis === current?.osis &&
-                                  n === current.chapter;
-                                return (
-                                  <Pressable
-                                    key={n}
-                                    onPress={() => onPick(b.osis, n)}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`${b.name} ${n}`}
-                                    className={`h-11 w-11 items-center justify-center rounded-xl active:opacity-70 ${here ? "bg-ink" : "bg-bg"}`}
+                        {open === b.osis && (
+                          <View className="flex-row flex-wrap gap-2 px-4 pb-4">
+                            {Array.from(
+                              { length: b.chapters },
+                              (_, n) => n + 1,
+                            ).map((n) => {
+                              const here =
+                                b.osis === current?.osis &&
+                                n === current.chapter;
+                              return (
+                                <Pressable
+                                  key={n}
+                                  onPress={() => onPick(b.osis, n)}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`${b.name} ${n}`}
+                                  className={`h-11 w-11 items-center justify-center rounded-xl active:opacity-70 ${here ? "bg-ink" : "bg-bg"}`}
+                                >
+                                  <Text
+                                    className={`font-sans-bold text-sm ${here ? "text-bg" : "text-ink"}`}
                                   >
-                                    <Text
-                                      className={`font-sans-bold text-sm ${here ? "text-bg" : "text-ink"}`}
-                                    >
-                                      {n}
-                                    </Text>
-                                  </Pressable>
-                                );
-                              })}
-                            </View>
-                          )}
-                        </View>
-                      ))}
-                    </View>
+                                    {n}
+                                  </Text>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    ))}
                   </View>
-                ))}
-              {only && (
-                <View className="mx-4 mt-4">
-                  <LineButton label="All books" onPress={() => setOnly(null)} />
                 </View>
-              )}
-            </>
+              ))
           )}
         </ScrollView>
       </View>

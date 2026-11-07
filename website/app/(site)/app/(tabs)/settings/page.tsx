@@ -20,13 +20,23 @@ export default function SettingsPage() {
   );
 }
 
-const STATUS = { trial: "Free trial", active: "Active", grace: "Payment problem", canceled: "Cancelled, access until", expired: "Expired" };
+const STATUS = {
+  trial: "Free trial",
+  active: "Active",
+  grace: "Payment problem",
+  canceled: "Cancelled, access until",
+  expired: "Expired",
+};
 
 async function Settings() {
   const user = await requirePageUser("/app/settings");
   const premium = await getPremium(user.id);
   const plan = premium ? planOf(premium.productId) : null;
-  const until = premium?.currentPeriodEnd.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const until = premium?.currentPeriodEnd.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
     <>
@@ -36,7 +46,11 @@ async function Settings() {
           <p className="wa-lead" style={{ marginTop: 0 }}>
             Signed in as <b>{user.email}</b>
           </p>
-          <ProfileForm firstName={user.firstName ?? ""} denomination={user.denomination ?? ""} />
+          <ProfileForm
+            firstName={user.firstName ?? ""}
+            denomination={user.denomination ?? ""}
+            translation={user.translation}
+          />
         </div>
       </section>
 
@@ -48,7 +62,11 @@ async function Settings() {
               <b>Premium{plan ? ` · ${plan.label}` : ""}</b>
               <p className="wa-lead">
                 {STATUS[premium.status]}
-                {premium.status === "canceled" ? ` ${until}` : premium.status === "trial" ? ` until ${until}` : ` · renews ${until}`}
+                {premium.status === "canceled"
+                  ? ` ${until}`
+                  : premium.status === "trial"
+                    ? ` until ${until}`
+                    : ` · renews ${until}`}
               </p>
               <p className="wa-lead">
                 {premium.source === "play"
@@ -60,7 +78,9 @@ async function Settings() {
             <div className="wa-row">
               <div>
                 <b>Free plan</b>
-                <p className="wa-lead">Bible, verse of the day and a daily prayer, forever.</p>
+                <p className="wa-lead">
+                  Bible, verse of the day and a daily prayer, forever.
+                </p>
               </div>
               <Link href="/app/upgrade" className="btn-line">
                 See Premium
@@ -75,7 +95,9 @@ async function Settings() {
         <div className="wa-card">
           <AccountActions />
           <p className="fine" style={{ marginTop: 16 }}>
-            <Link href="/privacy">Privacy Policy</Link> · <Link href="/terms">Terms</Link> · <Link href="/support">Support</Link>
+            <Link href="/privacy">Privacy Policy</Link> ·{" "}
+            <Link href="/terms">Terms</Link> ·{" "}
+            <Link href="/support">Support</Link>
           </p>
         </div>
       </section>

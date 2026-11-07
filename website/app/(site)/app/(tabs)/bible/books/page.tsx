@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Light } from "@/components/kit";
 import { requirePageUser } from "@/lib/auth/current";
 import { listBooks } from "@/lib/bible/passages";
+import { TranslationMenu } from "./translation-menu";
 
 export const metadata: Metadata = { title: "Books" };
 
@@ -13,9 +14,9 @@ const SECTIONS = [
   { key: "NT", title: "New Testament" },
 ] as const;
 
-// Book and chapter picker, as in the app: books by testament; each opens to its chapters; the book being read
-// starts open (?at=John.3). The shelf button next to the title lists just the book names (?shelf=1); picking one
-// shows only that book and its chapters (?book=Rev).
+// Book and chapter picker, as in the app: all books of the user's translation by testament; each opens to its
+// chapters; the book being read starts open (?at=John.3). The translation button next to the title switches the
+// translation (saved to the profile) and the list follows it.
 export default function BooksPage(props: PageProps<"/app/bible/books">) {
   return (
     <Suspense fallback={<Light size={56} state="thinking" />}>
@@ -27,47 +28,15 @@ export default function BooksPage(props: PageProps<"/app/bible/books">) {
 async function Books({ searchParams }: PageProps<"/app/bible/books">) {
   const user = await requirePageUser("/app/bible/books");
   const books = await listBooks(user.translation);
-  const params = await searchParams;
-  const at = typeof params.at === "string" ? params.at : undefined;
-  const [curOsis, curChapter] = at ? at.split(".") : [];
-  const shelf = params.shelf === "1";
-  const only =
-    typeof params.book === "string" && books.some((b) => b.osis === params.book)
-      ? params.book
-      : null;
-  // Links within this page keep the reader's place (?at=) so ✕ still goes back to it
-  const here = (extra: Record<string, string>) =>
-    `/app/bible/books?${new URLSearchParams({ ...(at ? { at } : {}), ...extra })}`;
+  const at = (await searchParams).at;
+  const [curOsis, curChapter] = typeof at === "string" ? at.split(".") : [];
 
   return (
     <>
-      <div className="wa-row">
+      <div className="wa-row" style={{ flexWrap: "nowrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <h1 className="wa-h1">Books</h1>
-          <Link
-            href={
-              shelf
-                ? here(only ? { book: only } : {})
-                : here({ shelf: "1", ...(only ? { book: only } : {}) })
-            }
-            className={`round-btn${shelf ? " on" : ""}`}
-            aria-label="Choose a book"
-            aria-expanded={shelf}
-          >
-            <svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M4 4h4v15H4zM10 6h4v13h-4zM15.5 7.2l3.4-.9 3.1 11.8-3.4.9zM2 21h20" />
-            </svg>
-          </Link>
+          <TranslationMenu current={user.translation} />
         </div>
         <Link
           href={curOsis ? `/app/bible/${curOsis}/${curChapter}` : "/app/bible"}
@@ -77,102 +46,52 @@ async function Books({ searchParams }: PageProps<"/app/bible/books">) {
           ✕
         </Link>
       </div>
-      {shelf &&
-        SECTIONS.map((s) => {
-          const list = books.filter((b) => b.testament === s.key);
-          if (!list.length) return null;
-          return (
-            <section key={s.key} className="wa-sec">
-              <span
-                className="eyebrow"
-                style={{
-                  color: "var(--muted)",
-                  display: "block",
-                  marginBottom: 8,
-                }}
-              >
-                {s.title}
-              </span>
-              <div className="book-shelf">
-                {list.map((b) => (
-                  <Link
-                    key={b.id}
-                    href={here({ book: b.osis })}
-                    className={b.osis === (only ?? curOsis) ? "on" : ""}
-                  >
-                    {b.name}
-                  </Link>
-                ))}
-              </div>
-            </section>
-          );
-        })}
-      {!shelf &&
-        SECTIONS.map((s) => {
-          const list = books.filter(
-            (b) => b.testament === s.key && (!only || b.osis === only),
-          );
-          if (!list.length) return null;
-          return (
-            <section key={s.key} className="wa-sec">
-              <span
-                className="eyebrow"
-                style={{
-                  color: "var(--muted)",
-                  display: "block",
-                  marginBottom: 8,
-                }}
-              >
-                {s.title}
-              </span>
-              <div className="wa-card wa-list" style={{ padding: 0 }}>
-                {list.map((b) => (
-                  <details
-                    key={b.id}
-                    className="book"
-                    open={b.osis === (only ?? curOsis)}
-                  >
-                    <summary>
-                      <b className={b.osis === curOsis ? "here" : ""}>
-                        {b.name}
-                      </b>
-                      <small>{b.chapters}</small>
-                    </summary>
-                    <div className="chapters">
-                      {Array.from({ length: b.chapters }, (_, i) => i + 1).map(
-                        (n) => (
-                          <Link
-                            key={n}
-                            href={`/app/bible/${b.osis}/${n}`}
-                            className={
-                              b.osis === curOsis && String(n) === curChapter
-                                ? "on"
-                                : ""
-                            }
-                            aria-label={`${b.name} ${n}`}
-                          >
-                            {n}
-                          </Link>
-                        ),
-                      )}
-                    </div>
-                  </details>
-                ))}
-              </div>
-            </section>
-          );
-        })}
-      {!shelf && only && (
-        <section className="wa-sec">
-          <Link
-            href={here({})}
-            className="wa-chip"
-            style={{ display: "inline-block", textDecoration: "none" }}
-          >
-            All books
-          </Link>
-        </section>
-      )}
+      {SECTIONS.map((s) => {
+        const list = books.filter((b) => b.testament === s.key);
+        if (!list.length) return null;
+        return (
+          <section key={s.key} className="wa-sec">
+            <span
+              className="eyebrow"
+              style={{
+                color: "var(--muted)",
+                display: "block",
+                marginBottom: 8,
+              }}
+            >
+              {s.title}
+            </span>
+            <div className="wa-card wa-list" style={{ padding: 0 }}>
+              {list.map((b) => (
+                <details key={b.id} className="book" open={b.osis === curOsis}>
+                  <summary>
+                    <b className={b.osis === curOsis ? "here" : ""}>{b.name}</b>
+                    <small>{b.chapters}</small>
+                  </summary>
+                  <div className="chapters">
+                    {Array.from({ length: b.chapters }, (_, i) => i + 1).map(
+                      (n) => (
+                        <Link
+                          key={n}
+                          href={`/app/bible/${b.osis}/${n}`}
+                          className={
+                            b.osis === curOsis && String(n) === curChapter
+                              ? "on"
+                              : ""
+                          }
+                          aria-label={`${b.name} ${n}`}
+                        >
+                          {n}
+                        </Link>
+                      ),
+                    )}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </>
   );
 }

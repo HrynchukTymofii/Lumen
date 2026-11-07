@@ -4,19 +4,39 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { resetAnalytics } from "@/lib/analytics/client";
 import { DENOMINATIONS } from "@/funnels/options";
+import { TRANSLATIONS } from "@/lib/bible/translations";
 import { post } from "../../../_components/post";
 
-export function ProfileForm({ firstName, denomination }: { firstName: string; denomination: string }) {
+export function ProfileForm({
+  firstName,
+  denomination,
+  translation,
+}: {
+  firstName: string;
+  denomination: string;
+  translation: string;
+}) {
   const router = useRouter();
   const [name, setName] = useState(firstName);
   const [denom, setDenom] = useState(denomination);
-  const [state, setState] = useState<"idle" | "saving" | "saved" | string>("idle");
+  const [bible, setBible] = useState(translation);
+  const [state, setState] = useState<"idle" | "saving" | "saved" | string>(
+    "idle",
+  );
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setState("saving");
     try {
-      await post("/api/me", { firstName: name.trim() || null, denomination: denom || null }, "PATCH");
+      await post(
+        "/api/me",
+        {
+          firstName: name.trim() || null,
+          denomination: denom || null,
+          translation: bible,
+        },
+        "PATCH",
+      );
       setState("saved");
       router.refresh();
     } catch (err) {
@@ -28,7 +48,11 @@ export function ProfileForm({ firstName, denomination }: { firstName: string; de
     <form onSubmit={save}>
       <label className="wa-field">
         First name
-        <input value={name} onChange={(e) => setName(e.target.value.slice(0, 40))} autoComplete="given-name" />
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, 40))}
+          autoComplete="given-name"
+        />
       </label>
       <label className="wa-field">
         Tradition
@@ -41,12 +65,28 @@ export function ProfileForm({ firstName, denomination }: { firstName: string; de
           ))}
         </select>
       </label>
+      <label className="wa-field">
+        Bible translation
+        <select value={bible} onChange={(e) => setBible(e.target.value)}>
+          {TRANSLATIONS.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="wa-row" style={{ marginTop: 16 }}>
-        <button type="submit" className="btn-line" disabled={state === "saving"}>
+        <button
+          type="submit"
+          className="btn-line"
+          disabled={state === "saving"}
+        >
           {state === "saving" ? "Saving…" : "Save"}
         </button>
         {state === "saved" && <span className="wa-ok">Saved</span>}
-        {!["idle", "saving", "saved"].includes(state) && <span className="fn-error">{state}</span>}
+        {!["idle", "saving", "saved"].includes(state) && (
+          <span className="fn-error">{state}</span>
+        )}
       </div>
     </form>
   );
@@ -78,22 +118,33 @@ export function AccountActions() {
         Log out
       </button>
       {!confirming ? (
-        <button type="button" className="wa-danger" onClick={() => setConfirming(true)}>
+        <button
+          type="button"
+          className="wa-danger"
+          onClick={() => setConfirming(true)}
+        >
           Delete my account
         </button>
       ) : (
         <div className="wa-card bg-rose" style={{ boxShadow: "none" }}>
           <b>Delete your account and everything in it?</b>
           <p style={{ marginTop: 6, lineHeight: 1.5, fontWeight: 600 }}>
-            This can&apos;t be undone.{" "}
-If you subscribed in the App Store or Google Play, cancel it there too: deleting your account doesn&apos;t stop
-            the store from charging you.
+            This can&apos;t be undone. If you subscribed in the App Store or
+            Google Play, cancel it there too: deleting your account doesn&apos;t
+            stop the store from charging you.
           </p>
-          <div className="wa-row" style={{ marginTop: 12, justifyContent: "flex-start" }}>
+          <div
+            className="wa-row"
+            style={{ marginTop: 12, justifyContent: "flex-start" }}
+          >
             <button type="button" className="wa-danger" onClick={remove}>
               Yes, delete everything
             </button>
-            <button type="button" className="btn-line" onClick={() => setConfirming(false)}>
+            <button
+              type="button"
+              className="btn-line"
+              onClick={() => setConfirming(false)}
+            >
               Keep my account
             </button>
           </div>

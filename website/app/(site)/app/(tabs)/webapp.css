@@ -200,12 +200,20 @@
     &.on { background: var(--ink); color: var(--bg); }
   }
   .round-btn.on { background: var(--ink); color: var(--bg); }
-  .book-shelf { display: flex; flex-wrap: wrap; gap: 8px; }
-  .book-shelf a {
-    border-radius: 999px; padding: 10px 16px; background: var(--card); color: var(--ink); font-weight: 800; font-size: 14px;
-    text-decoration: none; box-shadow: var(--shadow-sm);
-    &:hover { background: var(--line); }
-    &.on { background: var(--ink); color: var(--bg); }
+  .tr-menu { position: relative; }
+  .round-btn.tr-btn { width: auto; padding: 0 14px; display: inline-flex; gap: 6px; font-size: 14px; }
+  .tr-list {
+    position: absolute; top: calc(100% + 8px); left: 0; z-index: 20; min-width: 260px; padding: 0; overflow: hidden;
+    box-shadow: var(--shadow-sm), 0 12px 32px -12px rgba(0, 0, 0, 0.35);
+    & button {
+      display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 20px; background: none; border: 0;
+      border-top: 1px solid var(--line); color: var(--ink); font: inherit; font-weight: 700; text-align: left; cursor: pointer;
+      &:first-child { border-top: 0; }
+      &:hover { background: var(--line); }
+      &:disabled { cursor: default; }
+      & span { flex: 1; }
+      & small { color: var(--muted); }
+    }
   }
   .mark-list { display: grid; gap: 12px; }
   .mark-card { display: block; text-decoration: none; color: var(--ink); }
