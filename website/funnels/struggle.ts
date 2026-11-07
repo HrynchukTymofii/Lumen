@@ -1,7 +1,8 @@
-import { AI_COMFORT, DENOMINATIONS, FREQUENCY, OBSTACLES, STRUGGLES } from "./options";
+import { AI_COMFORT, CARRYING_SINCE, DENOMINATIONS, FREQUENCY, OBSTACLE_NONE, OBSTACLES, PRAYER_TIME, STRUGGLES } from "./options";
 import type { FunnelConfig } from "./types";
 
 // The one funnel for now. Others (habit, scripture…) come after competitor research + ICP interviews.
+// Questions and copy follow the "Holy Hush Funnel" prototype; email comes before the first prayer.
 export const struggle: FunnelConfig = {
   slug: "struggle",
   hook: "Carrying something heavy? Get a prayer for exactly that.",
@@ -13,7 +14,7 @@ export const struggle: FunnelConfig = {
       id: "landing",
       type: "landing",
       title: "Carrying something heavy?",
-      subtitle: "Answer a few gentle questions and get a short prayer written for exactly that, with real Bible verses.",
+      subtitle: "Answer a few gentle questions and get a short prayer for what you're carrying, with real Bible verses.",
       cta: "Start",
       scene: "dusk",
     },
@@ -28,6 +29,14 @@ export const struggle: FunnelConfig = {
       sensitive: true,
     },
     {
+      id: "carrying-since",
+      type: "single",
+      title: "How long have you been carrying this?",
+      options: CARRYING_SINCE,
+      answerKey: "carryingSince",
+      sensitive: true,
+    },
+    {
       id: "burden",
       type: "scale",
       title: "How heavy does it feel today?",
@@ -39,21 +48,11 @@ export const struggle: FunnelConfig = {
     },
     {
       id: "not-alone",
-      type: "fact",
-      title: "You're in good company",
-      stat: "44%",
-      body: "of American adults say they pray at least once a day. Many of them bring exactly the kind of worries you just named.",
-      source: "Pew Research Center, Religious Landscape Study 2023–24",
+      type: "insight",
+      title: "You don't have to carry this alone.",
+      body: "Thank you for being honest. That is where prayer starts.",
+      verse: { ref: "Matthew 11:28", text: "Come to me, all you who labor and are heavily burdened, and I will give you rest." },
       scene: "lake",
-    },
-    {
-      id: "denomination",
-      type: "single",
-      title: "Which tradition feels like home?",
-      subtitle: "So your prayers sound like your church. Kept private.",
-      options: DENOMINATIONS,
-      answerKey: "denomination",
-      sensitive: true,
     },
     { id: "frequency", type: "single", title: "How often do you pray now?", options: FREQUENCY, answerKey: "prayerFrequency" },
     {
@@ -63,6 +62,43 @@ export const struggle: FunnelConfig = {
       subtitle: "Choose any.",
       options: OBSTACLES,
       answerKey: "obstacles",
+      // Follows on from "How often do you pray now?"
+      follows: {
+        answerKey: "prayerFrequency",
+        variants: {
+          daily: {
+            title: "Every day, that's wonderful. What still makes it hard some days?",
+            subtitle: "Even daily prayer has its harder days. Choose any.",
+            extra: [OBSTACLE_NONE],
+          },
+          weekly: { title: "What keeps you from praying every day?", subtitle: "Choose any." },
+          sometimes: { title: "What gets in the way?", subtitle: "Choose any." },
+          never: { title: "What's kept you from praying?", subtitle: "No judgement here. Choose any." },
+        },
+      },
+    },
+    {
+      id: "obstacle-insight",
+      type: "obstacle-insight",
+      scene: "meadow",
+      prefer: "words",
+      insights: {
+        words: ["You don't need the right words.", "We'll give you a prayer to start from, and you can make it your own."],
+        time: ["A few quiet minutes is enough.", "Your daily prayer takes about as long as making a coffee."],
+        focus: ["Listening helps a wandering mind.", "Every prayer can be read aloud to you, so you only need to follow along."],
+        consistency: ["Missing a day doesn't undo anything.", "Your weekly goal forgives missed days, and we'll remind you at the time you pick."],
+        distance: ["You're in good company.", "The Psalms are full of people who felt the same and kept praying."],
+        none: ["Let's help you go deeper.", "Each day's prayer is written around what you're carrying, so it never turns into routine."],
+      },
+    },
+    {
+      id: "denomination",
+      type: "single",
+      title: "Which tradition feels like home?",
+      subtitle: "Kept private.",
+      options: DENOMINATIONS,
+      answerKey: "denomination",
+      sensitive: true,
     },
     {
       id: "ai",
@@ -81,13 +117,23 @@ export const struggle: FunnelConfig = {
       answerKey: "firstName",
     },
     {
+      id: "thanks",
+      type: "insight",
+      title: "Thank you for trusting us with this.",
+      body: "We'll put your answers together now.",
+      scene: "golden",
+      named: true,
+    },
+    {
       id: "loading",
       type: "loading",
-      // No question during the loading: "when do you pray" felt like the quiz asking twice. Prayer time is set in the app.
-      messages: ["Reading your answers", "Choosing verses for you", "Shaping your 7-day path", "Writing your first prayer"],
+      // Prayer time is asked only here (not as a quiz question, and not again in the app's own quiz)
+      messages: ["Reading your answers", "Choosing verses for you", "Shaping your 7-day path", "Finding your first prayer"],
+      micro: { title: "When would you like to pray?", options: PRAYER_TIME, answerKey: "prayerTime" },
     },
-    { id: "plan", type: "plan" },
     { id: "email", type: "email" },
+    { id: "prayer", type: "prayer" },
+    { id: "path", type: "path" },
     { id: "paywall", type: "paywall" },
   ],
 };

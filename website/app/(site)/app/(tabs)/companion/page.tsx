@@ -7,6 +7,7 @@ import { requirePageUser } from "@/lib/auth/current";
 import { listConversations } from "@/lib/chat";
 import { getPremium } from "@/lib/entitlement";
 import { StartChat } from "./start-chat";
+import { companionTopic } from "@/funnels/companion-topics";
 
 export const metadata: Metadata = { title: "Companion" };
 
@@ -50,18 +51,19 @@ async function Companion() {
   // A conversation gets its title from the first message; ones left empty are hidden
   const earlier = conversations.filter((c) => c.title);
   const left = premium ? null : Math.max(0, quota.limit - quota.used);
+  const topic = companionTopic(user.struggles);
 
   return (
     <>
       <div className="wa-row">
         <div>
           <h1 className="wa-h1">Companion</h1>
-          <p className="wa-lead">Ask about the Bible, or ask for a prayer.</p>
+          <p className="wa-lead">{topic.invite}</p>
         </div>
         <Light size={56} />
       </div>
 
-      <StartChat />
+      <StartChat prompts={topic.prompts} />
       {left !== null && (
         <p className="wa-lead" style={{ textAlign: "center", fontSize: 14 }}>
           {left} of {quota.limit} messages left today

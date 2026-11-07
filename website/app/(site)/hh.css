@@ -339,7 +339,7 @@
   .fn-opt { border-radius: 20px; }
   .fn-opt small, .fn-scale-labels, .fn-check, .fn-loading ul, .pw-compare ul, .pw-timeline li, .fn-days small { font-weight: 400; }
   .fn-opt:hover, .fn-scale button:hover { border-color: var(--line2); }
-  .fn-opt.on, .fn-scale button.on, .pw-plan:first-child { border-color: var(--ink); background: var(--surface); }
+  .fn-opt.on, .fn-scale button.on, .pw-plan.on { border-color: var(--ink); background: var(--surface); }
   .fn-opt .box { border-color: var(--line2); }
   .fn-input:focus { border-color: var(--ink); }
   .fn-card .fn-input { background: var(--bg); }

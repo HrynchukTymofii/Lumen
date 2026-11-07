@@ -19,7 +19,7 @@ async function Prayer({ params }: Pick<PageProps<"/app/prayers/[slug]">, "params
   const { slug } = await params;
   const user = await requirePageUser(`/app/prayers/${slug}`);
   const row = await prisma.audioTrack.findUnique({ where: { slug } });
-  if (!row || row.status !== "published" || (row.publishAt && row.publishAt > new Date())) notFound();
+  if (!row || row.category === "funnel" || row.status !== "published" || (row.publishAt && row.publishAt > new Date())) notFound();
 
   const track = toPublicTrack(row, Boolean(await getPremium(user.id)));
   // The middle length reads best on a screen; the player with all lengths comes with the app's player screen

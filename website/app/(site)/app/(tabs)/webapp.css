@@ -199,6 +199,14 @@
     &:hover { background: var(--line); }
     &.on { background: var(--ink); color: var(--bg); }
   }
+  .round-btn.on { background: var(--ink); color: var(--bg); }
+  .book-shelf { display: flex; flex-wrap: wrap; gap: 8px; }
+  .book-shelf a {
+    border-radius: 999px; padding: 10px 16px; background: var(--card); color: var(--ink); font-weight: 800; font-size: 14px;
+    text-decoration: none; box-shadow: var(--shadow-sm);
+    &:hover { background: var(--line); }
+    &.on { background: var(--ink); color: var(--bg); }
+  }
   .mark-list { display: grid; gap: 12px; }
   .mark-card { display: block; text-decoration: none; color: var(--ink); }
   .mark-card q { display: block; quotes: none; font-family: var(--f-read); font-size: 17px; line-height: 1.6; margin: 8px 0 0 -4px; border-radius: 6px; padding: 2px 4px; }
@@ -207,3 +215,117 @@
 
 @keyframes chat-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes sheet-up { from { opacity: 0; translate: 0 24px; } to { opacity: 1; translate: 0 0; } }
+
+/* ───────── The app's look on a wide screen ───────── */
+.site {
+  /* The phone's black pill tab bar, stood upright on the left (a floating bottom pill on phones) */
+  .wa-tabs { background: var(--inv); border-radius: 30px; padding: 8px; }
+  .wa-tabs a { color: var(--inv-muted); border-radius: 999px; padding: 6px 10px; font-weight: 600; }
+  .wa-tabs a:hover { color: var(--inv-ink); }
+  .wa-tabs a.on { background: var(--bg); color: var(--ink); }
+  .wa-tabs a.on .ic { background: none; color: inherit; }
+  .wa-tabs .ic { width: 30px; height: 30px; }
+  @media (max-width: 820px) {
+    .wa-side { background: none; border-top: 0; padding-inline: max(12px, env(safe-area-inset-left, 0px)); pointer-events: none; }
+    .wa-tabs { pointer-events: auto; padding: 6px; }
+    .wa-tabs a { padding: 6px 0; font-size: 11px; }
+  }
+
+  /* Today */
+  .wa-main:has(.home) { max-width: 1120px; }
+  .home { display: grid; gap: 16px; }
+  .home h2 { font-family: var(--f-display); font-weight: 600; }
+  .home .lab { font-size: 13.5px; color: var(--muted); font-weight: 600; }
+  .home-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  .home-hello { font-size: clamp(34px, 4.6vw, 56px); line-height: 1.03; letter-spacing: -0.04em; font-weight: 600; text-wrap: balance; }
+  .home-top .round-btn { box-shadow: none; }
+
+  .home-cards { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: 14px; margin-top: 10px; }
+  .pc, .poster { position: relative; overflow: hidden; display: block; color: #fff; text-decoration: none; isolation: isolate; background: var(--card); }
+  .pc { border-radius: 32px; aspect-ratio: 4 / 5; }
+  .pc:first-child { aspect-ratio: auto; min-height: 100%; }
+  .pc > .art, .poster > .art { position: absolute; inset: 0; height: 100%; border-radius: 0; z-index: -2; }
+  .pc > .art img, .poster > .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .pc::after, .poster::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0) 58%); }
+  .pc-tag { position: absolute; left: 16px; top: 16px; background: rgba(0, 0, 0, 0.45); padding: 6px 13px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+  .pc-meta { position: absolute; left: 22px; right: 22px; bottom: 22px; display: flex; align-items: flex-end; gap: 12px; }
+  .pc-meta > span:first-child { flex: 1; min-width: 0; }
+  .pc-meta b { display: block; font-family: var(--f-display); font-weight: 600; font-size: 26px; line-height: 1.08; letter-spacing: -0.03em; text-wrap: balance; }
+  .pc:first-child .pc-meta b { font-size: clamp(28px, 2.6vw, 36px); }
+  .pc-meta small { display: block; margin-top: 6px; font-size: 13.5px; opacity: 0.85; font-weight: 500; }
+  .pc-play { flex: none; width: 54px; height: 54px; border-radius: 50%; background: #fff; display: grid; place-items: center; transition: transform 0.2s; }
+  .pc:hover .pc-play { transform: scale(1.06); }
+
+  .home-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+  .home-chips a { flex: none; height: 40px; padding: 0 17px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--card); color: var(--ink); text-decoration: none; font-weight: 500; }
+  .home-chips a:hover { background: var(--chip); }
+  .home-chips a.on { background: var(--ink); color: var(--bg); }
+
+  /* The prayer week: one black row */
+  .home-week { background: var(--inv); color: var(--inv-ink); border-radius: 28px; padding: 22px 26px; display: flex; align-items: center; justify-content: space-between; gap: 18px 32px; flex-wrap: wrap; }
+  .home-week-text b { display: block; font-family: var(--f-display); font-weight: 600; font-size: 22px; letter-spacing: -0.02em; }
+  .home-week-text small { display: block; margin-top: 4px; color: var(--inv-muted); font-size: 14px; }
+  .home-days { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 44px); gap: 10px; }
+  .home-days li { display: grid; justify-items: center; gap: 8px; }
+  .home-days span { font-size: 12.5px; color: var(--inv-muted); }
+  .home-days li.today span { color: var(--inv-ink); font-weight: 700; }
+  .home-days i { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--inv-rule); }
+  .home-days li.today i { background: none; box-shadow: inset 0 0 0 2px var(--inv-ink); }
+  .home-days li.done i { background: var(--dot); color: #0e0e10; box-shadow: none; }
+
+  .home-box { background: var(--card); border-radius: 28px; padding: 24px; min-width: 0; }
+  .home-pair { display: grid; grid-template-columns: 1fr 1.25fr; gap: 14px; }
+  .home-pair.one { grid-template-columns: 1fr; }
+  .home-verse { display: flex; flex-direction: column; }
+  .home-verse q { display: block; quotes: none; font-family: var(--f-display); font-weight: 600; font-size: clamp(21px, 2vw, 25px); line-height: 1.22; letter-spacing: -0.02em; margin: 14px 0 18px; text-wrap: pretty; }
+  .home-verse small { margin-top: auto; color: var(--muted); font-size: 13.5px; }
+
+  .home-talk-head { display: flex; align-items: center; gap: 10px; }
+  .home-talk-head h2 { font-size: 21px; }
+  .glow { width: 34px; height: 34px; border-radius: 50%; flex: none; background: radial-gradient(circle, #fff6df 0, var(--dot) 45%, rgba(245, 199, 126, 0) 72%); }
+  .home-talk-line { margin-top: 10px; color: var(--muted); line-height: 1.45; }
+  .home-talk-line span { color: var(--ink); }
+  .home-ask { margin-top: 14px; display: flex; align-items: center; gap: 8px; background: var(--inv); border-radius: 999px; padding: 6px 6px 6px 20px; }
+  .home-ask input { flex: 1; min-width: 0; height: 40px; background: none; border: 0; outline: 0; color: var(--inv-ink); font: inherit; font-size: 15.5px; }
+  .home-ask input::placeholder { color: var(--inv-muted); }
+  .home-ask button { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--bg); color: var(--ink); display: grid; place-items: center; cursor: pointer; flex: none; }
+  .home-ask button:disabled { opacity: 0.5; cursor: default; }
+  .home-ask:focus-within { box-shadow: 0 0 0 2px var(--dot); }
+  .home-sugg { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .home-sugg button { border: 0; font: inherit; font-size: 13.5px; padding: 8px 13px; border-radius: 999px; background: var(--bg); color: var(--ink); cursor: pointer; }
+  .home-sugg button:hover { background: var(--chip); }
+
+  .home-prayer-head { display: flex; justify-content: space-between; align-items: center; }
+  .home-prayer h2 { font-size: 26px; letter-spacing: -0.02em; margin: 4px 0 10px; }
+  .home-prayer .prayer-text { max-width: 68ch; }
+  .home-mark { margin-top: 18px; }
+  .home-prayed { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 999px; padding: 11px 18px; font-weight: 600; }
+
+  .home-shelf { margin-top: 18px; scroll-margin-top: 20px; }
+  .home-shelf-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+  .home-shelf-head h2 { font-size: 24px; letter-spacing: -0.02em; }
+  .home-shelf-head a { color: var(--muted); text-decoration: none; font-weight: 500; }
+  .home-shelf-head a:hover { color: var(--ink); }
+  .home-row { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 6px; scrollbar-width: thin; }
+  .poster { flex: 0 0 clamp(150px, 18%, 196px); aspect-ratio: 3 / 4; border-radius: 24px; scroll-snap-align: start; }
+  .poster b { position: absolute; left: 14px; right: 14px; bottom: 14px; font-family: var(--f-display); font-weight: 600; font-size: 16px; line-height: 1.15; }
+  .poster b small { display: block; font-family: var(--f-body); font-weight: 500; font-size: 12.5px; opacity: 0.85; margin-top: 3px; }
+  .poster:hover b { text-decoration: underline; text-underline-offset: 3px; }
+
+  .home-premium { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 18px; }
+  .home-premium p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+  @media (max-width: 980px) {
+    .home-pair { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 820px) {
+    .home-cards { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -16px; padding-inline: 16px; scrollbar-width: none; }
+    .pc, .pc:first-child { flex: 0 0 86%; aspect-ratio: 1 / 1.08; min-height: 0; scroll-snap-align: center; }
+    .home-week { padding: 20px; }
+    .home-days { width: 100%; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .home-days i { width: 36px; height: 36px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pc-play { transition: none; }
+  }
+}

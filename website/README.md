@@ -21,14 +21,14 @@ Local Postgres for development (Docker, port 5433, matches `.env.example`):
 ```bash
 docker start lumen-db   # first time: docker run -d --name lumen-db -e POSTGRES_USER=lumen -e POSTGRES_PASSWORD=lumen -e POSTGRES_DB=lumen -p 5433:5432 pgvector/pgvector:pg17
 npm run db:migrate
-npm run bible:import    # WEB, KJV, Douay-Rheims (public domain) + keyword index + topic map, ~20 s
+npm run bible:import    # WEB, KJV, Douay-Rheims, BSB (public domain) + keyword index + topic map, ~20 s
 ```
 
 After a schema change, restart `npm run dev`: the running server keeps the old Prisma client.
 
 ## Bible (`lib/bible/`)
 
-- `npm run bible:import` downloads the three translations (eBible.org, scrollmapper), maps them to 73 books
+- `npm run bible:import` downloads the four translations (eBible.org, scrollmapper), maps them to 73 books
   (`lib/bible/books.ts`), and rebuilds the keyword index and the topic map (`lib/bible/topics.ts` + the funnel's
   verses). Safe to run again.
 - Search indexes live in the `search` Postgres schema, outside Prisma (it can't express a tsvector GIN or an HNSW

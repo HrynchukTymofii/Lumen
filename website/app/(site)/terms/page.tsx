@@ -177,7 +177,7 @@ export default function TermsPage() {
         licensors and protected by law. We give you a personal,
         non-transferable, revocable licence to use it for your own
         non-commercial use under these Terms. Bible translations we offer (such
-        as the World English Bible, King James Version and Douay-Rheims) are in
+        as the World English Bible, King James Version, Berean Standard Bible and Douay-Rheims) are in
         the public domain.
       </p>
 

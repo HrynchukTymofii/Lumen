@@ -15,6 +15,20 @@ const FOCUS: Record<string, [string, string][]> = {
   gratitude: [["Count the gifts", "Three things from today"], ["Joy in this day", "Praise for small things"]],
 };
 
+// "A prayer for worry", "Built around your family": the first thing they named, in a few words
+const TOPIC: Record<string, string> = {
+  anxiety: "worry",
+  grief: "grief",
+  family: "your family",
+  work: "work and money",
+  health: "your health",
+  loneliness: "loneliness",
+  doubt: "your doubts",
+  guilt: "guilt",
+  gratitude: "gratitude",
+};
+export const topicOf = (answers: Answers) => TOPIC[answers.struggles?.[0] ?? ""] ?? "what you're carrying";
+
 export type PlanDay = { day: number; title: string; focus: string };
 
 export function buildPlan(answers: Answers): PlanDay[] {

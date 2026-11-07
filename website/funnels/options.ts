@@ -1,7 +1,8 @@
 // Reusable answer options. The values are stored on the user, so keep them stable.
 // No imports on purpose: the phone app imports this file directly (app/metro.config.js).
 
-export type Option = { value: string; label: string; hint?: string };
+// exclusive: picking it clears the others on a multi-choice question (and picking another clears it)
+export type Option = { value: string; label: string; hint?: string; exclusive?: boolean };
 
 export const STRUGGLES: Option[] = [
   { value: "anxiety", label: "Worry or anxiety" },
@@ -13,6 +14,13 @@ export const STRUGGLES: Option[] = [
   { value: "doubt", label: "Doubts about faith" },
   { value: "guilt", label: "Guilt or regret" },
   { value: "gratitude", label: "Nothing heavy, I'm grateful" },
+];
+
+export const CARRYING_SINCE: Option[] = [
+  { value: "days", label: "A few days" },
+  { value: "weeks", label: "A few weeks" },
+  { value: "months", label: "A few months" },
+  { value: "always", label: "As long as I can remember" },
 ];
 
 export const DENOMINATIONS: Option[] = [
@@ -37,6 +45,8 @@ export const OBSTACLES: Option[] = [
   { value: "consistency", label: "I forget or can't keep it up" },
   { value: "distance", label: "God feels far away" },
 ];
+// Only offered to people who already pray every day
+export const OBSTACLE_NONE: Option = { value: "none", label: "Nothing really, it comes easily", exclusive: true };
 
 export const AI_COMFORT: Option[] = [
   { value: "comfortable", label: "Happy to try it", hint: "As long as the verses are real" },
@@ -47,6 +57,7 @@ export const AI_COMFORT: Option[] = [
 export const PRAYER_TIME: Option[] = [
   { value: "morning", label: "Morning" },
   { value: "evening", label: "Evening" },
+  { value: "both", label: "Both" },
 ];
 
 export const labelOf = (options: Option[], value: string | undefined) =>
