@@ -24,10 +24,20 @@ type RcSubscriber = {
   subscriber: {
     entitlements: Record<string, { expires_date: string | null; product_identifier: string }>;
     subscriptions: Record<string, RcSubscription>;
+    // One-time purchases (prayer token packs): every transaction per product
+    non_subscriptions?: Record<string, RcNonSubscription[]>;
   };
 };
 
-async function fetchSubscriber(userId: string): Promise<RcSubscriber> {
+export type RcNonSubscription = {
+  id: string;
+  store_transaction_id?: string | null;
+  purchase_date: string;
+  store: string;
+  is_sandbox: boolean;
+};
+
+export async function fetchSubscriber(userId: string): Promise<RcSubscriber> {
   const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`, {
     headers: { Authorization: `Bearer ${process.env.REVENUECAT_SECRET_KEY}` },
     cache: "no-store",

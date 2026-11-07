@@ -47,6 +47,15 @@ export type AnalyticsEvents = {
   chat_message_sent: { message_count_today: number; tier: "free" | "premium"; quick_prompt?: string };
   chat_message_blocked: { category: "off_topic" | "jailbreak" | "crisis" | "abuse"; tier: "free" | "premium" };
   chat_limit_reached: { tier: "free" | "premium"; limit: number };
+  // Personal prayers (counts and lengths only, never the text)
+  personal_prayer_generated: { length: string; tier: "free" | "premium" };
+  personal_prayer_blocked: { category: "off_topic" | "jailbreak" | "crisis" | "abuse" };
+  personal_prayer_limit_reached: { tier: "free" | "premium"; limit: number };
+  personal_prayer_saved: { source: "companion" };
+  personal_prayer_edited: { words: number };
+  personal_prayer_listened: { tokens: number; free: boolean; words: number };
+  tokens_sheet_shown: { placement: string };
+  tokens_purchased: { product_id: string; tokens: number; source: Source; sandbox?: boolean };
   verse_chip_opened: { reference: string };
   streak_goal_set: { goal: number };
   streak_week_completed: { goal: number };

@@ -38,6 +38,13 @@ async function Library({ searchParams }: PageProps<"/app/prayers">) {
       </Link>
       <h1 className="wa-h1">{category ? categoryTitle(category) : "All prayers"}</h1>
       <p className="wa-lead">Guided prayers for every part of the day.</p>
+      <Link href="/app/prayers/personal" className="wa-card wa-list-row pp-mine wa-sec">
+        <span>
+          <b>My prayers</b>
+          <small className="pp-meta">Prayers written for what you’re carrying</small>
+        </span>
+        <span aria-hidden>›</span>
+      </Link>
       {!tracks.length ? (
         <div className="wa-card wa-empty wa-sec">
           <Light size={56} />

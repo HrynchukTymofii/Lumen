@@ -328,4 +328,37 @@
   @media (prefers-reduced-motion: reduce) {
     .pc-play { transition: none; }
   }
+
+  /* personal prayers (My prayers, the generator, one prayer) */
+  .pp-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .pp-tokens { margin-top: 10px; font-weight: 800; font-size: 14px; color: var(--muted); }
+  .pp-meta { display: block; color: var(--muted); font-size: 13.5px; font-weight: 500; margin-top: 4px; }
+  .pp-mine { padding: 14px 18px; border-top: 0; }
+  .pp-label { margin-top: 14px; font-weight: 800; font-size: 14px; color: var(--muted); }
+  .pp-title { font-size: 24px; font-weight: 600; }
+  .pp-textarea {
+    display: block; width: 100%; margin-top: 12px; resize: vertical; border-radius: 22px; border: 1.5px solid var(--line2); background: var(--card);
+    color: var(--ink); padding: 14px 18px; font: inherit; font-weight: 500; line-height: 1.55; outline: 0;
+    &:focus { border-color: var(--peach-2); }
+  }
+  .pp-read { font-family: var(--f-read); font-size: 17px; line-height: 1.7; }
+  .pp-title-input {
+    width: 100%; height: 52px; padding: 0 16px; border-radius: 16px; border: 1.5px solid var(--line2); background: var(--card); color: var(--ink);
+    font: inherit; font-size: 22px; font-weight: 600; outline: 0;
+  }
+  .pp-lengths { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .pp-lengths button {
+    display: grid; gap: 2px; padding: 12px 8px; border-radius: 16px; border: 1.5px solid var(--line2); background: none; color: var(--ink); font: inherit; cursor: pointer;
+    & small { color: var(--muted); font-size: 12px; }
+    &.on { border-color: var(--ink); background: var(--card); }
+  }
+  .pp-actions { display: grid; gap: 8px; margin-top: 22px; max-width: 520px; }
+  .pp-actions button:disabled { opacity: 0.4; cursor: default; }
+  .pp-row { display: flex; gap: 10px; margin-top: 16px; }
+  .pp-error { margin-top: 12px; color: #b2413a; font-weight: 700; }
+  .pp-text { margin-top: 16px; display: grid; gap: 14px; max-width: 680px; }
+  .pp-text p { font-family: var(--f-read); font-size: 18px; line-height: 1.7; color: var(--ink); transition: color 0.3s; }
+  .pp-text p.dim { color: var(--dim); }
+  .save-prayer { display: inline-block; justify-self: start; text-decoration: none; }
+  .pp-buy { display: grid; gap: 10px; padding: 18px; line-height: 1.55; }
 }

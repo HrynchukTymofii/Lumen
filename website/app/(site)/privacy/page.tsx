@@ -19,7 +19,7 @@ const PROCESSORS = [
     "Finds Bible verses that match a companion message (AI text search)",
     "The text of the message you send to the companion",
   ],
-  ["ElevenLabs", "Turns prayer text into audio", "Prayer text"],
+  ["ElevenLabs", "Turns prayer text into audio, including your personal prayers when you choose to listen", "Prayer text"],
   [
     "Apple (App Store), Google (Google Play) and RevenueCat",
     "In-app purchases and subscription status",

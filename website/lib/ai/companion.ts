@@ -25,7 +25,8 @@ export type ChatEvent =
   // Progress for the "what I'm doing" line while there's no text yet: searching → reading (with refs) → writing
   | { event: "status"; data: { step: "searching" | "reading" | "writing"; refs?: string[] } }
   | { event: "delta"; data: { text: string } }
-  | { event: "done"; data: { messageId: string; citations: CitationOut[]; refused?: boolean } }
+  // prayer: the answer holds a prayer the user can save to My prayers (POST /api/prayers/personal/from-message)
+  | { event: "done"; data: { messageId: string; citations: CitationOut[]; refused?: boolean; prayer?: { title: string } } }
   | {
       event: "blocked";
       data: { category: Category; messageId: string; text: string; resources?: typeof CRISIS_RESOURCES };
@@ -67,6 +68,7 @@ async function saveExchange(input: {
   reply: string;
   citations?: Passage[];
   flagged?: boolean;
+  prayer?: { title: string; text: string } | null;
 }) {
   const { conversationId, category } = input;
   const flagged = category === "crisis" || category === "abuse" || Boolean(input.flagged);
@@ -80,6 +82,7 @@ async function saveExchange(input: {
         category,
         flagged: Boolean(input.flagged),
         citations: (input.citations ?? []).map(({ bookId, chapter, verseStart, verseEnd }) => ({ bookId, chapter, verseStart, verseEnd })),
+        prayer: input.prayer ? encrypt(JSON.stringify(input.prayer)) : null,
       },
     }),
     prisma.conversation.update({ where: { id: conversationId }, data: { updatedAt: new Date() } }),
@@ -186,6 +189,8 @@ export async function* reply(input: {
     yield { event: "delta", data: { text: shown } };
   }
 
+  // A prayer the answer wrapped in [[PRAYER]] markers, offered for saving
+  const prayer = refused ? null : stripper.prayerIn(shown);
   // Only labels we actually gave, in the order the answer used them
   const citations = stripper.cited.map((n) => passages[n - 1]).filter((p): p is Passage => Boolean(p));
   const messageId = await saveExchange({
@@ -195,11 +200,12 @@ export async function* reply(input: {
     reply: shown.trim(),
     citations,
     flagged: refused || BANNED.test(shown),
+    prayer,
   });
   await prisma.chatQuota.upsert({
     where: { userId_date: { userId: user.id, date: input.quota.date } },
     create: { userId: user.id, date: input.quota.date, count: 1 },
     update: { count: { increment: 1 } },
   });
-  yield { event: "done", data: { messageId, citations, ...(refused && { refused }) } };
+  yield { event: "done", data: { messageId, citations, ...(refused && { refused }), ...(prayer && { prayer: { title: prayer.title } }) } };
 }

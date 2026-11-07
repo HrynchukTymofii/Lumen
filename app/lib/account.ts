@@ -6,7 +6,7 @@ import { hasApiToken } from "./api/client";
 // (the companion, the prayer week, reminders, Premium, Bible notes / highlights / bookmarks, the journal,
 // downloads) sends someone without one to sign-in, with a line saying why.
 
-export type AccountReason = "companion" | "premium" | "streak" | "reminders" | "notes" | "journal" | "downloads";
+export type AccountReason = "companion" | "premium" | "streak" | "reminders" | "notes" | "journal" | "downloads" | "prayers";
 
 export const hasAccount = () => hasApiToken();
 

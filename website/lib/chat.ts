@@ -44,6 +44,12 @@ export async function setTitleIfMissing(id: string, text: string) {
 export async function getConversation(userId: string, id: string, translation: Translation) {
   const conversation = await ownConversation(userId, id);
   const messages = await prisma.message.findMany({ where: { conversationId: id }, orderBy: { createdAt: "asc" } });
+  // Prayers already saved to My prayers, so the app shows "Saved" instead of the button
+  const withPrayer = messages.filter((m) => m.prayer).map((m) => m.id);
+  const saved = withPrayer.length
+    ? await prisma.personalPrayer.findMany({ where: { userId, messageId: { in: withPrayer } }, select: { id: true, messageId: true } })
+    : [];
+  const savedBy = new Map(saved.map((s) => [s.messageId, s.id]));
   return {
     id,
     title: conversation.title ? decrypt(conversation.title) : null,
@@ -55,6 +61,7 @@ export async function getConversation(userId: string, id: string, translation: T
         category: m.category,
         createdAt: m.createdAt,
         citations: (await Promise.all((m.citations as Ref[]).map((r) => getPassage(r, translation)))).filter(Boolean),
+        prayer: m.prayer ? { title: (JSON.parse(decrypt(m.prayer)) as { title: string }).title, savedId: savedBy.get(m.id) ?? null } : null,
       })),
     ),
   };

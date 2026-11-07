@@ -55,6 +55,10 @@ async function Discover() {
             <div className="t">Quick prayers</div>
           </Link>
         )}
+        <Link href="/app/prayers/personal" className="wa-tile">
+          <Scene name="dawn" seed={17} noBigTrees />
+          <div className="t">My prayers</div>
+        </Link>
         <Link href="/app/bible" className="wa-tile">
           <Scene name="meadow" seed={5} />
           <div className="t">The Bible</div>

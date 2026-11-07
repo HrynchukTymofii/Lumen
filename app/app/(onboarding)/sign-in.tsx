@@ -27,6 +27,7 @@ const GUEST_COPY: Record<AccountReason | "default", [string, string]> = {
   notes: ["Keep your notes", "Create a free account to highlight verses, write notes and bookmark chapters, safe on any device."],
   journal: ["Keep a prayer journal", "Create a free account to write your intentions and reflections, safe on any device."],
   downloads: ["Pray offline", "Create a free account to download prayers and listen without a connection."],
+  prayers: ["Your own prayers", "Create a free account to have prayers written for what you’re carrying, and keep them."],
 };
 
 export default function SignIn() {

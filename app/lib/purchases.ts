@@ -111,3 +111,28 @@ export async function restore() {
   await syncWithServer();
   return Boolean(info.entitlements.active.premium);
 }
+
+// ───────── Prayer tokens (consumables, for audio prayers) ─────────
+// Sold in their own offering, "prayer_tokens" (packages five and fifteen), outside the premium entitlement. The
+// server owns the balance: after a purchase it reads RevenueCat and grants each store transaction once.
+
+export const TOKEN_OFFERING = "prayer_tokens";
+
+/** The token packs, smallest first. Empty when purchases are off or the offering isn't set up. */
+export async function getTokenPacks(): Promise<PurchasesPackage[]> {
+  if (!configured) return [];
+  const offerings = await Purchases.getOfferings();
+  return [...(offerings.all[TOKEN_OFFERING]?.availablePackages ?? [])].sort((a, b) => a.product.price - b.product.price);
+}
+
+/** Buys a token pack. Returns the new balance, or null when the person cancelled the store sheet. */
+export async function buyTokens(pkg: PurchasesPackage) {
+  try {
+    await Purchases.purchasePackage(pkg);
+  } catch (err) {
+    if ((err as { code?: string }).code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) return null;
+    throw err;
+  }
+  const { data } = await api.post<{ tokens: number }>("/prayers/tokens/sync");
+  return data.tokens;
+}

@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createHash } from "node:crypto";
 import { HttpError } from "@/lib/admin-auth";
@@ -72,4 +72,29 @@ export async function presignUpload(key: string, contentType: string) {
     { expiresIn: 600 },
   );
   return { uploadUrl: url, publicUrl: publicUrl(key), headers: { "Content-Type": contentType, "Cache-Control": IMMUTABLE } };
+}
+
+// ───────── Private audio (personal prayers) ─────────
+// A second bucket with no public access: personal prayers are only reachable through short-lived signed URLs.
+
+export const privateAudioConfigured = () => r2Configured() && Boolean(process.env.R2_PRIVATE_BUCKET);
+
+function privateBucket() {
+  if (!privateAudioConfigured()) throw new HttpError(503, "The private R2 bucket is not configured (R2_PRIVATE_BUCKET in .env)");
+  return process.env.R2_PRIVATE_BUCKET!;
+}
+
+export async function putPrivateAudio(key: string, body: Buffer) {
+  await r2().send(new PutObjectCommand({ Bucket: privateBucket(), Key: key, Body: body, ContentType: "audio/mpeg", CacheControl: "private, max-age=3600" }));
+}
+
+/** A GET link that works for `seconds` (default an hour). */
+export async function presignGet(key: string, seconds = 3600) {
+  return getSignedUrl(r2(), new GetObjectCommand({ Bucket: privateBucket(), Key: key }), { expiresIn: seconds });
+}
+
+export async function deletePrivate(key: string) {
+  await r2()
+    .send(new DeleteObjectCommand({ Bucket: privateBucket(), Key: key }))
+    .catch((err) => console.error("[r2] private delete failed", key, err));
 }

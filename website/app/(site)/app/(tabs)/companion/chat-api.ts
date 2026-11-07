@@ -10,6 +10,8 @@ export type ChatMessage = {
   createdAt: string;
   citations: Passage[];
   resources?: CrisisResource[];
+  // A prayer in this answer that can be saved to My prayers; savedId once it is
+  prayer?: { title: string; savedId: string | null } | null;
 };
 
 // What the reply stream sends (lib/ai/companion.ts ChatEvent)
@@ -17,7 +19,7 @@ export type ChatEvent =
   | { event: "meta"; data: { category: string } }
   | { event: "status"; data: { step: "searching" | "reading" | "writing"; refs?: string[] } }
   | { event: "delta"; data: { text: string } }
-  | { event: "done"; data: { messageId: string; citations: Passage[] } }
+  | { event: "done"; data: { messageId: string; citations: Passage[]; prayer?: { title: string } } }
   | { event: "blocked"; data: { category: string; messageId: string; text: string; resources?: CrisisResource[] } }
   | { event: "error"; data: { message: string } };
 

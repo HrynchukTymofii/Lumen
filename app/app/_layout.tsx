@@ -95,6 +95,10 @@ function RootNavigator() {
           <Stack.Screen name="settings/subscription" />
           <Stack.Screen name="settings/legal" />
           <Stack.Screen name="settings/support" />
+          <Stack.Screen name="personal-prayer/index" />
+          <Stack.Screen name="personal-prayer/new" />
+          <Stack.Screen name="personal-prayer/[id]" />
+          <Stack.Screen name="personal-prayer/tokens" options={{ presentation: "modal" }} />
           <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && !onboarded} redirectTo={home}>

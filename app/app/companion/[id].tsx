@@ -1,18 +1,20 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { type ComponentRef, useEffect, useRef, useState } from "react";
 import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
-import { KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light, type LightState } from "@/components/Light";
 import { IconButton } from "@/components/ui/Button";
-import { BackIcon, BookIcon, MicIcon, SendIcon } from "@/components/ui/icons";
+import { CrisisCard } from "@/components/CrisisCard";
+import { BackIcon, BookIcon, CheckIcon, MicIcon, PrayersIcon, SendIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { useKeyboardShown } from "@/hooks/useKeyboardShown";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { ChatError, getConversation, sendMessage } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
-import type { ChatMessage, CrisisResource } from "@/lib/api/types";
+import { savePrayerFromMessage } from "@/lib/api/prayers";
+import type { ChatMessage } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
 import { reviewMoment } from "@/lib/review";
 import { openPaywall } from "@/lib/account";
@@ -125,7 +127,7 @@ export default function ChatScreen() {
           else if (e.event === "delta") {
             got = true;
             updateReply((m) => ({ ...m, text: m.text + e.data.text }));
-          } else if (e.event === "done") updateReply((m) => ({ ...m, id: e.data.messageId, citations: e.data.citations }));
+          } else if (e.event === "done") updateReply((m) => ({ ...m, id: e.data.messageId, citations: e.data.citations, prayer: e.data.prayer ? { title: e.data.prayer.title, savedId: null } : null }));
           else if (e.event === "blocked") {
             got = true;
             updateReply((m) => ({ ...m, id: e.data.messageId, text: e.data.text, category: e.data.category, resources: e.data.resources }));
@@ -304,26 +306,42 @@ function Reply({ message, status }: { message: ChatMessage; status: string | nul
           <Text className="mt-1 font-serif text-[15px] leading-6 text-muted">{v.text}</Text>
         </View>
       ))}
+      {message.prayer && <SavePrayer messageId={message.id} prayer={message.prayer} />}
       {message.resources && <CrisisCard resources={message.resources} />}
     </View>
   );
 }
 
-function CrisisCard({ resources }: { resources: CrisisResource[] }) {
+// "Save to My prayers" under an answer that holds a prayer; then "Saved · Open"
+function SavePrayer({ messageId, prayer }: { messageId: string; prayer: { title: string; savedId: string | null } }) {
+  const c = useColors();
+  const [savedId, setSavedId] = useState(prayer.savedId);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const save = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      setSavedId((await savePrayerFromMessage(messageId)).id);
+    } catch (err) {
+      reportError(err);
+      setError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
   return (
-    <View className="gap-2 rounded-2xl bg-rose px-4 py-4">
-      <Text className="font-sans-bold text-[15px] text-on-pastel">You don’t have to go through this alone</Text>
-      {resources.map((r) => (
-        <Pressable
-          key={r.href}
-          onPress={() => Linking.openURL(r.href)}
-          accessibilityRole="button"
-          className="rounded-full bg-ink px-4 py-3 active:opacity-80"
-        >
-          <Text className="text-center font-sans-bold text-base text-bg">{r.label}</Text>
-          <Text className="text-center font-sans text-xs text-bg/70">{r.note}</Text>
-        </Pressable>
-      ))}
+    <View className="gap-1">
+      <Pressable
+        onPress={savedId ? () => router.push(`/personal-prayer/${savedId}`) : save}
+        disabled={saving}
+        accessibilityRole="button"
+        className="flex-row items-center gap-2 self-start rounded-full border-[1.5px] border-olive-deep/40 px-4 py-2.5 active:opacity-70"
+      >
+        {saving ? <ActivityIndicator size="small" color={c.oliveDeep} /> : savedId ? <CheckIcon size={16} color={c.oliveDeep} /> : <PrayersIcon size={16} color={c.oliveDeep} />}
+        <Text className="font-sans-bold text-sm text-olive-deep">{savedId ? "Saved · Open in My prayers" : "Save to My prayers"}</Text>
+      </Pressable>
+      {error && <Text className="font-sans text-sm text-danger">{error}</Text>}
     </View>
   );
 }

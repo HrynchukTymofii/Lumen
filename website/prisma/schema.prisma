@@ -76,6 +76,8 @@ model User {
   remindersEnabled   Boolean       @default(true)
   sensitiveConsentAt DateTime? // checkbox at sign-up (GDPR art. 9)
   marketingOptIn     Boolean       @default(false)
+  // Prayer tokens for audio prayers (consumables bought in the app); TokenLedger has every change
+  prayerTokens       Int           @default(0)
 
   // Acquisition
   funnelSlug       String?
@@ -110,6 +112,8 @@ model User {
   bookmarks       BibleBookmark[]
   ratings         AppRating[]
   supportRequests SupportRequest[]
+  personalPrayers PersonalPrayer[]
+  tokenLedger     TokenLedger[]
 }
 
 enum LoginTokenPurpose {
@@ -420,6 +424,8 @@ model Message {
   citations      Json            @default("[]") // [{ bookId, chapter, verseStart, verseEnd }]
   category       SafetyCategory? // classifier result, on user messages
   flagged        Boolean         @default(false) // crisis and abuse, for human review
+  // A prayer the companion wrote in this answer, encrypted JSON { title, text }; the app offers "Save to My prayers"
+  prayer         String?
   reviewedAt     DateTime?
   createdAt      DateTime        @default(now())
 
@@ -527,4 +533,68 @@ model BibleBookmark {
   createdAt DateTime
 
   @@id([userId, osis, chapter])
+}
+
+// ───────── Personal prayers (generator, saved from the companion, edited by hand) ─────────
+
+enum PrayerSource {
+  generator
+  companion
+  manual
+}
+
+model PersonalPrayer {
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source        PrayerSource
+  need          String? // what the user wrote in the generator, encrypted
+  messageId     String?      @unique // the companion message it was saved from (no double saves)
+  title         String // encrypted
+  text          String // encrypted
+  refs          Json         @default("[]") // verses the generator cited: [{ ref, text }]
+  words         Int
+  audioKey      String? // R2 key in the private bucket
+  audioTextHash String? // sha256 of the text that was voiced; differs after an edit
+  lines         Json? // [{ text, t }] from speakLines, for highlighting
+  durationSec   Int?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+// Generator prayers made: free users per month ("m:2026-11"), Premium per day ("d:2026-11-07"), user's timezone
+model PrayerQuota {
+  userId String
+  period String
+  count  Int    @default(0)
+
+  @@id([userId, period])
+}
+
+enum TokenReason {
+  purchase
+  spend
+  refund
+  store_refund
+  grant
+  monthly_free // Premium's free audio prayer of the month (delta 0)
+}
+
+// Every prayer-token change; User.prayerTokens is the running balance
+model TokenLedger {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta         Int
+  reason        TokenReason
+  transactionId String?     @unique // store transaction id: a purchase is granted once
+  productId     String?
+  prayerId      String?
+  month         String? // "2026-11" on monthly_free rows
+  createdAt     DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, reason, month])
 }

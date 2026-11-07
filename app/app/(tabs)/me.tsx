@@ -6,7 +6,7 @@ import { Light } from "@/components/Light";
 import { InkButton } from "@/components/ui/Button";
 import { RichText } from "@/components/RichText";
 import { SectionTitle, TrackCard } from "@/components/TrackCard";
-import { BoltIcon, ChevronIcon, DownloadIcon, GearIcon, HeartIcon, NoteIcon, PlusIcon } from "@/components/ui/icons";
+import { BoltIcon, ChevronIcon, DownloadIcon, GearIcon, HeartIcon, NoteIcon, PlusIcon, SparkleIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { askToSignIn, openPaywall } from "@/lib/account";
@@ -162,6 +162,15 @@ export default function MeScreen() {
               </EmptyTile>
             )}
           </Shelf>
+
+          <View className="mt-8">
+            <SectionTitle title="My prayers" onPress={() => router.push("/personal-prayer")} />
+            <Pressable onPress={() => router.push("/personal-prayer")} accessibilityRole="button" className="mx-4 flex-row items-center gap-3 rounded-[24px] bg-card px-5 py-4 active:opacity-80">
+              <SparkleIcon size={20} color={c.ink} />
+              <Text className="flex-1 font-sans-bold text-base text-ink">Prayers written for you</Text>
+              <ChevronIcon color={c.muted} />
+            </Pressable>
+          </View>
 
           <JournalSection kind="intention" />
           <JournalSection kind="reflection" />

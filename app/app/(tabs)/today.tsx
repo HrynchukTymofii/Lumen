@@ -9,10 +9,10 @@ import { StreakWeek } from "@/components/StreakWeek";
 import { SectionTitle, Shelf } from "@/components/TrackCard";
 import { TrackArt } from "@/components/TrackArt";
 import { InkButton, OliveButton } from "@/components/ui/Button";
-import { ArrowIcon, BellIcon, BibleIcon, CheckIcon, ChevronIcon, LockIcon, PlayIcon, SearchIcon } from "@/components/ui/icons";
+import { ArrowIcon, BellIcon, BibleIcon, CheckIcon, ChevronIcon, LockIcon, PlayIcon, SearchIcon, SparkleIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
-import { askToSignIn, hasAccount } from "@/lib/account";
+import { askToSignIn, hasAccount, withAccount } from "@/lib/account";
 import { createConversation } from "@/lib/api/chat";
 import { errorMessage } from "@/lib/api/client";
 import { cachedLibrary, getLibrary, getTrending } from "@/lib/api/library";
@@ -334,6 +334,7 @@ export default function HomeScreen() {
       {/* Today's Bible reading, or an invitation to start a plan; then the feast challenge coming up */}
       <ReadingCard />
       <ChallengeCard />
+      <PersonalPrayerCard />
 
       {/* The companion, one tap away */}
       {(!user || user.aiEnabled) && <TalkCard topic={companionTopic(user)} />}
@@ -491,6 +492,27 @@ function ReminderChoice({ label, strong, onPress }: { label: string; strong?: bo
 }
 
 // Today's reading of the plan in progress; without a plan, a quiet invitation to start one
+// The prayer generator: a prayer written for what the person is carrying (My prayers)
+function PersonalPrayerCard() {
+  const c = useColors();
+  return (
+    <Pressable
+      onPress={() => withAccount("prayers", () => router.push("/personal-prayer/new"))}
+      accessibilityRole="button"
+      className="mx-4 mt-4 flex-row items-center gap-4 rounded-[28px] bg-card p-5 active:opacity-90"
+    >
+      <View className="h-12 w-12 items-center justify-center rounded-full bg-bg">
+        <SparkleIcon size={22} color={c.ink} />
+      </View>
+      <View className="flex-1">
+        <Text className="font-display text-[18px] text-ink">Pray about something specific</Text>
+        <Text className="mt-0.5 font-sans text-sm text-muted">Tell us what’s on your heart, and we’ll write a prayer for it</Text>
+      </View>
+      <ChevronIcon size={18} color={c.dim} />
+    </Pressable>
+  );
+}
+
 function ReadingCard() {
   const c = useColors();
   const progress = usePlanProgress();

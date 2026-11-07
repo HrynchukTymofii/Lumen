@@ -38,6 +38,7 @@ export type AnalyticsEvents = {
   verse_of_day_viewed: Record<string, never>;
   verse_shared: Record<string, never>;
   chat_message_sent: { message_count_today: number; tier: "free" | "premium" };
+  tokens_sheet_shown: { placement: string };
   verse_chip_opened: { reference: string };
   streak_goal_set: { goal: number };
   streak_week_completed: { goal: number };

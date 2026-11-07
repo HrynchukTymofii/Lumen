@@ -34,7 +34,7 @@ export type ChatEvent =
   | { event: "meta"; data: { category: MessageCategory; quota: Omit<Quota, "premium"> } }
   | { event: "status"; data: { step: "searching" | "reading" | "writing"; refs?: string[] } }
   | { event: "delta"; data: { text: string } }
-  | { event: "done"; data: { messageId: string; citations: Passage[]; refused?: boolean } }
+  | { event: "done"; data: { messageId: string; citations: Passage[]; refused?: boolean; prayer?: { title: string } } }
   | { event: "blocked"; data: { category: MessageCategory; messageId: string; text: string; resources?: CrisisResource[] } }
   | { event: "error"; data: { message: string } };
 

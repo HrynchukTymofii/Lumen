@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BookIcon, Light } from "@/components/kit";
 import type { LightState } from "@/lib/kit/art";
+import { savePrayerFromMessage } from "../../prayers/personal/prayers-api";
 import { ChatError, sendMessage, type ChatMessage, type CrisisResource } from "../chat-api";
 
 // Chat, as in the app (app/app/companion/[id].tsx): the reply streams in as it's written; verses it cites show
@@ -96,7 +97,7 @@ export function Chat({
           else if (e.event === "delta") {
             got = true;
             updateReply((m) => ({ ...m, text: m.text + e.data.text }));
-          } else if (e.event === "done") updateReply((m) => ({ ...m, id: e.data.messageId, citations: e.data.citations }));
+          } else if (e.event === "done") updateReply((m) => ({ ...m, id: e.data.messageId, citations: e.data.citations, prayer: e.data.prayer ? { title: e.data.prayer.title, savedId: null } : null }));
           else if (e.event === "blocked") {
             got = true;
             updateReply((m) => ({ ...m, id: e.data.messageId, text: e.data.text, category: e.data.category, resources: e.data.resources }));
@@ -232,7 +233,44 @@ function Reply({ message, status }: { message: ChatMessage; status: string | nul
           <p>{v.text}</p>
         </div>
       ))}
+      {message.prayer && <SavePrayer messageId={message.id} prayer={message.prayer} />}
       {message.resources && <CrisisCard resources={message.resources} />}
+    </div>
+  );
+}
+
+// "Save to My prayers" under an answer that holds a prayer; then a link to it
+function SavePrayer({ messageId, prayer }: { messageId: string; prayer: { title: string; savedId: string | null } }) {
+  const [savedId, setSavedId] = useState(prayer.savedId);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (savedId) {
+    return (
+      <Link href={`/app/prayers/personal/${savedId}`} className="wa-chip save-prayer">
+        ✓ Saved · Open in My prayers
+      </Link>
+    );
+  }
+  return (
+    <div>
+      <button
+        className="wa-chip save-prayer"
+        disabled={saving}
+        onClick={async () => {
+          setSaving(true);
+          setError(null);
+          try {
+            setSavedId((await savePrayerFromMessage(messageId)).id);
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+          } finally {
+            setSaving(false);
+          }
+        }}
+      >
+        {saving ? "Saving…" : "Save to My prayers"}
+      </button>
+      {error && <p className="pp-error">{error}</p>}
     </div>
   );
 }

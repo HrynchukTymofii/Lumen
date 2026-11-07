@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { trackServer } from "@/lib/analytics/server";
 import { revenueCatConfigured, syncRevenueCat } from "@/lib/revenuecat";
+import { grantPurchasedTokens, grantTransaction, revokeTransaction, tokensOf } from "@/lib/tokens";
 
 // RevenueCat → Entitlement (SPEC §6.2, §9.2). RevenueCat sends the Authorization header set in its dashboard
 // (Integrations → Webhooks); it must equal REVENUECAT_WEBHOOK_AUTH. Each event re-reads the customer's state, so
@@ -15,6 +16,7 @@ type RcEvent = {
   transferred_from?: string[];
   transferred_to?: string[];
   product_id?: string;
+  transaction_id?: string; // the store's transaction id
   store?: string; // APP_STORE | PLAY_STORE | …
   environment?: string; // PRODUCTION | SANDBOX
   period_type?: string; // TRIAL | INTRO | NORMAL
@@ -34,6 +36,9 @@ async function trackPurchase(userId: string, e: RcEvent) {
   };
   const price = typeof e.price === "number" ? e.price : 0;
   switch (e.type) {
+    case "NON_RENEWING_PURCHASE":
+      if (tokensOf(e.product_id)) return trackServer(userId, "tokens_purchased", { ...base, tokens: tokensOf(e.product_id) });
+      return;
     case "INITIAL_PURCHASE":
       if (e.period_type === "TRIAL") return trackServer(userId, "trial_started", base);
       return trackServer(userId, "subscription_started", { ...base, price });
@@ -79,6 +84,15 @@ export async function POST(req: Request) {
     for (const id of ids) if (await syncRevenueCat(id)) ours.push(id);
     // A transfer touches two accounts; the purchase belongs to app_user_id when it's ours
     const buyer = ours.find((id) => id === event.app_user_id) ?? ours[0];
+    // Prayer token packs (consumables): granted once per store transaction, taken back on a refund
+    if (buyer && tokensOf(event.product_id)) {
+      if (event.type === "NON_RENEWING_PURCHASE") {
+        if (event.transaction_id) await grantTransaction(buyer, event.transaction_id, event.product_id!);
+        else await grantPurchasedTokens(buyer);
+      } else if (event.type === "CANCELLATION" && event.cancel_reason === "CUSTOMER_SUPPORT" && event.transaction_id) {
+        await revokeTransaction(buyer, event.transaction_id);
+      }
+    }
     if (buyer) await trackPurchase(buyer, event);
   } catch (err) {
     // A 500 makes RevenueCat retry later

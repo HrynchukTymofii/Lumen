@@ -194,4 +194,6 @@ export interface ChatMessage {
   citations: Passage[];
   // Only on a crisis reply received in this session
   resources?: CrisisResource[];
+  // A prayer in this answer that can be saved to My prayers; savedId once it is
+  prayer?: { title: string; savedId: string | null } | null;
 }

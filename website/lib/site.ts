@@ -9,7 +9,7 @@ export const SITE = {
   contactEmail: "lumen-support@fibipals.com",
   privacyEmail: "lumen-support@fibipals.com",
   governingLaw: "",
-  legalUpdated: "31 October 2026",
+  legalUpdated: "7 November 2026",
   minAge: 13,
   // US App Store prices, and the fallback everywhere the synced local prices (lib/prices.ts) are missing or broken.
   // Purchases only happen in the stores (no web checkout). A weekly plan exists in the app but isn't shown here.
