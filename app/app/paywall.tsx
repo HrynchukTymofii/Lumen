@@ -19,7 +19,7 @@ import { buy, getPlans, purchasesEnabled, restore, type Intro, type PeriodUnit, 
 // Feature lists: same copy as website/lib/plans.ts.
 
 const PREMIUM_FEATURES = [
-  "Unlimited companion chat",
+  "200 companion messages a week",
   "Personal daily prayer, text and audio",
   "Full guided prayer library with audio",
   "Prayer journal and history",

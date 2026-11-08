@@ -47,7 +47,7 @@ export function CheckoutMock() {
               <CheckIcon size={14} /> A personal prayer every day, with audio
             </li>
             <li>
-              <CheckIcon size={14} /> Unlimited companion chat
+              <CheckIcon size={14} /> 200 companion messages a week
             </li>
           </ul>
           <div className="co-total">

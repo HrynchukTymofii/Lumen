@@ -44,7 +44,7 @@ export type AnalyticsEvents = {
   verse_of_day_viewed: Record<string, never>;
   verse_shared: Record<string, never>;
   chat_conversation_started: Record<string, never>;
-  chat_message_sent: { message_count_today: number; tier: "free" | "premium"; quick_prompt?: string };
+  chat_message_sent: { message_count_week: number; tier: "free" | "premium"; quick_prompt?: string };
   chat_message_blocked: { category: "off_topic" | "jailbreak" | "crisis" | "abuse"; tier: "free" | "premium" };
   chat_limit_reached: { tier: "free" | "premium"; limit: number };
   // Personal prayers (counts and lengths only, never the text)

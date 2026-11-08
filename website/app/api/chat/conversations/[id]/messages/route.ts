@@ -33,12 +33,15 @@ export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/chat
   // Crisis replies are never held back by the quota; fixed replies don't use it
   if (screened.category === "on_topic" && screened.quota.used >= screened.quota.limit) {
     trackAfter(user.id, "chat_limit_reached", { tier, limit: screened.quota.limit });
-    throw new HttpError(402, "You've used today's messages.", { code: "quota", quota: screened.quota, premium });
+    // Premium gets its own code: nothing to upgrade to, so the apps show the message instead of the paywall card
+    throw premium
+      ? new HttpError(402, "You've reached this week's messages. They reset on Monday.", { code: "quota_premium", quota: screened.quota, premium })
+      : new HttpError(402, "You've used this week's messages.", { code: "quota", quota: screened.quota, premium });
   }
 
   // Counts and categories only, never the text
   if (screened.category === "on_topic") {
-    trackAfter(user.id, "chat_message_sent", { message_count_today: screened.quota.used + 1, tier, quick_prompt: input.quickPrompt });
+    trackAfter(user.id, "chat_message_sent", { message_count_week: screened.quota.used + 1, tier, quick_prompt: input.quickPrompt });
   } else {
     trackAfter(user.id, "chat_message_blocked", { category: screened.category, tier });
   }

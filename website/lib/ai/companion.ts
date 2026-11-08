@@ -14,9 +14,9 @@ import { historyFor } from "@/lib/chat";
 // One companion message (SPEC §7.2): classify → quota → retrieve verses → stream the answer → validate
 // citations → save both messages encrypted. The route turns the events into SSE.
 
-export const FREE_DAILY = 3;
-export const FREE_FIRST_DAY = 5; // a bigger first taste: the first day the user chats at all
-export const PREMIUM_DAILY = 50; // soft cap against runaway cost
+// Messages per week (Monday to Sunday in the user's timezone). Only on-topic answers count.
+export const FREE_WEEKLY = 10;
+export const PREMIUM_WEEKLY = 200; // soft cap against runaway cost
 
 export type CitationOut = Passage;
 
@@ -33,9 +33,10 @@ export type ChatEvent =
     }
   | { event: "error"; data: { message: string } };
 
-export type Quota = { used: number; limit: number; date: string };
+// date: the Monday the week started (YYYY-MM-DD); resetsOn: the next Monday
+export type Quota = { used: number; limit: number; date: string; resetsOn: string };
 
-// Free users count messages per day in their own timezone
+// The user's calendar date in their own timezone
 export function localDate(timezone: string) {
   try {
     return new Intl.DateTimeFormat("en-CA", { timeZone: timezone }).format(new Date());
@@ -44,15 +45,23 @@ export function localDate(timezone: string) {
   }
 }
 
+const addDays = (date: string, n: number) => {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
+// The Monday of the user's current week. ChatQuota rows are keyed by it, so one row counts a whole week.
+export function weekStart(timezone: string) {
+  const today = localDate(timezone);
+  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay(); // 0 = Sunday
+  return addDays(today, -((weekday + 6) % 7));
+}
+
 export async function getQuota(user: Pick<User, "id" | "timezone">, premium: boolean): Promise<Quota> {
-  const date = localDate(user.timezone);
-  const [row, earlier] = await Promise.all([
-    prisma.chatQuota.findUnique({ where: { userId_date: { userId: user.id, date } } }),
-    // Dates are YYYY-MM-DD strings, so "lt" compares them correctly
-    premium ? null : prisma.chatQuota.findFirst({ where: { userId: user.id, date: { lt: date } }, select: { date: true } }),
-  ]);
-  const limit = premium ? PREMIUM_DAILY : earlier ? FREE_DAILY : FREE_FIRST_DAY;
-  return { used: row?.count ?? 0, limit, date };
+  const date = weekStart(user.timezone);
+  const row = await prisma.chatQuota.findUnique({ where: { userId_date: { userId: user.id, date } } });
+  return { used: row?.count ?? 0, limit: premium ? PREMIUM_WEEKLY : FREE_WEEKLY, date, resetsOn: addDays(date, 7) };
 }
 
 // Claims that must never appear in an answer (SPEC §7.2 step 8). Can't be unsent mid-stream, so they flag

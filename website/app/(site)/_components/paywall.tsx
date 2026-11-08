@@ -17,7 +17,7 @@ import { usePrices } from "./use-prices";
 // drawer explaining that, or a checkout mock-up page. Kept short on purpose: three reasons, two plans, one button.
 // No countdowns, no fake discounts; "continue free" is always visible.
 // `variant` is still recorded for analytics, but both variants now show the same paywall.
-const REASONS = ["Your full 7-day prayer path", "A personal prayer every day, with audio", "Unlimited companion chat"];
+const REASONS = ["Your full 7-day prayer path", "A personal prayer every day, with audio", "200 companion messages a week"];
 
 const noop = () => () => {};
 

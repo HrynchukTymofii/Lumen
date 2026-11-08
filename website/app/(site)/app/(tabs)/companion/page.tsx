@@ -11,7 +11,7 @@ import { companionTopic } from "@/funnels/companion-topics";
 
 export const metadata: Metadata = { title: "Companion" };
 
-// Companion (SPEC §10.2), as in the app: new conversation, quick prompts, earlier conversations, today's allowance.
+// Companion (SPEC §10.2), as in the app: new conversation, quick prompts, earlier conversations, this week's allowance.
 export default function CompanionPage() {
   return (
     <Suspense fallback={<Light size={56} state="thinking" />}>
@@ -66,7 +66,7 @@ async function Companion() {
       <StartChat prompts={topic.prompts} />
       {left !== null && (
         <p className="wa-lead" style={{ textAlign: "center", fontSize: 14 }}>
-          {left} of {quota.limit} messages left today
+          {left} of {quota.limit} messages left this week
           {left === 0 && (
             <>
               {" · "}

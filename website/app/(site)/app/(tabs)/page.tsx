@@ -211,7 +211,7 @@ async function Today() {
         <section className="home-box home-premium">
           <div>
             <b>Try Premium free for 7 days</b>
-            <p>Personal prayers with audio, the full library, unlimited companion.</p>
+            <p>Personal prayers with audio, the full library, 200 companion messages a week.</p>
           </div>
           <Link href="/app/upgrade" className="btn-ink sm">
             See plans

@@ -161,7 +161,8 @@ export interface Library {
 export interface Quota {
   used: number;
   limit: number;
-  date: string;
+  date: string; // the Monday the week started
+  resetsOn: string; // the next Monday
   premium: boolean;
 }
 

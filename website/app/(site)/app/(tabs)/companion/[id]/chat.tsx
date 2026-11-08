@@ -8,7 +8,7 @@ import { savePrayerFromMessage } from "../../prayers/personal/prayers-api";
 import { ChatError, sendMessage, type ChatMessage, type CrisisResource } from "../chat-api";
 
 // Chat, as in the app (app/app/companion/[id].tsx): the reply streams in as it's written; verses it cites show
-// under it as cards. Crisis replies carry call / text buttons. Errors before the stream (daily limit, too fast)
+// under it as cards. Crisis replies carry call / text buttons. Errors before the stream (weekly limit, too fast)
 // show above the input. Until the first words arrive, the reply shows what the companion is doing.
 
 const MAX_LENGTH = 1000;
@@ -173,8 +173,8 @@ export function Chat({
           // Someone may have just opened up about something hard: no "limit reached", and their words stay in the box
           <div className="wa-card chat-quota">
             <p>
-              Thank you for sharing this with me. We’ve reached the end of today’s conversation, and I’ll be here again
-              tomorrow. Your message is saved below.
+              Thank you for sharing this with me. We’ve reached the end of this week’s conversations, and I’ll be here again
+              on Monday. Your message is saved below.
             </p>
             <p className="wa-lead" style={{ fontSize: 14 }}>
               Until then, you could bring it to God in prayer, or share it with someone you trust.

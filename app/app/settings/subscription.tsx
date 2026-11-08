@@ -59,7 +59,7 @@ export default function SubscriptionSettings() {
             <>
               <Text className="font-display text-[22px] leading-7 text-ink">Free plan</Text>
               <Text className="mt-1 font-sans text-sm leading-5 text-muted">
-                Bible, verse of the day and a daily prayer, forever. Premium unlocks every guided prayer and unlimited companion conversations.
+                Bible, verse of the day and a daily prayer, forever. Premium unlocks every guided prayer and 200 companion messages a week.
               </Text>
               <View className="mt-5">
                 <InkButton label="See Premium plans" onPress={() => openPaywall("settings")} />

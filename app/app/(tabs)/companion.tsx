@@ -15,7 +15,7 @@ import type { ConversationSummary, Quota } from "@/lib/api/types";
 import { reportError } from "@/lib/errorReporting";
 
 // Companion (SPEC §10.2): what the companion can do (said for what they're carrying, lib/companionTopics.ts),
-// suggestions to start with, "New conversation", earlier conversations and today's allowance.
+// suggestions to start with, "New conversation", earlier conversations and this week's allowance.
 
 function when(iso: string) {
   const d = new Date(iso);
@@ -169,7 +169,7 @@ function Companion() {
         <InkButton label="New conversation" onPress={() => start()} loading={starting} icon={<PlusIcon color={c.bg} />} />
         {left !== null && (
           <Text className="mt-2.5 text-center font-sans text-sm text-muted">
-            {left} of {quota!.limit} messages left today
+            {left} of {quota!.limit} messages left this week
           </Text>
         )}
       </View>

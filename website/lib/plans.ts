@@ -37,11 +37,11 @@ export const FREE_FEATURES = [
   "Full Bible: WEB, KJV, BSB, Douay-Rheims",
   "Verse of the day",
   "One daily prayer",
-  "Companion: 3 messages a day",
+  "Companion: 10 messages a week",
   "Weekly goal that forgives missed days",
 ];
 export const PREMIUM_FEATURES = [
-  "Unlimited companion chat",
+  "200 companion messages a week",
   "Personal daily prayer, text and audio",
   "Full guided prayer library",
   "Prayer journal and history",

@@ -20,7 +20,7 @@ import { reviewMoment } from "@/lib/review";
 import { openPaywall } from "@/lib/account";
 
 // Chat (SPEC §10.2 Companion): the reply streams in as it's written; verses it cites show under it as cards.
-// Crisis replies carry call / text buttons. Errors before the stream (daily limit, too fast) show above the input.
+// Crisis replies carry call / text buttons. Errors before the stream (weekly limit, too fast) show above the input.
 // Until the first words arrive, the reply shows what the companion is doing (reading, searching, writing).
 
 const MAX_LENGTH = 1000;
@@ -209,8 +209,8 @@ export default function ChatScreen() {
         // Someone may have just opened up about something hard: no "limit reached", and their words stay in the box
         <View className="mx-4 mb-2 gap-3 rounded-3xl bg-card px-5 py-4">
           <Text className="font-sans text-base leading-6 text-ink">
-            Thank you for sharing this with me. We’ve reached the end of today’s conversation, and I’ll be here again
-            tomorrow. Your message is saved below.
+            Thank you for sharing this with me. We’ve reached the end of this week’s conversations, and I’ll be here again
+            on Monday. Your message is saved below.
           </Text>
           <Text className="font-sans text-sm leading-5 text-muted">
             Until then, you could bring it to God in prayer, or share it with someone you trust.

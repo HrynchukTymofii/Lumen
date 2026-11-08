@@ -56,7 +56,7 @@ export default function SettingsScreen() {
         <View className="mt-3">
           <MenuRow label="General" hint="Theme, reminders, goal, Bible, companion" href="/settings/general" />
           <MenuRow label="Contact & Support" href="/settings/support" />
-          <MenuRow label={premium.active ? "Subscription" : "Subscribe"} hint={premium.active ? "Premium" : "Every prayer, unlimited companion"} href="/settings/subscription" />
+          <MenuRow label={premium.active ? "Subscription" : "Subscribe"} hint={premium.active ? "Premium" : "Every prayer, far more companion chat"} href="/settings/subscription" />
           <MenuRow label="Share Holy Hush" onPress={shareApp} />
           <MenuRow label="Legal" href="/settings/legal" />
           <MenuRow label="Log out" onPress={confirmSignOut} />

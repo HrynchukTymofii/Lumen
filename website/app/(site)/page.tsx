@@ -107,7 +107,7 @@ const CAPTIONS = [
 const FAQ = [
   [
     "Is it really free?",
-    "Yes. The Bible, verse of the day, one daily prayer, 3 companion messages a day and your weekly goal are free forever. Premium adds unlimited chat, personal prayers with audio, the full library, the journal and prayer paths.",
+    "Yes. The Bible, verse of the day, one daily prayer, 10 companion messages a week and your weekly goal are free forever. Premium adds 200 companion messages a week, personal prayers with audio, the full library, the journal and prayer paths.",
   ],
   [
     "Is it Catholic or Protestant?",
