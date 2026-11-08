@@ -18,6 +18,24 @@ export interface PersonalPrayerSummary {
   updatedAt: string;
 }
 
+// The voices a prayer can be read in. Only the name is shown. Keep in step with website/lib/voices.ts.
+export const VOICES = [
+  { id: "grace", name: "Grace" },
+  { id: "ruth", name: "Ruth" },
+  { id: "matthew", name: "Matthew" },
+  { id: "john", name: "John" },
+] as const;
+export type VoiceId = (typeof VOICES)[number]["id"];
+export const DEFAULT_VOICE: VoiceId = "grace";
+export const voiceName = (id: string) => VOICES.find((v) => v.id === id)?.name ?? "";
+/** A voice we know, else the default (a recording from before voices could be chosen, or an older server). */
+export const knownVoice = (id: unknown): VoiceId => VOICES.find((v) => v.id === id)?.id ?? DEFAULT_VOICE;
+
+// The recording's voice is always one the app can show
+function withVoice<T extends PersonalPrayer>(p: T): T {
+  return p.audio ? { ...p, audio: { ...p.audio, voice: knownVoice(p.audio.voice) } } : p;
+}
+
 export interface AudioPrice {
   tokens: number;
   free: boolean;
@@ -27,7 +45,7 @@ export interface AudioPrice {
 export interface PersonalPrayer extends PersonalPrayerSummary {
   text: string;
   refs: { ref: string; text: string }[];
-  audio: { url: string; durationSec: number | null; lines: { text: string; t: number | null }[]; stale: boolean } | null;
+  audio: { url: string; durationSec: number | null; lines: { text: string; t: number | null }[]; voice: VoiceId; stale: boolean } | null;
   audioPrice: AudioPrice;
 }
 
@@ -64,31 +82,31 @@ export async function listPrayers() {
 
 export async function getPrayer(id: string) {
   const { data } = await api.get<PersonalPrayer>(`/prayers/personal/${id}`);
-  return data;
+  return withVoice(data);
 }
 
 /** The new prayer, or a crisis answer (no prayer: the person is shown who to reach) */
 export async function generatePrayer(need: string, length: PrayerLength) {
   const { data } = await api.post<PersonalPrayer | { crisis: true; resources: CrisisResource[] }>("/prayers/personal", { need, length }, { timeout: 60_000 });
-  return data;
+  return "crisis" in data ? data : withVoice(data);
 }
 
 export async function savePrayerFromMessage(messageId: string) {
   const { data } = await api.post<PersonalPrayer>("/prayers/personal/from-message", { messageId });
-  return data;
+  return withVoice(data);
 }
 
 export async function editPrayer(id: string, change: { title?: string; text?: string }) {
   const { data } = await api.patch<PersonalPrayer>(`/prayers/personal/${id}`, change);
-  return data;
+  return withVoice(data);
 }
 
 export async function deletePrayer(id: string) {
   await api.delete(`/prayers/personal/${id}`);
 }
 
-/** Records the prayer as it reads now and charges `expectedTokens` (0 for the free one). */
-export async function recordPrayer(id: string, expectedTokens: number) {
-  const { data } = await api.post<PersonalPrayer>(`/prayers/personal/${id}/audio`, { expectedTokens }, { timeout: 70_000 });
-  return data;
+/** Records the prayer as it reads now, in `voice`, and charges `expectedTokens` (0 for the free one). */
+export async function recordPrayer(id: string, expectedTokens: number, voice: VoiceId) {
+  const { data } = await api.post<PersonalPrayer>(`/prayers/personal/${id}/audio`, { expectedTokens, voice }, { timeout: 70_000 });
+  return withVoice(data);
 }

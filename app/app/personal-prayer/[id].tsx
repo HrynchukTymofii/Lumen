@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -6,12 +7,16 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, Sc
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { VoiceMark } from "@/components/VoiceMark";
+import { VoiceSheet } from "@/components/VoiceSheet";
 import { InkButton, LineButton } from "@/components/ui/Button";
 import { BookIcon, CopyIcon, NoteIcon, PauseIcon, PlayIcon, ShareIcon, TrashIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { openPaywall } from "@/lib/account";
 import {
+  DEFAULT_VOICE,
   MAX_AUDIO_WORDS,
+  VOICES,
   countWords,
   deletePrayer,
   editPrayer,
@@ -22,6 +27,8 @@ import {
   tokensFor,
   type Allowance,
   type PersonalPrayer,
+  type VoiceId,
+  voiceName,
 } from "@/lib/api/prayers";
 import { reportError } from "@/lib/errorReporting";
 import { localPrayerAudio, removePrayerAudio, savePrayerAudio } from "@/lib/personalPrayerAudio";
@@ -30,6 +37,9 @@ import { localPrayerAudio, removePrayerAudio, savePrayerAudio } from "@/lib/pers
 // time (1 token per 200 words; Premium's first short one each month is free) and then plays it like any prayer,
 // following along paragraph by paragraph. After an edit the old recording still plays, with an offer to record the
 // new version.
+
+// The voice picked last time is picked again
+const VOICE_KEY = "prayer-voice";
 
 const paragraphsOf = (text: string) =>
   text
@@ -55,6 +65,15 @@ export default function PersonalPrayerScreen() {
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [current, setCurrent] = useState(-1); // paragraph being read
+  const [voice, setVoice] = useState<VoiceId>(DEFAULT_VOICE);
+  const [choosing, setChoosing] = useState(false); // the voice drawer is open
+
+  useEffect(() => {
+    AsyncStorage.getItem(VOICE_KEY)
+      .then((v) => VOICES.some((o) => o.id === v) && setVoice(v as VoiceId))
+      .catch(() => {});
+  }, []);
+
 
   // Fresh on every visit: the audio link expires, and a token purchase changes the balance
   useFocusEffect(
@@ -70,12 +89,12 @@ export default function PersonalPrayerScreen() {
     return () => clearTimeout(t);
   }, [note]);
 
-  const record = async (expected: number) => {
+  const record = async (expected: number, voice: VoiceId) => {
     if (!prayer) return;
     setRecording(true);
     setError(null);
     try {
-      const updated = await recordPrayer(prayer.id, expected);
+      const updated = await recordPrayer(prayer.id, expected, voice);
       setPrayer(updated);
       getAllowance().then(setAllowance, () => {});
       if (updated.audio) savePrayerAudio(updated.audio.url);
@@ -97,23 +116,34 @@ export default function PersonalPrayerScreen() {
     }
   };
 
+  // "Listen": without the tokens for it go straight to Premium / tokens; otherwise open the voice drawer
   const listen = () => {
     if (!prayer || !allowance) return;
     const price = prayer.audioPrice;
     if (price.tooLong) return;
-    if (price.free) return record(0);
-    if (allowance.tokens < price.tokens) {
+    if (!price.free && allowance.tokens < price.tokens) {
       // Audio and tokens come with Premium; tokens left from an earlier Premium still work
       if (!allowance.premium) return openPaywall("prayer");
       return router.push({ pathname: "/personal-prayer/tokens", params: { needed: String(price.tokens) } });
     }
+    setChoosing(true);
+  };
+
+  // A voice was picked in the drawer: remember it, then record
+  const listenWith = (v: VoiceId) => {
+    setChoosing(false);
+    setVoice(v);
+    AsyncStorage.setItem(VOICE_KEY, v).catch(() => {});
+    if (!prayer || !allowance) return;
+    const price = prayer.audioPrice;
+    if (price.free) return record(0, v);
     if (price.tokens >= 3) {
       return Alert.alert("Record this prayer?", `It’s ${prayer.words} words, so it uses ${price.tokens} tokens. You have ${allowance.tokens}.`, [
         { text: "Cancel", style: "cancel" },
-        { text: `Use ${price.tokens} tokens`, onPress: () => record(price.tokens) },
+        { text: `Use ${price.tokens} tokens`, onPress: () => record(price.tokens, v) },
       ]);
     }
-    record(price.tokens);
+    record(price.tokens, v);
   };
 
   const save = async () => {
@@ -158,11 +188,8 @@ export default function PersonalPrayerScreen() {
   const editWords = editing ? countWords(editing.text) : 0;
   const audio = prayer?.audio ?? null;
   const price = prayer?.audioPrice;
-  const listenLabel = !price
-    ? ""
-    : price.free
-      ? "Listen · free this month"
-      : `${audio?.stale ? "Record the new version" : "Listen"} · ${price.tokens} ${price.tokens === 1 ? "token" : "tokens"}`;
+  const priceLabel = !price ? "" : price.free ? "free this month" : `${price.tokens} ${price.tokens === 1 ? "token" : "tokens"}`;
+  const listenLabel = `${audio?.stale ? "Record the new version" : "Listen"} · ${priceLabel}`;
 
   return (
     <View className="flex-1 bg-bg">
@@ -259,6 +286,30 @@ export default function PersonalPrayerScreen() {
                   </Chip>
                 </View>
 
+                {audio && !audio.stale && price && !price.tooLong && (
+                  <View className="mt-6 gap-2">
+                    <Pressable
+                      onPress={listen}
+                      disabled={recording || !allowance}
+                      accessibilityRole="button"
+                      className="flex-row items-center gap-3 rounded-[22px] bg-card px-3 py-2.5 active:opacity-80"
+                    >
+                      <VoiceMark voice={audio.voice} size={40} />
+                      <View className="flex-1">
+                        <Text className="font-sans text-xs text-muted">Read by</Text>
+                        <Text className="font-sans-bold text-[15px] text-ink">{voiceName(audio.voice)}</Text>
+                      </View>
+                      {recording ? (
+                        <ActivityIndicator color={c.muted} style={{ marginRight: 8 }} />
+                      ) : (
+                        <Text className="mr-2 font-sans-semibold text-[15px] text-olive-deep">Change voice</Text>
+                      )}
+                    </Pressable>
+                    {recording && <Text className="text-center font-sans text-sm text-muted">Recording your prayer… this can take up to half a minute.</Text>}
+                    {error && <Text className="text-center font-sans text-[15px] text-danger">{error}</Text>}
+                  </View>
+                )}
+
                 {(!audio || audio.stale) && price && (
                   <View className="mt-6 gap-2">
                     {price.tooLong ? (
@@ -286,6 +337,16 @@ export default function PersonalPrayerScreen() {
             )}
           </ScrollView>
         </KeyboardAvoidingView>
+      )}
+      {choosing && prayer && (
+        <VoiceSheet
+          initial={voice}
+          // Already recorded as it reads now: that voice would buy the same recording again
+          current={audio && !audio.stale ? audio.voice : undefined}
+          price={priceLabel}
+          onClose={() => setChoosing(false)}
+          onConfirm={listenWith}
+        />
       )}
     </View>
   );

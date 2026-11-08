@@ -14,13 +14,13 @@ export function ttsConfigured() {
 }
 
 // Speaks all lines of one variant and returns the MP3 plus a start time for every line,
-// so the player can highlight the line being spoken.
-export async function speakLines(lines: Variant["lines"]) {
+// so the player can highlight the line being spoken. Without a voice id it uses ELEVENLABS_VOICE_ID.
+export async function speakLines(lines: Variant["lines"], voiceId = process.env.ELEVENLABS_VOICE_ID) {
   if (!ttsConfigured()) throw new HttpError(503, "ElevenLabs is not configured (ELEVENLABS_* in .env)");
 
   const text = lines.map((l) => l.text.trim()).join(LINE_GAP);
   const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}/with-timestamps?output_format=mp3_44100_128`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps?output_format=mp3_44100_128`,
     {
       method: "POST",
       headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY!, "Content-Type": "application/json" },

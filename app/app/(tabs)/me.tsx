@@ -6,11 +6,12 @@ import { Light } from "@/components/Light";
 import { InkButton } from "@/components/ui/Button";
 import { RichText } from "@/components/RichText";
 import { SectionTitle, TrackCard } from "@/components/TrackCard";
-import { BoltIcon, ChevronIcon, DownloadIcon, GearIcon, HeartIcon, NoteIcon, PlusIcon, SparkleIcon } from "@/components/ui/icons";
+import { BoltIcon, ChevronIcon, DownloadIcon, GearIcon, HeartIcon, NoteIcon, PlayIcon, PlusIcon } from "@/components/ui/icons";
 import { useColors } from "@/components/ui/theme";
 import { useAuth } from "@/context/AuthContext";
 import { askToSignIn, openPaywall } from "@/lib/account";
 import { cachedLibrary, getLibrary } from "@/lib/api/library";
+import { listPrayers, type PersonalPrayerSummary } from "@/lib/api/prayers";
 import { getToday } from "@/lib/api/today";
 import type { Library, Streak } from "@/lib/api/types";
 import { useMarks } from "@/lib/bibleMarks";
@@ -29,6 +30,7 @@ export default function MeScreen() {
   const c = useColors();
   const [streak, setStreak] = useState<Streak | null>(null);
   const [library, setLibrary] = useState<Library | null>(cachedLibrary);
+  const [prayers, setPrayers] = useState<PersonalPrayerSummary[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const recent = useRecent();
   const favorites = useFavorites();
@@ -37,7 +39,11 @@ export default function MeScreen() {
 
   const load = useCallback(
     () =>
-      Promise.all([user && getToday().then((t) => setStreak(t.streak)), getLibrary().then(setLibrary)]).catch(reportError),
+      Promise.all([
+        user && getToday().then((t) => setStreak(t.streak)),
+        user && listPrayers().then(setPrayers),
+        getLibrary().then(setLibrary),
+      ]).catch(reportError),
     [user],
   );
 
@@ -132,6 +138,8 @@ export default function MeScreen() {
         </Pressable>
       )}
 
+      {user && <MyPrayersCard prayers={prayers} />}
+
       {recentTracks.length > 0 && (
         <Shelf title="Recently prayed" onMore={() => list("recent")}>
           {recentTracks.slice(0, 10).map((t, i) => (
@@ -163,15 +171,6 @@ export default function MeScreen() {
             )}
           </Shelf>
 
-          <View className="mt-8">
-            <SectionTitle title="My prayers" onPress={() => router.push("/personal-prayer")} />
-            <Pressable onPress={() => router.push("/personal-prayer")} accessibilityRole="button" className="mx-4 flex-row items-center gap-3 rounded-[24px] bg-card px-5 py-4 active:opacity-80">
-              <SparkleIcon size={20} color={c.ink} />
-              <Text className="flex-1 font-sans-bold text-base text-ink">Prayers written for you</Text>
-              <ChevronIcon color={c.muted} />
-            </Pressable>
-          </View>
-
           <JournalSection kind="intention" />
           <JournalSection kind="reflection" />
 
@@ -187,6 +186,68 @@ export default function MeScreen() {
         </>
       )}
     </ScrollView>
+  );
+}
+
+// My prayers, up top and on a pastel card so it stands out: how many there are, the newest one, and a way to
+// write the next
+function MyPrayersCard({ prayers }: { prayers: PersonalPrayerSummary[] | null }) {
+  const c = useColors();
+  const latest = prayers?.[0];
+  const count = prayers?.length ?? 0;
+  const open = () => router.push("/personal-prayer");
+  return (
+    <Pressable onPress={open} accessibilityRole="button" accessibilityLabel="My prayers" className="mx-4 mt-6 overflow-hidden rounded-[32px] bg-lav p-6 active:opacity-95">
+      {/* Soft light in the corner */}
+      <View className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-butter opacity-70" />
+      <View className="absolute -right-2 top-6 opacity-90">
+        <Light size={64} />
+      </View>
+
+      <Text className="font-sans-bold text-xs uppercase tracking-[2px] text-on-pastel/60">Written for you</Text>
+      <Text className="mt-1 font-display text-[30px] leading-9 text-on-pastel" style={{ letterSpacing: -0.6 }}>
+        My prayers
+      </Text>
+      <Text className="mt-1 max-w-[78%] font-sans text-[15px] leading-5 text-on-pastel/70">
+        {count === 0 ? "Tell us what’s on your heart. We’ll write a prayer and read it to you." : `${count} ${count === 1 ? "prayer" : "prayers"}, read aloud in the voice you choose`}
+      </Text>
+
+      {latest && (
+        <Pressable
+          onPress={() => router.push({ pathname: "/personal-prayer/[id]", params: { id: latest.id } })}
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${latest.title}`}
+          className="mt-5 flex-row items-center gap-3 rounded-[22px] bg-white/60 px-4 py-3.5 active:opacity-80"
+        >
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-on-pastel">
+            <PlayIcon size={15} color={c.butter} />
+          </View>
+          <View className="flex-1">
+            <Text className="font-sans text-xs text-on-pastel/60">Latest</Text>
+            <Text className="font-sans-bold text-[15px] text-on-pastel" numberOfLines={1}>
+              {latest.title}
+            </Text>
+          </View>
+          <ChevronIcon color={c.onPastel} />
+        </Pressable>
+      )}
+
+      <View className="mt-4 flex-row gap-2">
+        <Pressable
+          onPress={() => router.push("/personal-prayer/new")}
+          accessibilityRole="button"
+          className="flex-row items-center gap-1.5 rounded-full bg-on-pastel px-5 py-3 active:opacity-85"
+        >
+          <PlusIcon size={16} color={c.lav} />
+          <Text className="font-sans-bold text-[15px] text-lav">Write a prayer</Text>
+        </Pressable>
+        {count > 1 && (
+          <Pressable onPress={open} accessibilityRole="button" className="flex-row items-center rounded-full border-[1.5px] border-on-pastel/20 px-5 py-3 active:opacity-80">
+            <Text className="font-sans-bold text-[15px] text-on-pastel">See all</Text>
+          </Pressable>
+        )}
+      </View>
+    </Pressable>
   );
 }
 

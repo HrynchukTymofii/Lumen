@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { deletePrivate, privateAudioConfigured, putPrivateAudio } from "@/lib/r2";
 import { refundTokens, spendTokens, undoMonthlyFree, useMonthlyFree } from "@/lib/tokens";
 import { speakLines, ttsConfigured } from "@/lib/tts";
+import { DEFAULT_VOICE, VOICE_IDS, VOICES } from "@/lib/voices";
 import {
   audioPrice,
   freeAudioLeft,
@@ -25,23 +26,23 @@ export const maxDuration = 60;
 // ElevenLabs API price for Multilingual v2: $0.08 per 1,000 characters = 80 micro-dollars per character
 const TTS_MICRO_USD_PER_CHAR = 80;
 
-const body = z.object({ expectedTokens: z.number().int().min(0).max(20) });
+const body = z.object({ expectedTokens: z.number().int().min(0).max(20), voice: z.enum(VOICE_IDS).default(DEFAULT_VOICE) });
 
-// POST /api/prayers/personal/:id/audio { expectedTokens } → the prayer with its new audio.
+// POST /api/prayers/personal/:id/audio { expectedTokens, voice? } → the prayer with its new audio, read in that voice.
 // Price: 1 token per 200 words (Premium's first prayer of the month up to 200 words is free). Tokens are taken
 // only for a recording that succeeds. 409 price_changed (the text changed since the price was shown),
 // 402 no_tokens / paywall, 422 too_long, 503 when ElevenLabs or the private bucket isn't configured.
 export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/prayers/personal/[id]/audio">) => {
   const { user, premium } = await companionUser(req);
   const prayer = await ownPrayer(user.id, (await ctx.params).id);
-  const { expectedTokens } = body.parse(await readJson(req));
+  const { expectedTokens, voice } = body.parse(await readJson(req));
   if (rateLimited(`audio:${prayer.id}`, 3)) throw new HttpError(429, "This prayer is already being recorded.");
 
   const text = decrypt(prayer.text);
   const hash = textHash(text);
   const freeLeft = await freeAudioLeft(user, premium);
-  // Already recorded as it reads now: nothing to buy
-  if (prayer.audioKey && prayer.audioTextHash === hash) return Response.json(await prayerDetail(prayer, freeLeft));
+  // Already recorded as it reads now, in this voice: nothing to buy
+  if (prayer.audioKey && prayer.audioTextHash === hash && (prayer.voice ?? DEFAULT_VOICE) === voice) return Response.json(await prayerDetail(prayer, freeLeft));
 
   const price = audioPrice(text, prayer.words, freeLeft);
   if (price.tooLong) throw new HttpError(422, "Audio prayers can be up to 1,600 words.", { code: "too_long" });
@@ -68,12 +69,12 @@ export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/pray
 
   let recorded;
   try {
-    const voiced = await speakLines(paragraphsOf(text).map((line) => ({ text: line, t: null })));
-    const key = `prayers/${user.id}/${prayer.id}-${hash}.mp3`;
+    const voiced = await speakLines(paragraphsOf(text).map((line) => ({ text: line, t: null })), VOICES[voice].elevenLabsId);
+    const key = `prayers/${user.id}/${prayer.id}-${hash}-${voice}.mp3`;
     await putPrivateAudio(key, voiced.audio);
     recorded = await prisma.personalPrayer.update({
       where: { id: prayer.id },
-      data: { audioKey: key, audioTextHash: hash, lines: voiced.lines, durationSec: voiced.durationSec },
+      data: { audioKey: key, audioTextHash: hash, voice, lines: voiced.lines, durationSec: voiced.durationSec },
     });
     if (prayer.audioKey && prayer.audioKey !== key) await deletePrivate(prayer.audioKey);
   } catch (err) {
@@ -86,6 +87,6 @@ export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/pray
   await prisma.aiUsage
     .create({ data: { userId: user.id, kind: "tts", model: "eleven_multilingual_v2", costMicroUsd: text.length * TTS_MICRO_USD_PER_CHAR } })
     .catch((err) => console.error("[prayer audio] usage not recorded", err));
-  trackAfter(user.id, "personal_prayer_listened", { tokens: price.tokens, free: price.free, words: prayer.words });
+  trackAfter(user.id, "personal_prayer_listened", { tokens: price.tokens, free: price.free, words: prayer.words, voice });
   return Response.json(await prayerDetail(recorded, price.free ? false : freeLeft));
 });

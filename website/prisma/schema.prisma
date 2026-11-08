@@ -556,6 +556,7 @@ model PersonalPrayer {
   words         Int
   audioKey      String? // R2 key in the private bucket
   audioTextHash String? // sha256 of the text that was voiced; differs after an edit
+  voice         String? // which voice read it (lib/voices.ts); null = recorded before voices could be chosen
   lines         Json? // [{ text, t }] from speakLines, for highlighting
   durationSec   Int?
   createdAt     DateTime     @default(now())

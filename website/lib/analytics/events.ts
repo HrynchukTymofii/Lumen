@@ -53,7 +53,7 @@ export type AnalyticsEvents = {
   personal_prayer_limit_reached: { tier: "free" | "premium"; limit: number };
   personal_prayer_saved: { source: "companion" };
   personal_prayer_edited: { words: number };
-  personal_prayer_listened: { tokens: number; free: boolean; words: number };
+  personal_prayer_listened: { tokens: number; free: boolean; words: number; voice: string };
   tokens_sheet_shown: { placement: string };
   tokens_purchased: { product_id: string; tokens: number; source: Source; sandbox?: boolean };
   verse_chip_opened: { reference: string };
