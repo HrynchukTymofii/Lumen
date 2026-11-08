@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 // from RevenueCat's REST API and saves it as one Entitlement row per user. Reading the state instead of applying
 // each event keeps it right however late or out of order the webhooks arrive.
 
-export const ENTITLEMENT_ID = "premium";
+export const ENTITLEMENT_ID = "lumen_premium"; // the entitlement identifier in RevenueCat
 
 export function revenueCatConfigured() {
   return Boolean(process.env.REVENUECAT_SECRET_KEY);

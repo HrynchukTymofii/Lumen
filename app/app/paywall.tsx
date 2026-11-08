@@ -11,7 +11,7 @@ import { track, type Placement } from "@/lib/analytics";
 import { errorMessage } from "@/lib/api/client";
 import { SITE_URL } from "@/lib/config";
 import { reportError } from "@/lib/errorReporting";
-import { buy, getPlans, purchasesEnabled, restore, type Intro, type PeriodUnit, type Plan } from "@/lib/purchases";
+import { NOT_ACTIVATED, buy, getPlans, purchasesEnabled, restore, type Intro, type PeriodUnit, type Plan } from "@/lib/purchases";
 
 // In-app paywall (SPEC §10.2), opened as a modal. Prices and intro offers come from the store through RevenueCat
 // (offering "default": $rc_annual, $rc_monthly). An intro offer (a lower first month, or a free trial) is shown only
@@ -106,8 +106,8 @@ export default function Paywall() {
     try {
       const found = await restore();
       track("purchases_restored", { found });
-      if (found) await refresh();
-      else setError("We didn’t find a subscription for this Apple or Google account.");
+      if (!found) setError("We didn’t find a subscription for this Apple or Google account.");
+      else if (!(await refresh())) setError(NOT_ACTIVATED);
     } catch (err) {
       reportError(err);
       setError(errorMessage(err));

@@ -12,6 +12,9 @@ const API_KEY = Platform.select({
   android: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY,
 });
 
+// The entitlement identifier in RevenueCat (same as ENTITLEMENT_ID in website/lib/revenuecat.ts)
+const ENTITLEMENT_ID = "lumen_premium";
+
 export const purchasesEnabled = Boolean(API_KEY) && Platform.OS !== "web";
 
 let configured = false;
@@ -105,11 +108,14 @@ export async function buy(pkg: PurchasesPackage) {
   return true;
 }
 
-/** Restores earlier App Store / Google Play purchases to this account. Returns whether Premium is active. */
+/** Shown when the store has the subscription but our server didn't turn on Premium (yet). */
+export const NOT_ACTIVATED = "We found your subscription but couldn’t activate it yet. Try again in a minute.";
+
+/** Restores earlier App Store / Google Play purchases to this account. Returns whether the store has an active subscription. */
 export async function restore() {
   const info = await Purchases.restorePurchases();
   await syncWithServer();
-  return Boolean(info.entitlements.active.premium);
+  return Boolean(info.entitlements.active[ENTITLEMENT_ID]);
 }
 
 // ───────── Prayer tokens (consumables, for audio prayers) ─────────

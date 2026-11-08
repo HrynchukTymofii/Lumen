@@ -7,7 +7,7 @@ import { InkButton } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
 import { errorMessage } from "@/lib/api/client";
 import { reportError } from "@/lib/errorReporting";
-import { purchasesEnabled, restore } from "@/lib/purchases";
+import { NOT_ACTIVATED, purchasesEnabled, restore } from "@/lib/purchases";
 import { openPaywall } from "@/lib/account";
 
 // Subscription: what plan this account is on, the way into the paywall, and restoring store purchases
@@ -23,9 +23,11 @@ export default function SubscriptionSettings() {
     setRestoring(true);
     setError(null);
     try {
-      const active = await restore();
-      await refresh();
-      Alert.alert(active ? "Purchases restored" : "Nothing to restore", active ? "Premium is active on this account." : "We didn’t find a subscription for this Apple or Google account.");
+      const found = await restore();
+      const active = await refresh();
+      if (!found) Alert.alert("Nothing to restore", "We didn’t find a subscription for this Apple or Google account.");
+      else if (active) Alert.alert("Purchases restored", "Premium is active on this account.");
+      else Alert.alert("Not activated yet", NOT_ACTIVATED);
     } catch (err) {
       reportError(err);
       setError(errorMessage(err));

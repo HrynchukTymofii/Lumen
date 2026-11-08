@@ -38,7 +38,8 @@ interface AuthContextType {
   signIn: (res: LoginResponse) => Promise<void>;
   signOut: () => Promise<void>;
   // Re-reads the account and premium status (after a purchase, on returning to the app)
-  refresh: () => Promise<void>;
+  /** Re-reads the account. Resolves to whether Premium is active, or null when it couldn't ask the server. */
+  refresh: () => Promise<boolean | null>;
   updateProfile: (patch: ProfilePatch) => Promise<User>;
   deleteAccount: () => Promise<void>;
   // Sends the quiz answers to the account and opens the app
@@ -98,16 +99,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refresh = useCallback(async () => {
     const sentWith = tokenRef.current;
-    if (!sentWith) return;
+    if (!sentWith) return null;
     try {
       const me = await getMe();
-      if (tokenRef.current !== sentWith) return;
+      if (tokenRef.current !== sentWith) return null;
       await saveAccount(me);
       identifyUser(me.user, me.premium.active);
+      return me.premium.active;
     } catch (err) {
       // 401 already signed out (client interceptor); offline keeps the cached account
-      if (isAxiosError(err) && (!err.response || err.response.status === 401)) return;
-      reportError(err);
+      if (!(isAxiosError(err) && (!err.response || err.response.status === 401))) reportError(err);
+      return null;
     }
   }, [saveAccount]);
 
