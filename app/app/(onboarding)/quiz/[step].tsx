@@ -329,13 +329,14 @@ function LoadingStep({ step, answers, onNext }: { step: Extract<QuizStep, { type
       </View>
       <Text className="mt-4 font-display text-[34px] text-ink">{Math.floor(pct)}%</Text>
 
-      <View className="mt-6 w-full gap-3">
+      {/* Centred as a block, so the checks still line up with each other */}
+      <View className="mt-8 gap-4 self-center">
         {step.messages.map((m, i) => (
-          <View key={m} className="flex-row items-center gap-3">
-            <View className={`h-6 w-6 items-center justify-center rounded-full ${i < shown ? "bg-olive" : i === shown ? "border-2 border-olive" : "border-2 border-line"}`}>
-              {i < shown && <CheckIcon size={12} color={c.onPastel} />}
+          <View key={m} className="flex-row items-center gap-3.5">
+            <View className={`h-7 w-7 items-center justify-center rounded-full ${i < shown ? "bg-olive" : i === shown ? "border-2 border-olive" : "border-2 border-line"}`}>
+              {i < shown && <CheckIcon size={14} color={c.onPastel} />}
             </View>
-            <Text className={`font-sans text-base ${i <= shown ? "text-ink" : "text-dim"}`}>{m}</Text>
+            <Text className={`font-sans-bold text-[18px] ${i <= shown ? "text-ink" : "text-dim"}`}>{m}</Text>
           </View>
         ))}
       </View>
