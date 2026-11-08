@@ -1,13 +1,20 @@
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, Text, View } from "react-native";
+import { Modal, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { VOICES, voiceSample, type VoiceId } from "@/lib/api/prayers";
-import { reportError } from "@/lib/errorReporting";
+import { VOICES, type VoiceId } from "@/lib/api/prayers";
 import { InkButton } from "./ui/Button";
 import { CheckIcon, PauseIcon, PlayIcon } from "./ui/icons";
 import { useColors } from "./ui/theme";
 import { VoiceMark } from "./VoiceMark";
+
+// A few seconds of each voice, shipped with the app (assets/voices), so trying one is instant and works offline
+const SAMPLES: Record<VoiceId, number> = {
+  grace: require("@/assets/voices/grace.mp3"),
+  ruth: require("@/assets/voices/ruth.mp3"),
+  matthew: require("@/assets/voices/matthew.mp3"),
+  john: require("@/assets/voices/john.mp3"),
+};
 
 // The drawer that opens from "Listen": try the voices (a short sample each), pick who reads the prayer, then
 // confirm. `current` is the voice it's already recorded in (choosing it again would buy the same recording), so it
@@ -35,35 +42,21 @@ export function VoiceSheet({
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
   const [trying, setTrying] = useState<VoiceId | null>(null);
-  const [loading, setLoading] = useState<VoiceId | null>(null);
-  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
   }, []);
 
-  const tryVoice = async (v: VoiceId) => {
+  const tryVoice = (v: VoiceId) => {
     if (trying === v && status.playing) {
       player.pause();
       setTrying(null);
       return;
     }
     if (v !== current) setVoice(v);
-    player.pause();
-    setFailed(false);
-    setLoading(v);
-    try {
-      const url = await voiceSample(v);
-      player.replace({ uri: url });
-      player.play();
-      setTrying(v);
-    } catch (err) {
-      reportError(err);
-      setFailed(true);
-      setTrying(null);
-    } finally {
-      setLoading(null);
-    }
+    player.replace(SAMPLES[v]);
+    player.play();
+    setTrying(v);
   };
 
   return (
@@ -97,9 +90,7 @@ export function VoiceSheet({
                     hitSlop={6}
                     className="h-10 w-10 items-center justify-center rounded-full bg-card active:opacity-70"
                   >
-                    {loading === v.id ? (
-                      <ActivityIndicator size="small" color={c.ink} />
-                    ) : trying === v.id && status.playing ? (
+                    {trying === v.id && status.playing ? (
                       <PauseIcon size={14} color={c.ink} />
                     ) : (
                       <PlayIcon size={14} color={c.ink} />
@@ -116,8 +107,6 @@ export function VoiceSheet({
               );
             })}
           </View>
-
-          {failed && <Text className="mt-3 text-center font-sans text-sm text-danger">Couldn’t play the sample. Please try again.</Text>}
 
           <View className="mt-6">
             <InkButton
