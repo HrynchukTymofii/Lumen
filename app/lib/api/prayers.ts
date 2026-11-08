@@ -105,6 +105,18 @@ export async function deletePrayer(id: string) {
   await api.delete(`/prayers/personal/${id}`);
 }
 
+// A few seconds of each voice, to try it in the voice drawer. The link never changes, so it's asked for once.
+const samples = new Map<VoiceId, Promise<string>>();
+export function voiceSample(voice: VoiceId) {
+  let url = samples.get(voice);
+  if (!url) {
+    url = api.get<{ url: string }>(`/prayers/voices/${voice}/sample`, { timeout: 60_000 }).then((r) => r.data.url);
+    url.catch(() => samples.delete(voice)); // a failure can be tried again
+    samples.set(voice, url);
+  }
+  return url;
+}
+
 /** Records the prayer as it reads now, in `voice`, and charges `expectedTokens` (0 for the free one). */
 export async function recordPrayer(id: string, expectedTokens: number, voice: VoiceId) {
   const { data } = await api.post<PersonalPrayer>(`/prayers/personal/${id}/audio`, { expectedTokens, voice }, { timeout: 70_000 });
