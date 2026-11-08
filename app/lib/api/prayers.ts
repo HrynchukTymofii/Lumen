@@ -28,12 +28,12 @@ export const VOICES = [
 export type VoiceId = (typeof VOICES)[number]["id"];
 export const DEFAULT_VOICE: VoiceId = "grace";
 export const voiceName = (id: string) => VOICES.find((v) => v.id === id)?.name ?? "";
-/** A voice we know, else the default (a recording from before voices could be chosen, or an older server). */
+/** A voice we know, else the default. */
 export const knownVoice = (id: unknown): VoiceId => VOICES.find((v) => v.id === id)?.id ?? DEFAULT_VOICE;
 
-// The recording's voice is always one the app can show
+// A recording's voice is one of ours, or null: recorded before voices could be chosen (the original voice)
 function withVoice<T extends PersonalPrayer>(p: T): T {
-  return p.audio ? { ...p, audio: { ...p.audio, voice: knownVoice(p.audio.voice) } } : p;
+  return p.audio ? { ...p, audio: { ...p.audio, voice: VOICES.find((v) => v.id === p.audio!.voice)?.id ?? null } } : p;
 }
 
 export interface AudioPrice {
@@ -45,7 +45,7 @@ export interface AudioPrice {
 export interface PersonalPrayer extends PersonalPrayerSummary {
   text: string;
   refs: { ref: string; text: string }[];
-  audio: { url: string; durationSec: number | null; lines: { text: string; t: number | null }[]; voice: VoiceId; stale: boolean } | null;
+  audio: { url: string; durationSec: number | null; lines: { text: string; t: number | null }[]; voice: VoiceId | null; stale: boolean } | null;
   audioPrice: AudioPrice;
 }
 

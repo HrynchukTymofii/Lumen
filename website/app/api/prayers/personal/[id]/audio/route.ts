@@ -41,8 +41,9 @@ export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/pray
   const text = decrypt(prayer.text);
   const hash = textHash(text);
   const freeLeft = await freeAudioLeft(user, premium);
-  // Already recorded as it reads now, in this voice: nothing to buy
-  if (prayer.audioKey && prayer.audioTextHash === hash && (prayer.voice ?? DEFAULT_VOICE) === voice) return Response.json(await prayerDetail(prayer, freeLeft));
+  // Already recorded as it reads now, in this voice: nothing to buy. Recordings from before voices could be
+  // chosen (voice null) were read by the old voice, so any choice records them again.
+  if (prayer.audioKey && prayer.audioTextHash === hash && prayer.voice === voice) return Response.json(await prayerDetail(prayer, freeLeft));
 
   const price = audioPrice(text, prayer.words, freeLeft);
   if (price.tooLong) throw new HttpError(422, "Audio prayers can be up to 1,600 words.", { code: "too_long" });

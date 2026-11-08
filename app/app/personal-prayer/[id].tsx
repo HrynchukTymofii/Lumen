@@ -294,10 +294,10 @@ export default function PersonalPrayerScreen() {
                       accessibilityRole="button"
                       className="flex-row items-center gap-3 rounded-[22px] bg-card px-3 py-2.5 active:opacity-80"
                     >
-                      <VoiceMark voice={audio.voice} size={40} />
+                      <VoiceMark voice={audio.voice ?? DEFAULT_VOICE} size={40} />
                       <View className="flex-1">
                         <Text className="font-sans text-xs text-muted">Read by</Text>
-                        <Text className="font-sans-bold text-[15px] text-ink">{voiceName(audio.voice)}</Text>
+                        <Text className="font-sans-bold text-[15px] text-ink">{audio.voice ? voiceName(audio.voice) : "The original voice"}</Text>
                       </View>
                       {recording ? (
                         <ActivityIndicator color={c.muted} style={{ marginRight: 8 }} />
@@ -342,7 +342,7 @@ export default function PersonalPrayerScreen() {
         <VoiceSheet
           initial={voice}
           // Already recorded as it reads now: that voice would buy the same recording again
-          current={audio && !audio.stale ? audio.voice : undefined}
+          current={audio && !audio.stale ? (audio.voice ?? undefined) : undefined}
           price={priceLabel}
           onClose={() => setChoosing(false)}
           onConfirm={listenWith}

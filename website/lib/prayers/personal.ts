@@ -8,7 +8,6 @@ import { versesFor, type Citation } from "@/funnels/verses";
 import type { PersonalPrayer, User } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { presignGet } from "@/lib/r2";
-import { DEFAULT_VOICE } from "@/lib/voices";
 
 // Personal prayers (docs: "Personal Prayers — Build Guide"). One library per user, filled three ways: the generator,
 // a prayer saved from the companion, or the user's own edits. Audio is bought with prayer tokens by length.
@@ -120,7 +119,7 @@ export async function prayerDetail(p: PersonalPrayer, freeLeft: boolean) {
           url: await presignGet(p.audioKey),
           durationSec: p.durationSec,
           lines: (p.lines as Line[] | null) ?? [],
-          voice: p.voice ?? DEFAULT_VOICE,
+          voice: p.voice, // null: recorded before voices could be chosen
           // The text was edited after it was recorded: the old audio still plays
           stale: p.audioTextHash !== textHash(text),
         }
