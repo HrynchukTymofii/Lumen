@@ -99,10 +99,15 @@ function RootNavigator() {
           <Stack.Screen name="personal-prayer/new" />
           <Stack.Screen name="personal-prayer/[id]" />
           <Stack.Screen name="personal-prayer/tokens" options={{ presentation: "modal" }} />
-          <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
         </Stack.Protected>
+        {/* Onboarding after sign-in: the first prayer, then the 7-day path, then the paywall */}
         <Stack.Protected guard={signedIn && !onboarded} redirectTo={home}>
           <Stack.Screen name="sample-prayer" />
+          <Stack.Screen name="onboarding-path" />
+        </Stack.Protected>
+        {/* A subscription belongs to the account: in the app, and as onboarding's last step */}
+        <Stack.Protected guard={signedIn} redirectTo={home}>
+          <Stack.Screen name="paywall" options={{ presentation: "modal" }} />
         </Stack.Protected>
         {/* Also open to someone trying the app, to sign in from inside it */}
         <Stack.Protected guard={!signedIn} redirectTo={home}>

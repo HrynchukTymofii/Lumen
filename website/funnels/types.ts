@@ -1,8 +1,8 @@
-import type { PlanId } from "@/lib/plans";
 import type { Option } from "./options";
 import type { Citation } from "./verses";
 
 // Funnel engine types (SPEC §8.2). A funnel is data: adding one = a new config file, no new components.
+// The phone app reads these files too (app/metro.config.js), so nothing here imports from outside funnels/.
 
 export type { Option };
 
@@ -52,5 +52,5 @@ export type FunnelConfig = {
   hypothesis: string; // what we test with it
   scene: string;
   steps: Step[];
-  plans: PlanId[];
+  plans: ("yearly" | "monthly")[]; // ids in lib/plans.ts
 };

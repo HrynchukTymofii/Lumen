@@ -25,6 +25,7 @@ export type AnalyticsEvents = {
   app_opened: { is_first_open: boolean };
   login_link_used: { success: boolean };
   onboarding_completed: { path: "web" | "app_store" };
+  plan_viewed: { funnel_slug: string };
   push_permission_result: { granted: boolean };
   reminders_paused: { hours: number };
   today_prayer_viewed: { prayer_type: string };

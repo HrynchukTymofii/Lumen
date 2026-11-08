@@ -49,6 +49,7 @@ export type ProfilePatch = Partial<
 // Quiz answers, same shape as the web funnel (website/funnels/types.ts Answers)
 export interface Answers {
   struggles?: string[];
+  carryingSince?: string;
   burden?: number;
   denomination?: string;
   prayerFrequency?: string;

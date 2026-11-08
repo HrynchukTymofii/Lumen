@@ -26,7 +26,6 @@ const PREMIUM_FEATURES = [
   "7-day and 30-day prayer paths",
 ];
 
-const close = () => (router.canGoBack() ? router.back() : router.replace("/today"));
 
 const PLAN_NAME: Record<string, string> = { ANNUAL: "Yearly", MONTHLY: "Monthly", WEEKLY: "Weekly" };
 const PERIOD: Record<string, string> = { ANNUAL: "year", MONTHLY: "month", WEEKLY: "week" };
@@ -45,7 +44,7 @@ function introLine(intro: Intro) {
 const CANCEL_WHERE = Platform.OS === "android" ? "in Google Play → Subscriptions" : "in Settings → your name → Subscriptions";
 
 export default function Paywall() {
-  const { refresh, premium } = useAuth();
+  const { refresh, premium, onboarded, finishOnboarding } = useAuth();
   const insets = useSafeAreaInsets();
   const c = useColors();
   // An iOS modal is a sheet that already starts below the status bar; on Android it is full screen
@@ -55,6 +54,22 @@ export default function Paywall() {
   const [busy, setBusy] = useState<"buy" | "restore" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const placement = (useLocalSearchParams<{ placement?: Placement }>().placement ?? "settings") as Placement;
+  // The last onboarding step: leaving it, bought or not, saves the quiz and opens the app (the route guard moves on)
+  const finishing = placement === "onboarding" && !onboarded;
+
+  const close = () => {
+    if (finishing) {
+      finishOnboarding()
+        .then(() => track("onboarding_completed", { path: "app_store" }))
+        .catch((err) => {
+          reportError(err);
+          setError(errorMessage(err));
+        });
+      return;
+    }
+    if (router.canGoBack()) router.back();
+    else router.replace("/today");
+  };
 
   useEffect(() => {
     track("paywall_viewed", { variant: "app", placement });
@@ -74,6 +89,8 @@ export default function Paywall() {
   // Bought (here or on another device): nothing left to sell
   useEffect(() => {
     if (premium.active) close();
+    // close only changes with premium and onboarding, which this already follows
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [premium.active]);
 
   const plan = plans?.[selected];

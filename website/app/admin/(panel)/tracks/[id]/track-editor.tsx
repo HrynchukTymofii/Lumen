@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import { api, ApiError, CATEGORIES, SCENES, type Line, type Track, type Variant } from "../../../_lib/api";
 import { Button, Card, ErrorBox, Field, StatusPill, fmtDuration, inputClass } from "../../../_lib/ui";
+import { VOICES } from "@/lib/voices";
 import { Preview } from "./preview";
 
 type Me = { email: string; services: { r2: boolean; tts: boolean } };
@@ -95,6 +96,7 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [voice, setVoice] = useState(""); // "" = ELEVENLABS_VOICE_ID
 
   const accept = useCallback((t: Track) => {
     setTrack(t);
@@ -382,12 +384,25 @@ export function TrackEditor({ params }: { params: Promise<{ id: string }> }) {
               <p className="mt-1 text-sm text-muted">{variant ? "No audio yet." : "Save this length first."}</p>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
+              <select
+                value={voice}
+                onChange={(e) => setVoice(e.target.value)}
+                aria-label="Voice"
+                className={`${inputClass} h-10 w-auto py-0`}
+              >
+                <option value="">Default voice</option>
+                {Object.entries(VOICES).map(([key, v]) => (
+                  <option key={key} value={key}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
               <Button
                 variant="olive"
                 disabled={!variant || live || dirty || busy !== null || !me?.services.tts || !me?.services.r2}
                 title={!me?.services.tts ? "Add the ElevenLabs keys to .env" : dirty ? "Save first" : undefined}
                 onClick={() =>
-                  run("tts", () => api(`/api/admin/tracks/${id}/tts`, { method: "POST", body: { minutes: tab } }), "Voice generated.")
+                  run("tts", () => api(`/api/admin/tracks/${id}/tts`, { method: "POST", body: { minutes: tab, ...(voice && { voice }) } }), "Voice generated.")
                 }
               >
                 {busy === "tts" ? "Generating…" : variant?.url ? "Regenerate voice" : "Generate voice"}

@@ -6,14 +6,19 @@ import { LENGTHS, readVariants } from "@/lib/content";
 import { prisma } from "@/lib/prisma";
 import { audioKey, putAudio } from "@/lib/r2";
 import { speakLines } from "@/lib/tts";
+import { VOICES, VOICE_IDS } from "@/lib/voices";
 
-const body = z.object({ minutes: z.union([z.literal(LENGTHS[0]), z.literal(LENGTHS[1]), z.literal(LENGTHS[2])]) });
+const body = z.object({
+  minutes: z.union([z.literal(LENGTHS[0]), z.literal(LENGTHS[1]), z.literal(LENGTHS[2])]),
+  voice: z.enum(VOICE_IDS).optional(), // lib/voices.ts; without it, ELEVENLABS_VOICE_ID
+});
 
-// Generates the voice for one length: ElevenLabs → R2 → url, duration and line timings saved on the track.
+// Generates the voice for one length, in the chosen voice: ElevenLabs → R2 → url, duration and line timings saved
+// on the track.
 export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/admin/tracks/[id]/tts">) => {
   await requireAdmin(req);
   const { id } = await ctx.params;
-  const { minutes } = body.parse(await readJson(req));
+  const { minutes, voice } = body.parse(await readJson(req));
   const track = await prisma.audioTrack.findUniqueOrThrow({ where: { id } });
   if (track.status === "published") throw new HttpError(409, "Unpublish it first");
 
@@ -21,7 +26,7 @@ export const POST = handle(async (req: NextRequest, ctx: RouteContext<"/api/admi
   const variant = variants.find((v) => v.minutes === minutes);
   if (!variant) throw new HttpError(404, `No ${minutes}-min version to voice`);
 
-  const spoken = await speakLines(variant.lines);
+  const spoken = await speakLines(variant.lines, voice ? VOICES[voice].elevenLabsId : undefined);
   const url = await putAudio(audioKey(track.slug, minutes, spoken.audio), spoken.audio);
 
   const updated = await prisma.audioTrack.update({

@@ -14,6 +14,18 @@ export function TrackList() {
   const [category, setCategory] = useState("");
   const [q, setQ] = useState("");
   const [creating, setCreating] = useState(params.get("new") === "1");
+  const [funnelBusy, setFunnelBusy] = useState(false);
+  const [funnelError, setFunnelError] = useState<string | null>(null);
+
+  // The onboarding's first prayer, written in code and read by John (api/admin/tracks/funnel-prayer)
+  const createFunnelPrayer = () => {
+    setFunnelBusy(true);
+    setFunnelError(null);
+    api<{ track: Track }>("/api/admin/tracks/funnel-prayer", { method: "POST" })
+      .then((r) => router.push(`/admin/tracks/${r.track.id}`))
+      .catch((err: ApiError) => setFunnelError(err.message))
+      .finally(() => setFunnelBusy(false));
+  };
 
   const load = useCallback(() => {
     const qs = new URLSearchParams();
@@ -32,8 +44,20 @@ export function TrackList() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="font-display text-4xl font-semibold">Prayers</h1>
-        <Button onClick={() => setCreating(true)}>New prayer</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="line"
+            disabled={funnelBusy}
+            title="A standard Protestant prayer read by John, for the web funnel and the app's onboarding"
+            onClick={createFunnelPrayer}
+          >
+            {funnelBusy ? "Recording…" : "Create funnel prayer"}
+          </Button>
+          <Button onClick={() => setCreating(true)}>New prayer</Button>
+        </div>
       </div>
+
+      <ErrorBox message={funnelError} />
 
       {creating && <NewTrack onCancel={() => setCreating(false)} onCreated={(id) => router.push(`/admin/tracks/${id}`)} />}
 
