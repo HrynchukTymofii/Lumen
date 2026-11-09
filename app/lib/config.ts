@@ -15,4 +15,4 @@ export const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 export const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";
 
 // Where Contact & Support messages land (also shown on the website)
-export const SUPPORT_EMAIL = "lumen-support@fibipals.com";
+export const SUPPORT_EMAIL = "holyhush@fibipals.com";
