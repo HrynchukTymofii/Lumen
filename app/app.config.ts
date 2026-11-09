@@ -7,7 +7,7 @@ const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.replace(
 const config: ExpoConfig = {
   name: "Holy Hush",
   slug: "prayer-companion",
-  version: "1.0.0",
+  version: "1.1.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
   scheme: "prayercompanion",

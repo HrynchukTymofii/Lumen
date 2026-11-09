@@ -1,7 +1,8 @@
 {
   "cli": {
     "version": ">= 16.17.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "remote",
+    "promptToConfigurePushNotifications": false
   },
   "build": {
     "development": {
@@ -17,13 +18,19 @@
       "environment": "production",
       "autoIncrement": true,
       "distribution": "store",
-      "ios": { "simulator": false },
-      "android": { "buildType": "app-bundle" }
+      "ios": {
+        "simulator": false
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
     "production": {
-      "ios": { "ascAppId": "6829436290" }
+      "ios": {
+        "ascAppId": "6829436290"
+      }
     }
   }
 }
