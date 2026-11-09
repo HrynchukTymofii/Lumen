@@ -19,7 +19,7 @@ export async function emailSignInCode(rawEmail: string, next?: string) {
   const code = newCode();
   const token = newLinkToken();
   const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
-  await prisma.loginToken.create({
+  const row = await prisma.loginToken.create({
     data: {
       purpose: "email_code",
       email,
@@ -30,5 +30,11 @@ export async function emailSignInCode(rawEmail: string, next?: string) {
     },
   });
   const nextParam = next?.startsWith("/app") ? `&next=${encodeURIComponent(next)}` : "";
-  await sendLoginEmail(email, code, `${SITE.url}/app/login?token=${token}${nextParam}`);
+  try {
+    await sendLoginEmail(email, code, `${SITE.url}/app/login?token=${token}${nextParam}`);
+  } catch (err) {
+    // A code that never arrived shouldn't count toward the hourly limit
+    await prisma.loginToken.delete({ where: { id: row.id } }).catch(() => {});
+    throw err;
+  }
 }

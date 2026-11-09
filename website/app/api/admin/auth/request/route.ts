@@ -17,10 +17,16 @@ export const POST = handle(async (req: NextRequest) => {
     });
     if (recent < 5) {
       const code = newCode();
-      await prisma.adminLoginCode.create({
+      const row = await prisma.adminLoginCode.create({
         data: { email, codeHash: hashCode(code), expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
       });
-      await sendAdminCode(email, code);
+      try {
+        await sendAdminCode(email, code);
+      } catch (err) {
+        // A code that never arrived shouldn't count toward the hourly limit
+        await prisma.adminLoginCode.delete({ where: { id: row.id } }).catch(() => {});
+        throw err;
+      }
     }
   }
   return Response.json({ ok: true });
