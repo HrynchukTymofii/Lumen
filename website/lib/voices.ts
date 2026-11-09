@@ -10,4 +10,4 @@ export const VOICES = {
 
 export type VoiceId = keyof typeof VOICES;
 export const VOICE_IDS = Object.keys(VOICES) as [VoiceId, ...VoiceId[]];
-export const DEFAULT_VOICE: VoiceId = "grace";
+export const DEFAULT_VOICE: VoiceId = "john";

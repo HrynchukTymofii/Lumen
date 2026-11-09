@@ -26,7 +26,7 @@ export const VOICES = [
   { id: "john", name: "John" },
 ] as const;
 export type VoiceId = (typeof VOICES)[number]["id"];
-export const DEFAULT_VOICE: VoiceId = "grace";
+export const DEFAULT_VOICE: VoiceId = "john";
 export const voiceName = (id: string) => VOICES.find((v) => v.id === id)?.name ?? "";
 /** A voice we know, else the default. */
 export const knownVoice = (id: unknown): VoiceId => VOICES.find((v) => v.id === id)?.id ?? DEFAULT_VOICE;
