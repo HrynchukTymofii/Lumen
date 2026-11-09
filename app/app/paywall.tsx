@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Light } from "@/components/Light";
@@ -56,12 +56,23 @@ export default function Paywall() {
   const placement = (useLocalSearchParams<{ placement?: Placement }>().placement ?? "settings") as Placement;
   // The last onboarding step: leaving it, bought or not, saves the quiz and opens the app (the route guard moves on)
   const finishing = placement === "onboarding" && !onboarded;
+  // Set once onboarding is being finished from here, so the screen leaves for the app when it's saved
+  const leaving = useRef(false);
+
+  // Finishing drops the onboarding screens under this modal, but the paywall itself stays allowed: without leaving
+  // explicitly it would remain as the only screen, full screen instead of a sheet
+  useEffect(() => {
+    if (leaving.current && onboarded) router.replace("/today");
+  }, [onboarded]);
 
   const close = () => {
     if (finishing) {
+      if (leaving.current) return;
+      leaving.current = true;
       finishOnboarding()
         .then(() => track("onboarding_completed", { path: "app_store" }))
         .catch((err) => {
+          leaving.current = false;
           reportError(err);
           setError(errorMessage(err));
         });
