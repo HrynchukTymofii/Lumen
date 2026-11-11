@@ -39,6 +39,22 @@ export const VERSES: Record<string, Citation[]> = {
     { ref: "1 John 1:9", text: "If we confess our sins, he is faithful and righteous to forgive us the sins, and to cleanse us from all unrighteousness." },
     { ref: "Psalm 147:3", text: "He heals the broken in heart, and binds up their wounds." },
   ],
+  loved_one: [
+    { ref: "Numbers 6:24–25", text: "Yahweh bless you, and keep you. Yahweh make his face to shine on you, and be gracious to you." },
+    { ref: "Philippians 1:3–4", text: "I thank my God whenever I remember you, always in every request of mine on behalf of you all, making my requests with joy," },
+  ],
+  caregiving: [
+    { ref: "Isaiah 40:31", text: "But those who wait for Yahweh will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint." },
+    { ref: "Galatians 6:9", text: "Let’s not be weary in doing good, for we will reap in due season, if we don’t give up." },
+  ],
+  marriage: [
+    { ref: "Ecclesiastes 4:12", text: "a threefold cord is not quickly broken." },
+    { ref: "Colossians 3:13", text: "bearing with one another, and forgiving each other, if any man has a complaint against any; even as Christ forgave you, so you also do." },
+  ],
+  hurt: [
+    { ref: "Ephesians 4:32", text: "And be kind to one another, tender hearted, forgiving each other, just as God also in Christ forgave you." },
+    { ref: "Psalm 147:3", text: "He heals the broken in heart, and binds up their wounds." },
+  ],
   gratitude: [
     { ref: "1 Thessalonians 5:18", text: "In everything give thanks, for this is the will of God in Christ Jesus toward you." },
     { ref: "Psalm 118:24", text: "This is the day that Yahweh has made. We will rejoice and be glad in it!" },

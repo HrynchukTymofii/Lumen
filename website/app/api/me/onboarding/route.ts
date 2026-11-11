@@ -3,10 +3,9 @@ import { z } from "zod";
 import { handle, readJson } from "@/lib/api";
 import { requireUser } from "@/lib/auth/session";
 import { publicUser, remindersFor } from "@/lib/auth/users";
-import type { AiComfort, Denomination } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { funnels } from "@/funnels";
-import { answersSchema } from "@/funnels/answers";
+import { aiComfortOf, answersSchema, denominationOf, shareNote, translationOf } from "@/funnels/answers";
 
 const utm = z.string().trim().max(200).optional();
 const body = z.object({
@@ -30,7 +29,9 @@ export const POST = handle(async (req: NextRequest) => {
     ? {
         struggles: a.struggles,
         burden: a.burden,
-        denomination: a.denomination as Denomination | undefined,
+        denomination: denominationOf(a.denomination),
+        prayingFor: a.prayingFor,
+        carryAlone: a.carryAlone,
         sensitiveConsentAt: new Date(),
       }
     : {};
@@ -38,9 +39,11 @@ export const POST = handle(async (req: NextRequest) => {
   // "When would you like to pray?" sets the reminders, unless they were already set (by an earlier quiz or Settings)
   const current = await prisma.user.findUniqueOrThrow({
     where: { id: session.id },
-    select: { reminderTime: true, eveningReminderTime: true, funnelSlug: true, utmSource: true },
+    select: { reminderTime: true, eveningReminderTime: true, funnelSlug: true, utmSource: true, memorySummary: true },
   });
   const reminders = !current.reminderTime && !current.eveningReminderTime ? remindersFor(a.prayerTime) : null;
+  // "Want to tell God more?" (web funnel): added to the companion's notes, with consent
+  const note = sensitiveConsent ? shareNote(a.share) : undefined;
 
   const user = await prisma.user.update({
     where: { id: session.id },
@@ -50,7 +53,11 @@ export const POST = handle(async (req: NextRequest) => {
       prayerFrequency: a.prayerFrequency,
       obstacles: a.obstacles,
       prayerTime: a.prayerTime,
-      aiComfort: a.aiComfort as AiComfort | undefined,
+      aiComfort: aiComfortOf(a.aiComfort),
+      fewMinutes: a.fewMinutes,
+      translation: translationOf(a),
+      ...(note && { memorySummary: current.memorySummary ? `${current.memorySummary}
+${note}` : note }),
       ...(a.firstName && { firstName: a.firstName }),
       // First funnel and first UTMs win, as at sign-up
       ...(funnelSlug && !current.funnelSlug && { funnelSlug, paywallVariant }),

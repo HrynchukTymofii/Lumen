@@ -2,13 +2,13 @@ import type { NextRequest } from "next/server";
 import { handle } from "@/lib/api";
 import { readVariants } from "@/lib/content";
 import { prisma } from "@/lib/prisma";
-import { STRUGGLES } from "@/funnels/options";
+import { ALL_STRUGGLES } from "@/funnels/options";
 
 // The funnel's first prayer: a recorded prayer from the admin library (category "funnel", tagged with the struggles
 // it fits). Several recordings per struggle → one is picked at random, so people hear different ones.
 // GET /api/funnel/recording?s=anxiety,grief → { recording } or { recording: null } when none fits yet.
 export const GET = handle(async (req: NextRequest) => {
-  const known = new Set(STRUGGLES.map((s) => s.value));
+  const known = new Set(ALL_STRUGGLES.map((s) => s.value));
   const wanted = (req.nextUrl.searchParams.get("s") ?? "").split(",").filter((s) => known.has(s));
   const now = new Date();
   const rows = await prisma.audioTrack.findMany({

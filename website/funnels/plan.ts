@@ -1,5 +1,6 @@
 import type { Answers } from "./types";
-import { STRUGGLES, labelOf } from "./options";
+import { ALL_STRUGGLES, FUNNEL_DENOMINATIONS, labelOf } from "./options";
+import { translationOf } from "./stored";
 import { versesFor, type Citation } from "./verses";
 
 // The personalised 7-day path shown before the email step. Template-based (no AI), so it's instant.
@@ -13,6 +14,10 @@ const FOCUS: Record<string, [string, string][]> = {
   doubt: [["Honest prayer", "Bring the questions too"], ["Help my unbelief", "Faith the size of a seed"]],
   guilt: [["Coming home", "Confession without fear"], ["Made new", "Receive forgiveness"]],
   gratitude: [["Count the gifts", "Three things from today"], ["Joy in this day", "Praise for small things"]],
+  loved_one: [["Lift them up", "Pray for them by name"], ["Trust them to God", "What you can't fix, you can pray"]],
+  caregiving: [["Strength for the carer", "Rest for the one who gives"], ["Seen by God", "The tired parts no one else sees"]],
+  marriage: [["A threefold cord", "Pray for the two of you"], ["Soft hearts", "Words that heal, not wound"]],
+  hurt: [["Name the hurt", "Bring what happened to God"], ["One step toward forgiving", "Not forgetting, letting go"]],
 };
 
 // "A prayer for worry", "Built around your family": the first thing they named, in a few words
@@ -26,8 +31,83 @@ const TOPIC: Record<string, string> = {
   doubt: "your doubts",
   guilt: "guilt",
   gratitude: "gratitude",
+  loved_one: "someone you love",
+  caregiving: "caring for someone",
+  marriage: "your marriage",
+  hurt: "a hurt you can't let go of",
 };
 export const topicOf = (answers: Answers) => TOPIC[answers.struggles?.[0] ?? ""] ?? "what you're carrying";
+
+// ---- Web funnel v3 (funnels/struggle.ts) ----
+
+/** The struggle the funnel's words are about: praying for someone they love wins, then the first thing they named */
+export const funnelTopic = (a: Answers) => (a.prayingFor === "loved_one" ? "loved_one" : (a.struggles?.[0] ?? "anxiety"));
+
+// Paywall title: "your plan for peace about …" (gratitude has its own title)
+const PEACE_ABOUT: Record<string, string> = {
+  anxiety: "your worries",
+  loved_one: "someone you love",
+  caregiving: "caring for someone",
+  marriage: "your marriage",
+  work: "work and money",
+  health: "your health",
+  grief: "your loss",
+  hurt: "an old hurt",
+  loneliness: "feeling alone",
+  doubt: "your doubts",
+  guilt: "what you regret",
+  family: "your family",
+};
+export function paywallTitle(a: Answers) {
+  const about = PEACE_ABOUT[funnelTopic(a)];
+  const rest = about ? `your plan for peace about ${about}` : "your plan for a steady, grateful heart";
+  return a.firstName ? `${a.firstName}, ${rest}` : rest[0].toUpperCase() + rest.slice(1);
+}
+
+// Loader: "Choosing verses about …"
+const VERSE_THEME: Record<string, string> = {
+  anxiety: "God's care",
+  loved_one: "blessing the ones you love",
+  caregiving: "new strength",
+  marriage: "holding together",
+  work: "God's provision",
+  health: "healing",
+  grief: "comfort in loss",
+  hurt: "forgiveness",
+  loneliness: "never being alone",
+  doubt: "honest faith",
+  guilt: "mercy",
+  gratitude: "joy and thanks",
+  family: "love at home",
+};
+
+const TRANSLATION_NAME: Record<string, string> = { KJV: "KJV", WEB: "WEB", BSB: "BSB", DRA: "Douay-Rheims" };
+export const translationName = (a: Answers) => TRANSLATION_NAME[translationOf(a) ?? "KJV"];
+
+/** The loading screen's lines, spoken in their own answers */
+export function loaderLines(a: Answers) {
+  const carried = (a.struggles ?? []).filter((s) => s !== "gratitude" && TOPIC[s]).slice(0, 2).map((s) => TOPIC[s]);
+  return [
+    carried.length ? `Reading what you carry: ${carried.join(" and ")}` : "Reading your answers",
+    `Choosing verses about ${VERSE_THEME[funnelTopic(a)] ?? "God's care"}`,
+    `Shaping your 28-day journey in the ${translationName(a)}`,
+    "Finding your first prayer",
+  ];
+}
+
+/** "Built from your answers: Catholic · Douay-Rheims · your health" */
+export function journeyBasis(a: Answers) {
+  const d = a.denomination === "free_church" ? "protestant" : a.denomination;
+  const tradition = ["protestant", "catholic", "orthodox"].includes(d ?? "") ? labelOf(FUNNEL_DENOMINATIONS, d) : "";
+  return [tradition, translationName(a), TOPIC[funnelTopic(a)]].filter(Boolean).join(" · ");
+}
+
+export const JOURNEY_WEEKS: [string, string][] = [
+  ["Week 1", "Naming what you carry"],
+  ["Week 2", "Bringing it to God"],
+  ["Week 3", "Letting go of what you can't control"],
+  ["Week 4", "Rest, and looking back at what God answered"],
+];
 
 export type PlanDay = { day: number; title: string; focus: string };
 
@@ -49,7 +129,7 @@ export function buildPlan(answers: Answers): PlanDay[] {
 // Used when the AI is off or slow: still personal, still only real verses.
 export function fallbackPrayer(answers: Answers): { title: string; text: string; citations: Citation[] } {
   const [verse] = versesFor(answers.struggles);
-  const things = (answers.struggles ?? []).filter((s) => s !== "gratitude").map((s) => labelOf(STRUGGLES, s).toLowerCase());
+  const things = (answers.struggles ?? []).filter((s) => s !== "gratitude").map((s) => labelOf(ALL_STRUGGLES, s).toLowerCase());
   const carrying = things.length ? things.join(", ").replace(/, ([^,]*)$/, " and $1") : "everything on my heart today";
   const grateful = answers.struggles?.includes("gratitude");
   return {

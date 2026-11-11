@@ -374,3 +374,85 @@
 @keyframes pa-sheen { 0%, 70% { translate: -110% 0; } 100% { translate: 110% 0; } }
 @keyframes ss-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ss-up { from { transform: translateY(100%); } to { transform: none; } }
+
+/* Web funnel v3: music button, the warm glow that rises as the quiz goes on, parts of a screen arriving one after
+   another, and the new paywall flow (f/[slug]/paywall-flow.tsx). */
+.site .fn-shell { --fn-dawn: rgba(253, 214, 170, 0.55); }
+@media (prefers-color-scheme: dark) {
+  .site .fn-shell { --fn-dawn: rgba(150, 100, 40, 0.28); }
+}
+.site {
+  .fn-shell { position: relative; }
+  .fn-shell > * { position: relative; z-index: 1; }
+  .fn-shell::before {
+    content: ""; position: fixed; inset: auto 0 0 0; height: 75vh; z-index: 0; pointer-events: none;
+    background: radial-gradient(70% 100% at 50% 100%, var(--fn-dawn), transparent 75%);
+    opacity: calc(0.35 + var(--g, 0) * 0.65); transform: translateY(calc((1 - var(--g, 0)) * 70%));
+    transition: transform 2.4s ease, opacity 2.4s ease;
+  }
+  .fn-music {
+    width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line2); background: var(--card); color: var(--ink);
+    display: grid; place-items: center; cursor: pointer; flex: none;
+    &.off { color: var(--dim); }
+  }
+
+  /* One after another within about half a second; taps work at once */
+  .fn-q > *, .fn-plan > *, .fv > * { animation: fv-rise 0.7s cubic-bezier(0.25, 0.6, 0.3, 1) both; }
+  .fn-q > :nth-child(2), .fn-plan > :nth-child(2), .fv > :nth-child(2) { animation-delay: 0.12s; }
+  .fn-q > :nth-child(3), .fn-plan > :nth-child(3), .fv > :nth-child(3) { animation-delay: 0.24s; }
+  .fn-q > :nth-child(4), .fn-plan > :nth-child(4), .fv > :nth-child(4) { animation-delay: 0.36s; }
+  .fn-q > :nth-child(n + 5), .fn-plan > :nth-child(n + 5), .fv > :nth-child(n + 5) { animation-delay: 0.48s; }
+  .fn-insight .fn-verse { animation: fv-rise 1.1s cubic-bezier(0.25, 0.6, 0.3, 1) 0.9s both; }
+  @keyframes fv-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .fn-q > *, .fn-plan > *, .fv > *, .fn-insight .fn-verse { animation: none; }
+    .fn-shell::before { transition: none; }
+  }
+
+  .fn-textarea { min-height: 140px; resize: vertical; font: inherit; line-height: 1.5; padding-top: 14px; }
+  .fn-text-note { margin-top: 8px; }
+  .fn-goal { margin-top: 16px; padding: 14px 16px; border-radius: 18px; background: var(--card); color: var(--muted); font-weight: 600; font-size: 14.5px; line-height: 1.5; }
+
+  .fv .pw-plan .amt { text-align: right; }
+  .fv .pw-plan .amt small { display: block; font-family: var(--f-body); }
+  .fv-time {
+    list-style: none; padding: 0; margin: 4px 0 12px; display: grid; gap: 0; border-radius: 18px; background: var(--card); overflow: hidden;
+    & li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; font-size: 14.5px; color: var(--muted); font-weight: 600; }
+    & li + li { border-top: 1px solid var(--line); }
+    & b { color: var(--ink); text-align: right; }
+  }
+  .fv-guarantee { margin: 12px 0; padding: 12px 16px; border-radius: 16px; background: var(--sage); color: #26301f; font-weight: 700; font-size: 14px; }
+  .fv .pw-cta { margin-top: 12px; }
+  .fv-incl {
+    margin-top: 26px;
+    & > b { font-family: var(--f-display); font-size: 19px; }
+    & ul { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; font-size: 15px; font-weight: 600; }
+    & li { display: flex; gap: 10px; align-items: flex-start; }
+    & li svg { flex: none; width: 22px; height: 22px; padding: 4px; border-radius: 50%; background: var(--ink); color: var(--bg); }
+  }
+  .fv-calm { align-items: center; text-align: center; padding-top: 30px; display: flex; flex-direction: column; gap: 14px; }
+  .fv-calm .fn-sticky { width: 100%; }
+  .fv-addon { cursor: default; margin: 16px 0; }
+  .fv-addon .what small { display: block; margin-top: 4px; line-height: 1.45; }
+  .fv-gift {
+    display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 20px; background: var(--card);
+    & p { font-size: 14px; line-height: 1.45; color: var(--muted); font-weight: 600; }
+    & p b { color: var(--ink); }
+  }
+  .fv-lock {
+    width: 92px; flex: none; aspect-ratio: 9 / 16; border-radius: 16px; padding: 10px 8px; display: flex; flex-direction: column; gap: 6px;
+    background: linear-gradient(180deg, #3b3150, #b07f9c 70%, #f5c7a0); color: #fff; overflow: hidden;
+    & .t { font-family: var(--f-display); font-weight: 600; font-size: 20px; text-align: center; }
+    & .v { font-family: var(--f-read); font-size: 8.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+    & .r { font-size: 8px; opacity: 0.8; margin-top: auto; }
+  }
+  .fv-sample {
+    display: flex; gap: 12px; align-items: center; padding: 14px; border-radius: 20px; background: var(--card); margin-top: 16px;
+    & .play { width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--ink); color: var(--bg); cursor: pointer; flex: none; font-size: 15px; }
+    & > span { flex: 1; min-width: 0; }
+    & b { display: block; }
+    & small { display: block; color: var(--muted); font-weight: 600; font-size: 13px; }
+    & .bar { display: block; height: 5px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 8px; }
+    & .bar i { display: block; height: 100%; background: var(--ink); transition: width 0.25s linear; }
+  }
+}

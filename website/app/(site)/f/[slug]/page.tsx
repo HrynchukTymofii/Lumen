@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Wordmark } from "@/components/kit";
 import { webSignInConfig } from "@/lib/auth/web-sign-in";
+import { checkoutMode } from "@/lib/checkout";
 import { SITE } from "@/lib/site";
 import { funnels } from "@/funnels";
 import { AccountLink } from "./account-link";
@@ -39,5 +40,6 @@ async function FunnelFor({ params }: Pick<PageProps<"/f/[slug]">, "params">) {
   const { slug } = await params;
   if (!funnels[slug]) notFound();
   // Sign in with Google / Apple at the email step (public client ids, lib/auth/web-sign-in.ts)
-  return <FunnelLoader slug={slug} signIn={webSignInConfig()} />;
+  // How the paywall takes payment: CHECKOUT_MODE (lib/checkout.ts)
+  return <FunnelLoader slug={slug} signIn={webSignInConfig()} mode={checkoutMode()} />;
 }

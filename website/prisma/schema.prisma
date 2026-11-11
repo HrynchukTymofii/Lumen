@@ -64,6 +64,10 @@ model User {
   obstacles          String[]
   prayerTime         String? // morning|evening|both (asked on the funnel's loading screen)
   aiComfort          AiComfort?
+  // Web funnel v3 answers: prayingFor self|loved_one|both, carryAlone mostly|sometimes|no, fewMinutes yes|maybe|shorter
+  prayingFor         String?
+  carryAlone         String?
+  fewMinutes         String?
   aiEnabled          Boolean       @default(true)
   // Short notes the companion keeps about the user (name, struggles, intentions); viewable and deletable
   memorySummary      String?

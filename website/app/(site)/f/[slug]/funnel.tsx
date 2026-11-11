@@ -4,21 +4,23 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowIcon, BookIcon, CheckIcon, Light, Scene } from "@/components/kit";
 import { identify, track } from "@/lib/analytics/client";
+import type { CheckoutMode } from "@/lib/checkout";
 import { SITE } from "@/lib/site";
 import { funnels } from "@/funnels";
-import { buildPlan, topicOf } from "@/funnels/plan";
-import type { Answers, Option, Step } from "@/funnels/types";
+import { JOURNEY_WEEKS, journeyBasis, loaderLines, topicOf } from "@/funnels/plan";
+import type { AdTheme, Answers, Option, Step } from "@/funnels/types";
 import type { Citation } from "@/funnels/verses";
 import { clock, phrases, type Line } from "@/lib/phrases";
-import { Paywall } from "../../_components/paywall";
-import { prefetchPrices } from "../../_components/use-prices";
 import { PostError, post } from "../../_components/post";
 import { SocialSignIn } from "../../app/login/social-sign-in";
+import { MusicButton, useFunnelMusic } from "./music";
+import { PaywallFlow, type Sample } from "./paywall-flow";
 
 // The quiz funnel state machine (SPEC §8.2): one question per screen, answers kept in sessionStorage
 // so a refresh resumes, analytics on every step. Faith answers never go to analytics, only "hidden".
 
-type Saved = { index: number; answers: Answers; startedAt?: number; signedUp?: boolean; email?: string };
+// theme: the ad this visit came from (?utm_content=b8), see the landing step's `themes`
+type Saved = { index: number; answers: Answers; startedAt?: number; signedUp?: boolean; email?: string; theme?: string };
 type Prayer = { title: string; text: string; citations: Citation[]; source?: string };
 /** Client ids for Sign in with Google / Apple (lib/auth/web-sign-in.ts); null hides that button */
 type SignInConfig = { google: string | null; apple: string | null };
@@ -51,9 +53,34 @@ function paywallVariant(): "A" | "B" {
 // already got that far.
 function restore(key: string, steps: Step[]): Saved {
   const saved = load<Saved>(key) ?? { index: 0, answers: {} };
+  const theme = saved.theme ?? adTheme(steps);
   const jump = new URLSearchParams(window.location.search).get("step");
   const jumpIndex = jump ? steps.findIndex((s) => s.id === jump) : -1;
-  return jumpIndex >= 0 && saved.signedUp ? { ...saved, index: jumpIndex } : saved;
+  return jumpIndex >= 0 && saved.signedUp ? { ...saved, theme, index: jumpIndex } : { ...saved, theme };
+}
+
+// The ad the visitor came from: ?utm_content=b8, ?pain=b8 or just ?b8 (codes are the landing step's `themes`)
+function adTheme(steps: Step[]): string | undefined {
+  const landing = steps.find((s) => s.type === "landing");
+  const themes = landing?.type === "landing" ? landing.themes : undefined;
+  if (!themes) return undefined;
+  for (const [k, v] of new URLSearchParams(window.location.search)) {
+    const key = k.toLowerCase();
+    const value = v.toLowerCase();
+    if ((key === "utm_content" || key === "pain") && themes[value]) return value;
+    if (themes[key]) return key;
+  }
+  return undefined;
+}
+
+// Answers an ad already implies, filled in when the quiz starts (never over an answer already given)
+function prefill(theme: AdTheme | undefined, answers: Answers): Answers {
+  const out: Record<string, unknown> = { ...answers };
+  for (const [key, value] of Object.entries(theme?.prefill ?? {})) {
+    const current = out[key];
+    if (current === undefined || (Array.isArray(current) && !current.length)) out[key] = value;
+  }
+  return out as Answers;
 }
 
 const vibrate = () => {
@@ -62,14 +89,13 @@ const vibrate = () => {
   } catch {}
 };
 
-export function Funnel({ slug, signIn }: { slug: string; signIn: SignInConfig }) {
+export function Funnel({ slug, signIn, mode }: { slug: string; signIn: SignInConfig; mode: CheckoutMode }) {
   const config = funnels[slug];
   const key = `pc_funnel_${slug}`;
   // Client-only component (see funnel-loader.tsx), so sessionStorage can be read while initialising
   const [state, setState] = useState<Saved>(() => restore(key, config.steps));
-  // Local prices for the paywall at the end, fetched while the quiz is answered
-  useEffect(() => void prefetchPrices(), []);
   const [dir, setDir] = useState<1 | -1>(1);
+  const music = useFunnelMusic();
 
   useEffect(() => {
     // First touch wins: keep the first visit that actually carried UTMs
@@ -82,16 +108,21 @@ export function Funnel({ slug, signIn }: { slug: string; signIn: SignInConfig })
   useEffect(() => save(key, state), [key, state]);
 
   const step = config.steps[state.index];
-  const questionSteps = config.steps.filter((s) => !["landing", "paywall"].includes(s.type));
+  const questionSteps = config.steps.filter((s) => !["landing", "paywall"].includes(s.type) && !s.skip?.(state.answers));
   const progress = Math.max(0, questionSteps.indexOf(step)) / questionSteps.length;
+  // The warm glow rising from the bottom: none on the landing, full by the first prayer
+  const prayerAt = Math.max(1, questionSteps.findIndex((s) => s.type === "prayer"));
+  const glow = step.type === "landing" ? 0 : step.type === "paywall" ? 1 : Math.max(0.08, Math.min(1, questionSteps.indexOf(step) / prayerAt));
 
   function go(delta: 1 | -1, patch?: Partial<Answers>) {
     setDir(delta);
     setState((s) => {
       const answers = { ...s.answers, ...patch };
-      let index = Math.min(Math.max(s.index + delta, 0), config.steps.length - 1);
-      // Never walk back into the loading screen or past the email once signed up
-      while (delta < 0 && index > 0 && config.steps[index].type === "loading") index--;
+      const last = config.steps.length - 1;
+      let index = Math.min(Math.max(s.index + delta, 0), last);
+      // Pass over steps that don't apply to these answers, and never walk back into the loading screen
+      const passOver = (i: number) => Boolean(config.steps[i].skip?.(answers)) || (delta < 0 && config.steps[i].type === "loading");
+      while (index > 0 && index < last && passOver(index)) index += delta;
       return { ...s, index, answers, startedAt: s.startedAt ?? Date.now() };
     });
     window.scrollTo({ top: 0 });
@@ -107,8 +138,12 @@ export function Funnel({ slug, signIn }: { slug: string; signIn: SignInConfig })
   // Once the email is in, the quiz is saved: no walking back into it from the prayer
   const canGoBack = state.index > 0 && step.type !== "paywall" && !((step.type === "email" || step.type === "prayer") && state.signedUp);
 
+  const landing = config.steps[0];
+  const theme = landing.type === "landing" && state.theme ? landing.themes?.[state.theme] : undefined;
+
   return (
-    <div className="fn-shell">
+    // After a refresh mid-quiz, the music starts again with the next tap
+    <div className="fn-shell" style={{ "--g": glow } as React.CSSProperties} onPointerDown={state.index > 0 ? music.start : undefined}>
       {step.type !== "landing" && (
         <div className="fn-top">
           <button type="button" className="fn-back" onClick={() => go(-1)} disabled={!canGoBack} aria-label="Back">
@@ -117,6 +152,7 @@ export function Funnel({ slug, signIn }: { slug: string; signIn: SignInConfig })
           <div className="fn-progress" aria-hidden>
             <i style={{ width: `${Math.round((step.type === "paywall" ? 1 : progress) * 100)}%` }} />
           </div>
+          {music.ready && <MusicButton on={music.on} onClick={music.toggle} />}
         </div>
       )}
 
@@ -125,10 +161,13 @@ export function Funnel({ slug, signIn }: { slug: string; signIn: SignInConfig })
           step={step}
           slug={slug}
           signIn={signIn}
+          mode={mode}
+          theme={theme}
           answers={state.answers}
           onStart={() => {
-            track("quiz_started", { funnel_slug: slug });
-            go(1);
+            track("quiz_started", { funnel_slug: slug, ...(theme && { ad_theme: theme.code }) });
+            music.start();
+            go(1, prefill(theme, state.answers));
           }}
           onAnswer={answer}
           onNext={(patch) => go(1, patch)}
@@ -151,6 +190,8 @@ type StepProps = {
   step: Step;
   slug: string;
   signIn: SignInConfig;
+  mode: CheckoutMode;
+  theme?: AdTheme;
   answers: Answers;
   onStart: () => void;
   onAnswer: (step: Step, value: string | string[] | number, patch: Partial<Answers>) => void;
@@ -160,7 +201,7 @@ type StepProps = {
   onSignedUp: (email: string) => void;
 };
 
-function StepView({ step, slug, signIn, answers, email, onStart, onAnswer, onNext, onLoaded, onSignedUp }: StepProps) {
+function StepView({ step, slug, signIn, mode, theme, answers, email, onStart, onAnswer, onNext, onLoaded, onSignedUp }: StepProps) {
   switch (step.type) {
     case "landing":
       return (
@@ -168,10 +209,10 @@ function StepView({ step, slug, signIn, answers, email, onStart, onAnswer, onNex
           <Scene name={step.scene} />
           <div className="fn-card">
             <Light size={72} />
-            <h1>{step.title}</h1>
+            <h1>{theme?.title ?? step.title}</h1>
             <p className="sub">{step.subtitle}</p>
             <button type="button" className="btn-ink full" onClick={onStart}>
-              {step.cta}
+              {theme?.cta ?? step.cta}
               <span className="dot">
                 <ArrowIcon />
               </span>
@@ -224,7 +265,13 @@ function StepView({ step, slug, signIn, answers, email, onStart, onAnswer, onNex
       );
 
     case "text":
-      return <TextStep step={step} value={answers.firstName ?? ""} onDone={(v) => onAnswer(step, v ? "given" : "skipped", { firstName: v || undefined })} />;
+      return (
+        <TextStep
+          step={step}
+          value={answers[step.answerKey] ?? ""}
+          onDone={(v) => onAnswer(step, v ? "given" : "skipped", { [step.answerKey]: v || undefined })}
+        />
+      );
 
     case "fact":
       return (
@@ -241,8 +288,11 @@ function StepView({ step, slug, signIn, answers, email, onStart, onAnswer, onNex
       );
 
     case "insight": {
-      const title = step.named && answers.firstName ? `${answers.firstName}, ${step.title[0].toLowerCase()}${step.title.slice(1)}` : step.title;
-      return <InsightCard scene={step.scene} title={title} body={step.body} verse={step.verse} onNext={() => onNext()} />;
+      const earlier = step.follows ? answers[step.follows.answerKey] : undefined;
+      const words = step.follows && earlier !== undefined ? step.follows.variants[String(earlier)] : undefined;
+      const base = words?.title ?? step.title;
+      const title = step.named && answers.firstName ? `${answers.firstName}, ${base[0].toLowerCase()}${base.slice(1)}` : base;
+      return <InsightCard scene={step.scene} title={title} body={words?.body ?? step.body} verse={words?.verse ?? step.verse} onNext={() => onNext()} />;
     }
 
     case "obstacle-insight": {
@@ -265,15 +315,7 @@ function StepView({ step, slug, signIn, answers, email, onStart, onAnswer, onNex
       return <EmailStep slug={slug} signIn={signIn} answers={answers} onDone={onSignedUp} />;
 
     case "paywall":
-      return (
-        <Paywall
-          variant={paywallVariant()}
-          name={answers.firstName}
-          email={email}
-          placement="funnel"
-          onFree={() => (window.location.href = "/success?plan=free")}
-        />
-      );
+      return <PaywallStep slug={slug} answers={answers} email={email} mode={mode} />;
   }
 }
 
@@ -371,6 +413,7 @@ function MultiStep({ step, answers, onDone }: { step: Extract<Step, { type: "mul
 
 function TextStep({ step, value, onDone }: { step: Extract<Step, { type: "text" }>; value: string; onDone: (v: string) => void }) {
   const [text, setText] = useState(value);
+  const max = step.maxLength ?? 40;
   return (
     <Question title={step.title} subtitle={step.subtitle}>
       <form
@@ -379,14 +422,26 @@ function TextStep({ step, value, onDone }: { step: Extract<Step, { type: "text" 
           onDone(text.trim());
         }}
       >
-        <input
-          className="fn-input"
-          value={text}
-          onChange={(e) => setText(e.target.value.slice(0, 40))}
-          placeholder={step.placeholder}
-          autoComplete="given-name"
-          autoFocus
-        />
+        {step.multiline ? (
+          <textarea
+            className="fn-input fn-textarea"
+            value={text}
+            onChange={(e) => setText(e.target.value.slice(0, max))}
+            placeholder={step.placeholder}
+            aria-label={step.title}
+            rows={5}
+          />
+        ) : (
+          <input
+            className="fn-input"
+            value={text}
+            onChange={(e) => setText(e.target.value.slice(0, max))}
+            placeholder={step.placeholder}
+            autoComplete="given-name"
+            autoFocus
+          />
+        )}
+        {step.note && <p className="fine fn-text-note">{step.note}</p>}
         <div className="fn-sticky">
           <button type="submit" className="btn-ink full">
             {text.trim() ? "Continue" : "Skip"}
@@ -440,7 +495,8 @@ function LoadingStep({ step, answers, onDone }: { step: Extract<Step, { type: "l
     return () => cancelAnimationFrame(raf);
   }, [asking, micro, onDone, step.micro]);
 
-  const shown = Math.floor((pct / 100) * step.messages.length);
+  const messages = step.personal ? loaderLines(answers) : step.messages;
+  const shown = Math.floor((pct / 100) * messages.length);
   return (
     <div className="fn-loading">
       <div className="halo-ring">
@@ -465,7 +521,7 @@ function LoadingStep({ step, answers, onDone }: { step: Extract<Step, { type: "l
       </div>
       <div className="pct">{Math.floor(pct)}%</div>
       <ul>
-        {step.messages.map((m, i) => (
+        {messages.map((m, i) => (
           <li key={m} className={i < shown ? "done" : i === shown ? "now" : ""}>
             <i>{i < shown && <CheckIcon size={12} />}</i>
             {m}
@@ -559,7 +615,7 @@ function PrayerStep({ slug, answers, onNext }: { slug: string; answers: Answers;
       ) : (
         <WrittenPrayer prayer={first.prayer} />
       )}
-      <ContinueButton onClick={onNext} label="See my 7-day path" disabled={!first} />
+      <ContinueButton onClick={onNext} label="See my 28-day journey" disabled={!first} />
     </div>
   );
 }
@@ -770,16 +826,8 @@ function RecordedPrayer({ slug, recording }: { slug: string; recording: Recordin
   );
 }
 
-// The 7-day path reads like a week, not a numbered list: real day names from today, and a small scene per day that
-// moves from sunrise to night over the week.
-const WEEK_SCENES = ["dawn", "sky", "meadow", "lake", "golden", "dusk", "evening"];
-function dayLabel(i: number) {
-  if (i === 0) return "Today";
-  if (i === 1) return "Tomorrow";
-  const d = new Date();
-  d.setDate(d.getDate() + i);
-  return d.toLocaleDateString("en-US", { weekday: "long" });
-}
+// The 28-day journey: four weeks with a theme each, and a small scene per week that moves from sunrise to evening.
+const WEEK_SCENES = ["dawn", "meadow", "golden", "evening"];
 const REMIND: Record<string, string> = {
   morning: "We'll remind you in the morning.",
   evening: "We'll remind you in the evening.",
@@ -787,30 +835,48 @@ const REMIND: Record<string, string> = {
 };
 
 function PathStep({ slug, answers, onNext }: { slug: string; answers: Answers; onNext: () => void }) {
-  const plan = useMemo(() => buildPlan(answers), [answers]);
   useEffect(() => track("plan_viewed", { funnel_slug: slug }), [slug]);
 
   return (
     <div className="fn-plan">
-      <h2>{answers.firstName ? `${answers.firstName}, your 7-day prayer path is ready` : "Your 7-day prayer path is ready"}</h2>
+      <h2>{answers.firstName ? `${answers.firstName}, your 28-day prayer journey is ready` : "Your 28-day prayer journey is ready"}</h2>
       <p className="sub">
-        Built around {topicOf(answers)}. A few minutes a day. {REMIND[answers.prayerTime ?? ""] ?? "We'll remind you at the time you pick."}
+        Built from your answers: {journeyBasis(answers)}. A few minutes a day.{" "}
+        {REMIND[answers.prayerTime ?? ""] ?? "We'll remind you at the time you pick."}
       </p>
       <ol className="fn-days">
-        {plan.map((d, i) => (
-          <li key={d.day} className={i === 0 ? "today" : undefined}>
-            <Scene name={WEEK_SCENES[i % WEEK_SCENES.length]} seed={i} noBigTrees className="thumb" />
+        {JOURNEY_WEEKS.map(([week, theme], i) => (
+          <li key={week} className={i === 0 ? "today" : undefined}>
+            <Scene name={WEEK_SCENES[i]} seed={i} noBigTrees className="thumb" />
             <span>
-              <em>{dayLabel(i)}</em>
-              <b>{i === 0 ? "Your first prayer" : d.title}</b>
-              <small>{i === 0 ? "The prayer written for you" : d.focus}</small>
+              <em>{week}</em>
+              <b>{theme}</b>
+              {i === 0 && <small>Day 1 · your first prayer, today</small>}
             </span>
           </li>
         ))}
       </ol>
+      <p className="fn-goal">
+        Your companion checks in along the way, and your journal keeps what you prayed for and what changed. Goal: 5 days a week.
+        Missed days never reset anything.
+      </p>
       <ContinueButton onClick={onNext} />
     </div>
   );
+}
+
+// The paywall flow, with the funnel's prayer recording for the upsell's 15-second sample (fetched long before)
+function PaywallStep({ slug, answers, email, mode }: { slug: string; answers: Answers; email?: string; mode: CheckoutMode }) {
+  const [sample, setSample] = useState<Sample | null>(null);
+  useEffect(() => {
+    let live = true;
+    firstPrayer(slug, answers).then((f) => live && "recording" in f && setSample({ title: f.recording.title, url: f.recording.url }));
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per visit
+  }, []);
+  return <PaywallFlow answers={answers} email={email} mode={mode} sample={sample} />;
 }
 
 // The email already has an account: we've emailed it a 6-digit code (and a link), so sign in right here and carry on
@@ -992,7 +1058,7 @@ function EmailStep({ slug, signIn, answers, onDone }: { slug: string; signIn: Si
 
   if (account) {
     return (
-      <Question title="Save your prayer path" subtitle={`You're signed in as ${account.email}. Your answers will be kept with your account.`}>
+      <Question title="Save your prayer journey" subtitle={`You're signed in as ${account.email}. Your answers will be kept with your account.`}>
         <form onSubmit={continueSignedIn} className="fn-email">
           {consentBoxes}
           {error && <p className="fn-error">{error}</p>}
@@ -1010,7 +1076,7 @@ function EmailStep({ slug, signIn, answers, onDone }: { slug: string; signIn: Si
   }
 
   return (
-    <Question title="Where should we send your prayer path?" subtitle="Your account keeps your path, your prayers and your answers. No password needed.">
+    <Question title="Where should we send your prayer journey?" subtitle="Your account keeps your journey, your prayer journal and your answers. No password needed.">
       <form onSubmit={submit} className="fn-email">
         {consentBoxes}
         {/* Google / Apple work once consent is ticked, like the email button */}

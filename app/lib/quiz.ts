@@ -1,16 +1,16 @@
-import { struggle } from "@website/funnels/struggle";
+import { appQuiz } from "@website/funnels/app-quiz";
 import type { Step } from "@website/funnels/types";
 import type { Answers } from "@/lib/api/types";
 
-// The in-app quiz (SPEC §10.1) is the web funnel itself (website/funnels/struggle.ts): the same questions, insight
-// screens and loading screen, in the same order, so a change there changes both. The app has its own screens for
-// the rest: the welcome screen instead of the landing, sign-in instead of the email step, then the first prayer,
+// The in-app quiz (SPEC §10.1) is the web funnel's quiz as it was before the web funnel's v3 rewrite
+// (website/funnels/app-quiz.ts): the same questions, insight screens and loading screen. The app has its own screens
+// for the rest: the welcome screen instead of the landing, sign-in instead of the email step, then the first prayer,
 // the 7-day path and the paywall after sign-in.
 
 const IN_QUIZ = new Set<Step["type"]>(["single", "multi", "scale", "text", "fact", "insight", "obstacle-insight", "loading"]);
 
 export type QuizStep = Extract<Step, { type: "single" | "multi" | "scale" | "text" | "fact" | "insight" | "obstacle-insight" | "loading" }>;
-export const QUIZ = struggle.steps.filter((s): s is QuizStep => IN_QUIZ.has(s.type));
+export const QUIZ = appQuiz.steps.filter((s): s is QuizStep => IN_QUIZ.has(s.type));
 
 export const quizIndex = (id: string) => Math.max(0, QUIZ.findIndex((s) => s.id === id));
 

@@ -9,7 +9,8 @@ import { SITE } from "@/lib/site";
 // in the App Store / Google Play only, so it says how: get the app, sign in with the same email, start the plan
 // there, and it then works on the phone and here on the web.
 
-export type SheetPlan = { label: string; today: string; price: string; period: string; intro: boolean };
+// terms: the price line in full, for plans that aren't "first month, then" (the funnel's 4- and 12-week plans)
+export type SheetPlan = { label: string; today: string; price: string; period: string; intro: boolean; terms?: string };
 
 export function StoreSheet({
   plan,
@@ -47,7 +48,9 @@ export function StoreSheet({
     },
     {
       title: `Start ${plan.label.toLowerCase()} in the app`,
-      text: plan.intro
+      text: plan.terms
+        ? plan.terms
+        : plan.intro
         ? `${plan.today} for the first month, then ${plan.price}/${plan.period}. Paid through the ${store.name}, cancel anytime.`
         : `${plan.price}/${plan.period}, paid through the ${store.name}. Cancel anytime.`,
     },

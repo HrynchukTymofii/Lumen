@@ -6,7 +6,15 @@ export type Placement = "funnel" | "onboarding" | "companion_quota" | "library" 
 
 export type AnalyticsEvents = {
   funnel_viewed: { funnel_slug: string };
-  quiz_started: { funnel_slug: string };
+  quiz_started: { funnel_slug: string; ad_theme?: string };
+  // The web funnel's paywall flow (v3). mode: lib/checkout.ts CHECKOUT_MODE; demo: the Stripe mock-up took no money.
+  funnel_checkout_started: { plan: string; offer: boolean; mode: "store" | "stripe" };
+  funnel_offer_viewed: { plan: string };
+  funnel_payment_done: { plan: string; offer: boolean; demo: boolean };
+  funnel_upsell_viewed: { offer: boolean };
+  funnel_upsell_answered: { offer: boolean; bought: boolean };
+  funnel_free_chosen: { after_offer: boolean };
+  funnel_music_toggled: { on: boolean };
   quiz_step_completed: { funnel_slug: string; step_id: string; answer: string | string[] };
   quiz_completed: { funnel_slug: string; duration_ms: number };
   plan_viewed: { funnel_slug: string };

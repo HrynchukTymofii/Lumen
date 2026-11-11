@@ -4,11 +4,10 @@ import { handle, readJson } from "@/lib/api";
 import { emailSignInCode } from "@/lib/auth/email-code";
 import { LINK_TTL_MS, hashToken, loginResponse, newLinkToken, normalizeEmail, remindersFor } from "@/lib/auth/users";
 import { sendWelcomeEmail } from "@/lib/email";
-import type { AiComfort, Denomination } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { SITE } from "@/lib/site";
 import { funnels } from "@/funnels";
-import { answersSchema } from "@/funnels/answers";
+import { aiComfortOf, answersSchema, denominationOf, shareNote, translationOf } from "@/funnels/answers";
 
 const utm = z.string().trim().max(200).optional();
 const body = z.object({
@@ -40,13 +39,19 @@ export const POST = handle(async (req: NextRequest) => {
     firstName: a.firstName || null,
     struggles: a.struggles ?? [],
     burden: a.burden ?? null,
-    denomination: (a.denomination as Denomination | undefined) ?? null,
+    denomination: denominationOf(a.denomination) ?? null,
     prayerFrequency: a.prayerFrequency ?? null,
     obstacles: a.obstacles ?? [],
     prayerTime: a.prayerTime ?? null,
     // The phone reminds them at the time of day they picked
     ...remindersFor(a.prayerTime),
-    aiComfort: (a.aiComfort as AiComfort | undefined) ?? null,
+    aiComfort: aiComfortOf(a.aiComfort) ?? null,
+    prayingFor: a.prayingFor ?? null,
+    carryAlone: a.carryAlone ?? null,
+    fewMinutes: a.fewMinutes ?? null,
+    ...(translationOf(a) && { translation: translationOf(a) }),
+    // What they wrote on "Want to tell God more?", for the companion
+    memorySummary: shareNote(a.share) ?? null,
     sensitiveConsentAt: new Date(),
     marketingOptIn: input.marketingOptIn,
     funnelSlug: input.funnelSlug,

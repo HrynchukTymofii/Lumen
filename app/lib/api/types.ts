@@ -57,6 +57,12 @@ export interface Answers {
   aiComfort?: string;
   firstName?: string;
   prayerTime?: string;
+  // Asked by the web funnel only (v3); the app quiz doesn't ask them
+  prayingFor?: string;
+  carryAlone?: string;
+  translation?: string;
+  fewMinutes?: string;
+  share?: string;
 }
 
 export interface Citation {
