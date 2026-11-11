@@ -158,11 +158,12 @@ export function SocialSignIn({
       {google && (
         <>
           <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" onReady={() => setGoogleReady(true)} />
-          {/* A click only reaches our face when Google's button failed to load (blocked script, origin not allowed) */}
+          {/* Clicks pass through our face (pointer-events: none) to Google's frame, and never come back out of it; one
+              only lands here when Google's button failed to load (blocked script, origin not allowed) */}
           <div
             className="google-wrap"
-            onClick={(e) => {
-              if ((e.target as HTMLElement).closest(".google-face")) onError("Google sign-in isn't available right now. Use your email instead.");
+            onClick={() => {
+              if (!googleBox.current?.querySelector("iframe")) onError("Google sign-in isn't available right now. Use your email instead.");
             }}
           >
             <span className="google-face" aria-hidden>

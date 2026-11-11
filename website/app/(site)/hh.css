@@ -377,8 +377,10 @@
   }
   .apple-btn { background: var(--ink); color: var(--bg); }
   .google-wrap { position: relative; height: 55px; border-radius: 999px; }
+  /* Our face sits ON TOP of Google's (nearly invisible) button and lets clicks fall through to it: with Google's
+     frame on top, its "Continue as …" text showed through on dark backgrounds */
   .google-face {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    position: absolute; inset: 0; z-index: 1; pointer-events: none; display: flex; align-items: center; justify-content: center;
     background: var(--bg); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--line2); transition: box-shadow 0.15s;
   }
   .google-wrap:hover .google-face { box-shadow: inset 0 0 0 1.5px var(--ink); }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Wordmark } from "@/components/kit";
 import { webSignInConfig } from "@/lib/auth/web-sign-in";
@@ -39,6 +40,8 @@ export default function FunnelPage({ params }: PageProps<"/f/[slug]">) {
 async function FunnelFor({ params }: Pick<PageProps<"/f/[slug]">, "params">) {
   const { slug } = await params;
   if (!funnels[slug]) notFound();
+  // Rendered per visit (not at build time), so a change to CHECKOUT_MODE in the host's settings applies at once
+  await connection();
   // Sign in with Google / Apple at the email step (public client ids, lib/auth/web-sign-in.ts)
   // How the paywall takes payment: CHECKOUT_MODE (lib/checkout.ts)
   return <FunnelLoader slug={slug} signIn={webSignInConfig()} mode={checkoutMode()} />;

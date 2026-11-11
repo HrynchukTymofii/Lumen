@@ -390,6 +390,8 @@
     opacity: calc(0.35 + var(--g, 0) * 0.65); transform: translateY(calc((1 - var(--g, 0)) * 70%));
     transition: transform 2.4s ease, opacity 2.4s ease;
   }
+  /* The page-coloured strip behind sticky buttons showed as a box over the glow */
+  .fn-sticky { background: none; }
   .fn-music {
     width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--line2); background: var(--card); color: var(--ink);
     display: grid; place-items: center; cursor: pointer; flex: none;
@@ -455,4 +457,72 @@
     & .bar { display: block; height: 5px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 8px; }
     & .bar i { display: block; height: 100%; background: var(--ink); transition: width 0.25s linear; }
   }
+}
+
+/* The Stripe Checkout mock-up (f/[slug]/stripe-checkout-mock.tsx): light like Stripe's own page, in any theme */
+/* (own properties in a separate rule: the CSS build drops them from a top-level rule that also nests rules) */
+.site .sx {
+  color-scheme: light; --sx-ink: #1a1a1a; --sx-muted: #6d6e78; --sx-line: #e6e6e6; --sx-blue: #0570de;
+  background: #fff; color: var(--sx-ink); border-radius: 22px; padding: 18px 18px 22px; margin-top: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+.site .sx {
+
+  .sx-top { display: flex; align-items: center; gap: 10px; }
+  .sx-back { width: 30px; height: 30px; border-radius: 50%; border: 0; background: #f2f2f4; color: var(--sx-ink); display: grid; place-items: center; cursor: pointer; }
+  .sx-brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+  .sx-brand i { width: 22px; height: 22px; border-radius: 6px; background: radial-gradient(circle at 35% 30%, #ffe9c4, #f5b65b); }
+  .sx-test { margin-left: auto; background: #ffde92; color: #a14f00; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 8px; border-radius: 5px; }
+
+  .sx-summary { margin: 20px 0 6px; }
+  .sx-label { color: var(--sx-muted); font-weight: 500; }
+  .sx-total { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; margin: 2px 0 12px; }
+  .sx-total small { font-size: 14px; font-weight: 500; color: var(--sx-muted); margin-left: 6px; letter-spacing: 0; }
+  .sx-lines { list-style: none; padding: 0; margin: 0; }
+  .sx-lines li { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--sx-line); font-weight: 500; }
+  .sx-lines small { display: block; color: var(--sx-muted); font-weight: 400; font-size: 12.5px; margin-top: 2px; }
+  .sx-lines .sx-due { font-weight: 600; }
+
+  .sx-pay { display: grid; gap: 10px; margin-top: 14px; }
+  .sx-wallet {
+    height: 46px; border-radius: 6px; border: 0; background: #000; color: #fff; display: flex; align-items: center; justify-content: center;
+    gap: 5px; cursor: pointer; font-size: 19px; font-family: inherit;
+    & b { font-weight: 500; letter-spacing: -0.01em; }
+    &:disabled { opacity: 0.6; cursor: default; }
+  }
+  .sx-or { display: flex; align-items: center; gap: 12px; color: var(--sx-muted); margin: 8px 0 2px; font-size: 13.5px; }
+  .sx-or::before, .sx-or::after { content: ""; flex: 1; height: 1px; background: var(--sx-line); }
+  form { display: grid; gap: 14px; }
+  .sx-field { display: grid; gap: 6px; }
+  .sx-field > span { color: #30313d; font-weight: 500; font-size: 13.5px; }
+  .sx-field input, .sx-field select {
+    width: 100%; height: 44px; border: 1px solid var(--sx-line); border-radius: 6px; padding: 0 12px; font: inherit; font-size: 15px;
+    color: var(--sx-ink); background: #fff; box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03); outline: none;
+  }
+  .sx-field input:focus, .sx-field select:focus { border-color: var(--sx-blue); box-shadow: 0 0 0 3px rgba(5, 112, 222, 0.18); }
+  .sx-card { border: 1px solid var(--sx-line); border-radius: 6px; overflow: hidden; }
+  .sx-card input { border: 0; border-radius: 0; box-shadow: none; }
+  .sx-card input:focus { box-shadow: inset 0 0 0 2px rgba(5, 112, 222, 0.5); }
+  .sx-num { display: flex; align-items: center; border-bottom: 1px solid var(--sx-line); }
+  .sx-row { display: grid; grid-template-columns: 1fr 1fr; }
+  .sx-row input + input { border-left: 1px solid var(--sx-line); }
+  .sx-brands { display: flex; gap: 4px; padding-right: 10px; flex: none; }
+  .sx-brands i { height: 16px; min-width: 24px; border-radius: 3px; display: grid; place-items: center; font-style: normal; font-size: 8px; font-weight: 800; }
+  .sx-brands .visa { background: #1a1f71; color: #fff; }
+  .sx-brands .amex { background: #2e77bb; color: #fff; }
+  .sx-brands .mc { background: radial-gradient(circle at 36% 50%, #eb001b 5px, transparent 5.5px), radial-gradient(circle at 64% 50%, #f79e1b 5px, transparent 5.5px), #f4f4f4; }
+  .sx-submit {
+    height: 46px; border: 0; border-radius: 6px; background: var(--sx-blue); color: #fff; font: inherit; font-size: 16px; font-weight: 600;
+    cursor: pointer; display: grid; place-items: center; margin-top: 4px; transition: background 0.2s;
+    &.done { background: #1a8f4a; }
+    &:disabled { cursor: default; }
+  }
+  .sx-spin { width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid rgba(255, 255, 255, 0.35); border-top-color: #fff; animation: sx-spin 0.7s linear infinite; }
+  @keyframes sx-spin { to { transform: rotate(360deg); } }
+  .sx-note { text-align: center; color: var(--sx-muted); margin: -4px 0 0; }
+  .sx-fine { color: var(--sx-muted); font-size: 12px; line-height: 1.5; text-align: center; margin-top: 6px; }
+  .sx-demo { color: #a14f00; font-size: 12px; text-align: center; font-weight: 600; }
+  .sx-powered { display: flex; justify-content: center; align-items: center; gap: 12px; color: #a3acb9; font-size: 12px; margin-top: 4px; }
+  .sx-powered b { font-weight: 800; letter-spacing: -0.03em; font-size: 14px; color: #8792a2; margin-left: -8px; }
 }

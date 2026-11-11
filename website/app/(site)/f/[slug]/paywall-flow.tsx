@@ -11,12 +11,14 @@ import { funnelTopic, paywallTitle } from "@/funnels/plan";
 import type { Answers } from "@/funnels/types";
 import { versesFor } from "@/funnels/verses";
 import { StoreSheet } from "../../_components/store-sheet";
+import { StripeCheckoutMock, type Addon } from "./stripe-checkout-mock";
 
-// The funnel's paywall (v3): plans → (on "continue free", once) a cheaper "Before you go" offer → payment →
-// the "Personal audio prayers" upsell → (on "no") a cheaper second offer → /success.
-// Payment depends on CHECKOUT_MODE (lib/checkout.ts): "store" opens the App Store / Google Play sheet (the upsells
-// can't follow a store purchase, so they're skipped); "stripe" is an on-page checkout, a MOCK-UP for now that
-// takes no money. When a Stripe account exists, PayStep is where Stripe Checkout goes.
+// The funnel's paywall (v3): plans → (on "continue free", once) a cheaper "Before you go" offer → the "Personal
+// audio prayers" add-on → (on "no") a cheaper second offer → checkout with the plan (and the add-on) → /success.
+// Payment depends on CHECKOUT_MODE (lib/checkout.ts): "store" opens the App Store / Google Play sheet right after
+// the plan (no add-on: it can't be bought alongside a store plan); "stripe" shows the add-on, then a Stripe
+// Checkout MOCK-UP (stripe-checkout-mock.tsx) that takes no money. With a Stripe account, that's where the real
+// Stripe Checkout goes.
 
 type Stage = "plans" | "offer" | "pay" | "upsell" | "upsell-offer";
 export type Sample = { title: string; url: string };
@@ -50,6 +52,7 @@ export function PaywallFlow({
   const [offer, setOffer] = useState(false); // the "Before you go" price was taken
   const [offerSeen, setOfferSeen] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [addon, setAddon] = useState<Addon>(null); // the audio-prayers add-on in the order, at full or offer price
   const plan = FUNNEL_PLANS.find((p) => p.id === planId)!;
   const router = useRouter();
 
@@ -79,7 +82,7 @@ export function PaywallFlow({
   const checkout = (withOffer: boolean) => {
     setOffer(withOffer);
     track("funnel_checkout_started", { plan: plan.id, offer: withOffer, mode });
-    if (mode === "stripe") setStage("pay");
+    if (mode === "stripe") setStage("upsell");
     else setSheet(true);
   };
 
@@ -118,7 +121,20 @@ export function PaywallFlow({
       </Calm>
     );
 
-  if (stage === "pay") return <PayStep plan={plan} offer={offer} onBack={() => setStage("plans")} onPaid={() => setStage("upsell")} />;
+  if (stage === "pay")
+    return (
+      <StripeCheckoutMock
+        plan={plan}
+        offer={offer}
+        addon={addon}
+        email={email}
+        onBack={() => setStage("plans")}
+        onPaid={() => {
+          track("funnel_payment_done", { plan: plan.id, offer, demo: true });
+          finish(Boolean(addon));
+        }}
+      />
+    );
 
   if (stage === "upsell" || stage === "upsell-offer") {
     const second = stage === "upsell-offer";
@@ -131,8 +147,9 @@ export function PaywallFlow({
         sample={sample}
         onAnswer={(bought) => {
           track("funnel_upsell_answered", { offer: second, bought });
-          if (bought || second) finish(bought);
-          else setStage("upsell-offer");
+          if (!bought && !second) return setStage("upsell-offer");
+          setAddon(bought ? (second ? "offer" : "full") : null);
+          setStage("pay");
         }}
       />
     );
@@ -243,54 +260,6 @@ function Calm({ title, children }: { title: string; children: React.ReactNode })
       <Light size={72} />
       <h2>{title}</h2>
       {children}
-    </div>
-  );
-}
-
-const METHODS = ["Apple Pay", "Google Pay", "Card"] as const;
-
-// Stripe mode. MOCK-UP: no card fields, nothing is charged or sent; the real Stripe Checkout replaces this.
-function PayStep({ plan, offer, onBack, onPaid }: { plan: FunnelPlan; offer: boolean; onBack: () => void; onPaid: () => void }) {
-  const [method, setMethod] = useState<(typeof METHODS)[number] | null>(null);
-  const now = offer ? plan.offer : plan.now;
-  return (
-    <div className="fn-q fv">
-      <h2>Confirm your plan</h2>
-      <p className="fine">Secure checkout by Stripe · Demo, you won&apos;t be charged</p>
-      <ul className="fv-time">
-        <li>
-          <span>{plan.label}, today</span>
-          <b>{usd(now)}</b>
-        </li>
-        <li>
-          <span>Then, from {dateIn(plan.days)}</span>
-          <b>
-            {usd(plan.then)} {plan.every}
-          </b>
-        </li>
-      </ul>
-      <div className="fn-options">
-        {METHODS.map((m, i) => (
-          <button key={m} type="button" className={`fn-opt ${method === m ? "on" : ""}`} style={{ animationDelay: `${i * 40}ms` }} onClick={() => setMethod(m)}>
-            <span>{m}</span>
-          </button>
-        ))}
-      </div>
-      <div className="fv-guarantee">30-day money-back guarantee. Cancel anytime.</div>
-      <div className="fn-sticky">
-        <Cta
-          disabled={!method}
-          onClick={() => {
-            track("funnel_payment_done", { plan: plan.id, offer, demo: true });
-            onPaid();
-          }}
-        >
-          Pay {usd(now)}
-        </Cta>
-        <button type="button" className="pw-free" onClick={onBack}>
-          Change plan
-        </button>
-      </div>
     </div>
   );
 }
