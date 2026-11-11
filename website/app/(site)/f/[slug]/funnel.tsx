@@ -693,13 +693,50 @@ function RecordedPrayer({ slug, recording }: { slug: string; recording: Recordin
   let current = 0;
   for (let i = 0; i < list.length; i++) if (list[i].start <= time + 0.2) current = i;
 
-  // Follow the voice, unless the text was just scrolled by hand
+  const listRef = useRef(list);
   useEffect(() => {
-    if (Date.now() - handAt.current < HAND_SCROLL_MS) return;
-    const box = scroller.current;
-    const el = box?.children[current] as HTMLElement | undefined;
-    if (box && el) box.scrollTo({ top: Math.max(0, el.offsetTop - 48), behavior: "smooth" });
-  }, [current]);
+    listRef.current = list;
+  }, [list]);
+
+  // Follow the voice with a slow, continuous glide (unless the text was just scrolled by hand): the reading point
+  // moves through each phrase as it is spoken, sits about a third of the way down, and the box eases towards it every
+  // frame. scrollTop is set directly, since scrollTo({ behavior: "smooth" }) on an inner box is unreliable on iOS.
+  useEffect(() => {
+    let raf = 0;
+    let last = 0;
+    let pos = -1; // our own (fractional) scroll position; browsers round scrollTop
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
+      const box = scroller.current;
+      const a = audio.current;
+      const items = listRef.current;
+      if (!box || !a || !items.length || Date.now() - handAt.current < HAND_SCROLL_MS) {
+        pos = -1;
+        return;
+      }
+      const t = a.currentTime;
+      let i = 0;
+      for (let k = 0; k < items.length; k++) if (items[k].start <= t + 0.2) i = k;
+      const el = box.children[i] as HTMLElement | undefined;
+      const next = box.children[i + 1] as HTMLElement | undefined;
+      if (!el) return;
+      const from = items[i].start;
+      const to = items[i + 1]?.start ?? (a.duration || from);
+      const progress = next && to > from ? Math.min(1, Math.max(0, (t - from) / (to - from))) : 0;
+      const y = el.offsetTop + (next ? (next.offsetTop - el.offsetTop) * progress : 0);
+      const target = Math.min(Math.max(0, y - box.clientHeight * 0.3), box.scrollHeight - box.clientHeight);
+
+      if (pos < 0 || Math.abs(box.scrollTop - pos) > 2) pos = box.scrollTop; // start, or moved by someone else
+      const gap = target - pos;
+      if (Math.abs(gap) < 0.25) return;
+      pos += gap * (1 - Math.exp(-dt / 0.6)); // eases in ~0.6 s: gentle, never a jump
+      box.scrollTop = pos;
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // Starts on its own like the app when the browser allows it; otherwise the play button does. Stops on leaving.
   useEffect(() => {
