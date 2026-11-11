@@ -6,8 +6,8 @@ export const TRANSLATIONS: {
   label: string;
   name: string;
 }[] = [
-  { value: "WEB", label: "World English", name: "World English Bible" },
   { value: "KJV", label: "King James", name: "King James Version" },
+  { value: "WEB", label: "World English", name: "World English Bible" },
   { value: "BSB", label: "Berean Standard", name: "Berean Standard Bible" },
   { value: "DRA", label: "Douay-Rheims", name: "Douay-Rheims" },
 ];

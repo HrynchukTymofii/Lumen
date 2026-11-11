@@ -201,7 +201,7 @@ export default function LandingPage() {
           <div className="choice">
             <h3>Your tradition, your Bible, your choice</h3>
             <ChoiceChips label="Tradition" options={["Catholic", "Protestant", "Orthodox", "Still exploring"]} initial="Protestant" />
-            <ChoiceChips label="Bible" options={["WEB", "KJV", "Douay-Rheims", "No AI, just the Bible"]} initial="WEB" />
+            <ChoiceChips label="Bible" options={["KJV", "WEB", "Douay-Rheims", "No AI, just the Bible"]} initial="KJV" />
           </div>
         </div>
         <ChatDemo

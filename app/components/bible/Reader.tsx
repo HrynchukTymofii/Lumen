@@ -55,7 +55,7 @@ export interface Loc {
 
 export function BibleReader({ start, pointed, tab }: { start: Loc; pointed?: { from: number; to: number }; tab?: boolean }) {
   const { user } = useAuth();
-  const translation: Translation = user?.translation ?? "WEB";
+  const translation: Translation = user?.translation ?? "KJV";
   const insets = useSafeAreaInsets();
   const c = useColors();
   const marks = useMarks();

@@ -4,7 +4,7 @@
 export const VOICES = {
   grace: { name: "Grace", gender: "female", elevenLabsId: "zA6D7RyKdc2EClouEMkP" },
   ruth: { name: "Ruth", gender: "female", elevenLabsId: "Atp5cNFg1Wj5gyKD7HWV" },
-  matthew: { name: "Matthew", gender: "male", elevenLabsId: "8rR7lSanqYt6DVpJHArb" },
+  matthew: { name: "Matthew", gender: "male", elevenLabsId: "EkK5I93UQWFDigLMpZcX" },
   john: { name: "John", gender: "male", elevenLabsId: "FYZl5JbWOAm6O1fPKAOu" },
 } as const;
 

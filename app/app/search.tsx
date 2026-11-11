@@ -32,7 +32,7 @@ export default function SearchScreen() {
 
   useEffect(() => {
     if (!library) getLibrary().then(setLibrary, reportError);
-    getBooks(user?.translation ?? "WEB").then(setBooks, reportError);
+    getBooks(user?.translation ?? "KJV").then(setBooks, reportError);
   }, [library, user?.translation]);
 
   const query = norm(q);

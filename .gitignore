@@ -15,3 +15,11 @@ assets/Hallow/
 
 # Store creatives (icon / screenshot sources and renders): kept locally, out of git and EAS uploads
 store-creatives/
+
+# Build output in sub-projects. Already ignored by their own .gitignore files, but
+# EAS CLI only reads this root file when packing the upload, so repeat them here.
+app/android/
+app/ios/
+app/.expo/
+website/.next/
+website/node_modules/

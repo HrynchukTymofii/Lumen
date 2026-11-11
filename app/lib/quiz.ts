@@ -32,6 +32,11 @@ const SCENES: Record<string, string> = {
   orthodox: "evening",
   exploring: "dawn",
   not_sure: "meadow",
+  // Bible translation
+  KJV: "golden",
+  WEB: "sky",
+  BSB: "lake",
+  DRA: "evening",
   // AI
   comfortable: "sky",
   unsure: "meadow",

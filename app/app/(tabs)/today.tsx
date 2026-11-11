@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomShade } from "@/components/ArtTile";
@@ -99,6 +99,15 @@ export default function HomeScreen() {
     // Keeps the next week of Bible-reading reminders scheduled (lib/planActions.ts)
     refreshPlanReminders().catch(reportError);
   }, [load]);
+
+  // The verse of the day is in the user's translation: fetch it again after a change in Settings or the book picker
+  const translation = user?.translation;
+  const shownTranslation = useRef(translation);
+  useEffect(() => {
+    if (shownTranslation.current === translation) return;
+    shownTranslation.current = translation;
+    getToday().then(setToday, reportError);
+  }, [translation]);
 
   // Keeps the next week of reminders scheduled, without today's once it's prayed
   const prayedToday = today?.streak?.prayedToday;

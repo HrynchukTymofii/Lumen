@@ -22,7 +22,7 @@ async function readVerses(translation: Translation, ref: Ref) {
 }
 
 /** The text of a reference in the reader's translation, falling back to the WEB when that translation lacks it. */
-export async function getPassage(ref: Ref, translation: Translation = "WEB"): Promise<Passage | null> {
+export async function getPassage(ref: Ref, translation: Translation = "KJV"): Promise<Passage | null> {
   let used = sourceFor(translation, ref.bookId);
   let verses = await readVerses(used, ref);
   if (!verses.length && used !== "WEB") {
@@ -37,7 +37,7 @@ export async function getPassage(ref: Ref, translation: Translation = "WEB"): Pr
   return { ...clipped, ref: label, text: verses.map((v) => v.text).join(" "), translation: used };
 }
 
-export async function getPassages(refs: Ref[], translation: Translation = "WEB") {
+export async function getPassages(refs: Ref[], translation: Translation = "KJV") {
   const out = await Promise.all(refs.map((r) => getPassage(r, translation)));
   return out.filter((p): p is Passage => p !== null);
 }

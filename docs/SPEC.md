@@ -258,7 +258,7 @@ model User {
   // Profile (from quiz or settings)
   denomination        Denomination?
   denominationDetail  String?       // "Baptist", "Methodist", ...
-  translation         Translation   @default(WEB)
+  translation         Translation   @default(KJV)
   struggles           String[]      // ["anxiety","grief"]
   prayerFrequency     String?       // never|sometimes|weekly|daily
   obstacles           String[]

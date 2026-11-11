@@ -1,4 +1,4 @@
-import { AI_COMFORT, CARRYING_SINCE, DENOMINATIONS, FREQUENCY, OBSTACLE_NONE, OBSTACLES, PRAYER_TIME, STRUGGLES } from "./options";
+import { AI_COMFORT, CARRYING_SINCE, DENOMINATIONS, FREQUENCY, OBSTACLE_NONE, OBSTACLES, PRAYER_TIME, STRUGGLES, TRANSLATIONS } from "./options";
 import type { FunnelConfig } from "./types";
 
 // The phone app's in-app quiz (app/lib/quiz.ts): the questions of the web funnel before its v3 rewrite (2026-11-11),
@@ -99,6 +99,15 @@ export const appQuiz: FunnelConfig = {
       options: DENOMINATIONS,
       answerKey: "denomination",
       sensitive: true,
+    },
+    // Added 2026-11-11. After the tradition, so "Not sure" can pick Douay-Rheims for Catholics (stored.ts translationOf).
+    {
+      id: "translation",
+      type: "single",
+      title: "Which Bible translation do you like to read?",
+      subtitle: "Every verse you see will come from it. You can change it anytime in Settings.",
+      options: TRANSLATIONS,
+      answerKey: "translation",
     },
     {
       id: "ai",

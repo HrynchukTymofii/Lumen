@@ -57,7 +57,7 @@ model User {
 
   // Profile (from the quiz or settings). Faith answers are sensitive data: stored only after explicit consent.
   denomination       Denomination?
-  translation        Translation   @default(WEB)
+  translation        Translation   @default(KJV)
   struggles          String[] // ["anxiety","grief"]
   burden             Int? // 1..5, "how heavy does it feel"
   prayerFrequency    String? // never|sometimes|weekly|daily

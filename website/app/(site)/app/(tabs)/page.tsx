@@ -2,12 +2,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowIcon, Light, Scene } from "@/components/kit";
 import { requirePageUser } from "@/lib/auth/current";
+import { verseOfDay } from "@/lib/bible/verse-of-day";
 import { getLibrary } from "@/lib/content";
 import { getPremium } from "@/lib/entitlement";
 import { getStreak, getTrending } from "@/lib/streak";
 import { companionTopic } from "@/funnels/companion-topics";
 import { fallbackPrayer } from "@/funnels/plan";
-import { VERSES } from "@/funnels/verses";
 import { categoryTitle } from "./prayers/categories";
 import { MarkPrayed, TalkCard } from "./home";
 
@@ -15,8 +15,7 @@ import { MarkPrayed, TalkCard } from "./home";
 // big picture cards to start a prayer, topic chips, the prayer week as one row, the verse of the day and "Talk it
 // through" side by side, today's written prayer, then shelves: Pray anytime, Trending and one per category, ordered
 // by the time of day. v0: the daily prayer is the template prayer for the user's answers and the verse rotates
-// through the hand-picked WEB verses.
-const ALL_VERSES = [...new Map(Object.values(VERSES).flat().map((v) => [v.ref, v])).values()];
+// through the hand-picked verses, in the user's translation (lib/bible/verse-of-day.ts).
 
 export default function TodayPage() {
   return (
@@ -55,7 +54,7 @@ async function Today() {
   const local = new Date(new Date().toLocaleString("en-US", { timeZone: user.timezone }));
   const hour = local.getHours();
   const dayNumber = Math.floor(local.getTime() / 86_400_000);
-  const verse = ALL_VERSES[dayNumber % ALL_VERSES.length];
+  const verse = await verseOfDay(dayNumber, user.translation);
   const prayer = fallbackPrayer({ struggles: user.struggles, firstName: user.firstName ?? undefined });
   const topic = companionTopic(user.struggles);
   const name = user.firstName?.trim();
@@ -173,7 +172,7 @@ async function Today() {
         <div className="home-box home-verse">
           <span className="lab">Verse of the day</span>
           <q>“{verse.text}”</q>
-          <small>{verse.ref} · WEB</small>
+          <small>{verse.ref} · {verse.translation === "DRA" ? "Douay-Rheims" : verse.translation}</small>
         </div>
         {user.aiEnabled && <TalkCard line={topic.line} prompts={topic.prompts} />}
       </section>
