@@ -59,6 +59,13 @@ export async function putAudio(key: string, body: Buffer) {
   return publicUrl(key);
 }
 
+export async function putImage(key: string, body: Buffer, contentType: ImageType) {
+  await r2().send(
+    new PutObjectCommand({ Bucket: process.env.R2_BUCKET!, Key: key, Body: body, ContentType: contentType, CacheControl: IMMUTABLE }),
+  );
+  return publicUrl(key);
+}
+
 // Browser uploads (audio or images) straight to R2 (bucket CORS must allow PUT from the website origin).
 export async function presignUpload(key: string, contentType: string) {
   const url = await getSignedUrl(

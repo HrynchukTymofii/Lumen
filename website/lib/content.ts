@@ -8,6 +8,10 @@ export const SCENES = ["dawn", "golden", "lake", "meadow", "dusk", "evening", "n
 export const CATEGORIES = ["morning", "evening", "peace", "psalms", "grief", "family", "sleep", "funnel"] as const;
 export const LENGTHS = [1, 3, 5] as const;
 
+// The length (1, 3 or 5) closest to a real audio duration
+export const nearestLength = (seconds: number) =>
+  LENGTHS.reduce((best, m) => (Math.abs(m * 60 - seconds) < Math.abs(best * 60 - seconds) ? m : best));
+
 export const MAX_LINE = 2000;
 
 export const lineSchema = z.object({

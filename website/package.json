@@ -11,6 +11,8 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "prayers:generate": "tsx scripts/generate-prayers.ts",
+    "prayers:import": "tsx scripts/import-prayers.ts",
+    "prayers:images": "tsx scripts/attach-prayer-images.ts",
     "bible:import": "tsx scripts/import-bible.ts",
     "bible:embed": "tsx scripts/embed-bible.ts",
     "prices:sync": "tsx scripts/sync-prices.ts"
