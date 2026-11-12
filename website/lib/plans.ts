@@ -42,7 +42,7 @@ export const FREE_FEATURES = [
 ];
 export const PREMIUM_FEATURES = [
   "200 companion messages a week",
-  "Personal daily prayer, text and audio",
+  "Personal prayers written for you",
   "Full guided prayer library",
   "Prayer journal and history",
   "7-day and 30-day prayer paths",

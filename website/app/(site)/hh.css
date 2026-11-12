@@ -260,6 +260,13 @@
     }
     .glow { position: absolute; top: 96px; right: 28px; opacity: 0.95; pointer-events: none; }
   }
+  /* Premium: the three funnel plans under the "from" price */
+  .plan .amt small.from { margin: 0 6px 0 0; }
+  .plan ul.plan-opts { flex: none; margin: 24px 0 0; }
+  .plan ul.plan-opts li { display: grid; gap: 2px; padding: 12px 0; font-size: 15px; color: var(--pm); }
+  .plan ul.plan-opts b { font-size: 17px; font-weight: 500; color: var(--inv-ink); }
+  .plan li.extra { color: var(--pm); }
+  .plan.premium .note { margin: 0 0 20px; }
 
   /* FAQ */
   .lp-faq {

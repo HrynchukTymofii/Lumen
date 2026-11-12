@@ -1,9 +1,7 @@
-import { headers } from "next/headers";
 import Link from "next/link";
-import { Suspense } from "react";
 import { Light, MascotPill, Scene } from "@/components/kit";
 import { FREE_FEATURES, PREMIUM_FEATURES } from "@/lib/plans";
-import { pricesFor, US_PRICES, type Prices } from "@/lib/prices";
+import { ADDON, FUNNEL_PLANS, usd } from "@/lib/funnel-plans";
 import { SITE } from "@/lib/site";
 import { ChoiceChips } from "./_components/choice-chips";
 import { ChatDemo, type Talk } from "./_components/chat-demo";
@@ -236,9 +234,7 @@ export default function LandingPage() {
               Start free
             </Link>
           </div>
-          <Suspense fallback={<PremiumPlan prices={US_PRICES} />}>
-            <LocalPremiumPlan />
-          </Suspense>
+          <PremiumPlan />
         </div>
       </section>
 
@@ -280,15 +276,10 @@ export default function LandingPage() {
   );
 }
 
-// Premium plan in the visitor's local App Store prices (Vercel's IP country). Streams in after the static page;
-// the fallback and any unknown country show the US prices.
-async function LocalPremiumPlan() {
-  const country = (await headers()).get("x-vercel-ip-country");
-  return <PremiumPlan prices={pricesFor(country)} />;
-}
-
-function PremiumPlan({ prices }: { prices: Prices }) {
-  const intro = prices.yearlyIntro;
+// Premium: the funnel's plans (lib/funnel-plans.ts). The visitor picks one at the end of the quiz, so the card shows the
+// lowest way in and every plan's renewal, and sends them to the quiz.
+function PremiumPlan() {
+  const from = Math.min(...FUNNEL_PLANS.map((p) => p.now));
   return (
     <div className="plan premium">
       <span className="glow" aria-hidden>
@@ -296,23 +287,31 @@ function PremiumPlan({ prices }: { prices: Prices }) {
       </span>
       <div className="top">
         <h3>Premium</h3>
-        {intro && <span className="badge">First month {intro}</span>}
+        <span className="badge">3 plans</span>
       </div>
       <div className="amt">
-        {prices.yearly}
-        <small> / year</small>
+        <small className="from">from </small>
+        {usd(from)}
       </div>
-      <p className="note">
-        {intro ? `${intro} for your first month, then ${prices.yearly} a year.` : `${prices.yearly} a year.`} Or {prices.monthly} a
-        month. Cancel anytime in your store settings.
-      </p>
+      <ul className="plan-opts">
+        {FUNNEL_PLANS.map((p) => (
+          <li key={p.id}>
+            <b>{p.label}</b>
+            <span>
+              {usd(p.now)} {p.unit.startsWith("first") ? `for the ${p.unit}` : p.unit}, then {usd(p.then)} {p.every}
+            </span>
+          </li>
+        ))}
+      </ul>
       <ul>
         {PREMIUM_FEATURES.map((t) => (
           <li key={t}>{t}</li>
         ))}
+        <li className="extra">Optional: personal audio prayers read aloud for you, {usd(ADDON.now)} add-on</li>
       </ul>
+      <p className="note">You pick your plan after a short quiz. Cancel anytime.</p>
       <Link href={START} className="lp-btn full">
-        {intro ? `Start for ${intro}` : "Get Premium"}
+        Choose my plan
       </Link>
     </div>
   );
